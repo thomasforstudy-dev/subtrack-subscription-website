@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "example-story",
+  "title": "How the method develops",
+  "driver": "discrete-intersection",
+  "steps": [
+    {
+      "id": "observe",
+      "content": {
+        "heading": "Start from evidence",
+        "contentRef": "#observe-copy"
+      },
+      "presentation": {
+        "stageRef": "#method-map",
+        "visualState": "observe",
+        "transitionIntent": "focus-observe"
+      }
+    },
+    {
+      "id": "decide",
+      "content": {
+        "heading": "Turn evidence into a decision",
+        "contentRef": "#decide-copy"
+      },
+      "presentation": {
+        "stageRef": "#method-map",
+        "visualState": "decide",
+        "transitionIntent": "focus-decide"
+      }
+    }
+  ],
+  "scroll": {
+    "mode": "native",
+    "stickyStage": true,
+    "snap": "none",
+    "programmaticFocus": false
+  },
+  "navigation": {
+    "anchors": true,
+    "previousNext": true,
+    "skipStory": true
+  },
+  "fallback": {
+    "unsupportedDriver": "discrete",
+    "noJs": "linear-document",
+    "reducedMotion": "discrete-static-states",
+    "noMotion": "linear-document"
+  }
+}

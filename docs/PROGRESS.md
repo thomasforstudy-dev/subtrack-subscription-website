@@ -20,14 +20,35 @@ Tick a box when the feature works **and** its tests pass.
 | 11 | Sat 24 Oct | README with screenshots, demo account, demo video | ⬜ |
 | 12 | Sun 25 Oct | Spare day for bugs | ⬜ |
 
-## Who does what (suggested)
+## Who does what
 
-| Tool | Best at here |
+| Tool | Role |
 |---|---|
-| Claude | Lead: plan, backend, SQL Server / T-SQL, security, fixing bugs from screenshots, reviewing others' work |
-| Antigravity | UI/UX: templates + CSS, checking pages in its browser |
-| Codex | Clear, well-defined coding tasks and tests; second-opinion code review |
-| Gemini | Research and explanations; Google parts (Calendar, Gemini API for the AI helper) |
+| **Claude** | Lead: backend features, SQL Server / T-SQL, security, reviews, bug fixes from screenshots |
+| **Codex** | Runs things on the PC (setup, Cloudflare, services, backups), well-defined features, tests, reviews Claude's and Antigravity's work |
+| **Gemini** (+ Stitch) | Designs the look: colour, fonts, page mockups. Doesn't edit the code |
+| **Antigravity** | Turns Gemini's designs into the real templates + CSS; checks pages in its browser |
+
+| Day | Backend lane | UI lane | PC setup / other |
+|---|---|---|---|
+| 1 | — | — | **Codex**: switch to SQL Server (run `01_schema.sql`, `.env`, `check-db`) |
+| 2 | ✅ Claude: links | — | — |
+| 3 | **Claude**: production server files | **Gemini** → design system + mockups | **Codex**: Cloudflare Tunnel + auto-start |
+| 4 | **Claude**: email (Resend), confirm email, forgot password | **Antigravity**: apply design to existing pages | Owner: Resend account + DNS in Cloudflare |
+| 5 | **Claude**: reminder emails | **Antigravity**: landing page | **Codex**: daily reminder task in Task Scheduler |
+| 6 | **Claude**: dashboard data | **Antigravity**: dashboard page | — |
+| 7 | **Codex**: plans + Google Calendar buttons + feed | **Antigravity**: plans page | — |
+| 8 | **Claude**: AI helper backend (Gemini API) | **Antigravity**: chat widget | — |
+| 9 | **Claude**: API tokens for the extension | — | **Codex**: Chrome extension (`extension/`) |
+| 10 | **Claude** + **Codex**: review each other's code (security) | **Antigravity**: mobile + accessibility check | **Codex**: nightly backups, uptime monitor |
+| 11 | **Claude**: README | **Antigravity**: screenshots | **Gemini**: help script the demo video |
+| 12 | Everyone: bug fixes from the bug folder | | |
+
+## Requests
+
+Things one lane needs from another. Delete a line when it's done.
+
+- (none yet)
 
 ## Log
 
@@ -35,3 +56,4 @@ Newest at the bottom. One line each: `date — tool — what changed`.
 
 - 2026-10-14 — Claude — Switched app to SQL Server (Windows login), wrote `database/01_schema.sql` (tables, constraints, indexes, 2 views), added Pinned links, `flask check-db`, `run_local.bat`.
 - 2026-10-14 — Claude — Links get their real page title automatically (`app/link_preview.py`, blocks private-network addresses). Added tests (`tests/`, `run_tests.bat`) and this shared AI rulebook (`AGENTS.md`).
+- 2026-10-14 — Claude — Added file lanes (AGENTS.md) and the day-by-day work split between Claude, Codex, Gemini and Antigravity (this file).
