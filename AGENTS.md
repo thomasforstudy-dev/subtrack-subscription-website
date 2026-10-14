@@ -49,7 +49,7 @@ Two AIs may work at the same time **only if they are in different lanes**.
 |---|---|---|
 | **Backend** | `app/*.py`, `database/`, `tests/`, `requirements.txt`, `.env.example` | Claude, Codex |
 | **UI** | `app/templates/`, `app/static/` (CSS, JS, images) | Antigravity (from Gemini's designs) |
-| **PC setup** | `.bat` files, `deploy/`, Windows services, Cloudflare Tunnel, Task Scheduler | Codex |
+| **PC setup** | `.bat` files, `deploy/`, Windows services, Cloudflare Tunnel, Task Scheduler | Codex (auto-start on boot: Antigravity) |
 | **Extension** | `extension/` | Codex |
 
 - UI work must not change Python, routes or form field `name=`s. If the UI needs
