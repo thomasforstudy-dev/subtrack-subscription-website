@@ -35,4 +35,4 @@ def test_contact_buttons_use_https_links_only(client, monkeypatch):
     page = client.get("/login").get_data(as_text=True)
     assert 'href="https://m.me/example"' in page
     assert "javascript:" not in page
-    assert "Zalo (not set up yet)" in page
+    assert ">Zalo<" not in page  # unsafe/missing link: no button at all

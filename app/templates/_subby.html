@@ -41,19 +41,20 @@
     <template data-handoff>
       <div class="handoff">
         <strong>Talk to the owner 👋</strong>
-        <div class="handoff-buttons">
-          {% if contact.messenger %}
-            <a class="button messenger" href="{{ contact.messenger }}" target="_blank" rel="noopener noreferrer">Messenger</a>
-          {% else %}
-            <span class="button messenger not-set">Messenger (not set up yet)</span>
-          {% endif %}
-          {% if contact.zalo %}
-            <a class="button zalo" href="{{ contact.zalo }}" target="_blank" rel="noopener noreferrer">Zalo</a>
-          {% else %}
-            <span class="button zalo not-set">Zalo (not set up yet)</span>
-          {% endif %}
-        </div>
-        <p class="muted">Usually replies within a few hours.</p>
+        {# Only show the apps the owner has set up in .env. #}
+        {% if contact.messenger or contact.zalo %}
+          <div class="handoff-buttons">
+            {% if contact.messenger %}
+              <a class="button messenger" href="{{ contact.messenger }}" target="_blank" rel="noopener noreferrer">Messenger</a>
+            {% endif %}
+            {% if contact.zalo %}
+              <a class="button zalo" href="{{ contact.zalo }}" target="_blank" rel="noopener noreferrer">Zalo</a>
+            {% endif %}
+          </div>
+          <p class="muted">Usually replies within a few hours.</p>
+        {% else %}
+          <p class="muted">Contact links aren't set up yet. Please check back soon!</p>
+        {% endif %}
       </div>
     </template>
   </section>

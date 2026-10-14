@@ -61,3 +61,4 @@ Newest at the bottom. One line each: `date — tool — what changed`.
 - 2026-10-15 — Claude — DESIGN.md v2 (colourful chaos→calm, Plus Jakarta Sans, Subby bot, scroll animation plan). New Stitch mockups: landing v2 (laptop/desktop/phone) + Subby chat and voice mode.
 - 2026-10-15 — Claude — (owner asked Claude to do the UI lane this time) Built the animated landing page (`landing.html/css/js`), restyled every page to DESIGN.md v2, added Subby chat panel with pre-written answers (`_subby.html`, `subby.js`, Messenger/Zalo links from `.env`). Tests in `tests/test_pages.py`.
 - 2026-10-15 — Claude — Site live at https://alloutdeepclean.com via Cloudflare Tunnel `subtrack` → waitress (`serve.py`, port 8000). Not auto-started yet: Codex to make serve.py + `cloudflared tunnel run subtrack` start on boot.
+- 2026-10-15 — Claude — Subby hand-off shows only the contact apps set in .env (Messenger now; Zalo hidden). Next day: Subby's brain (Gemini), voice, hand-off messages.

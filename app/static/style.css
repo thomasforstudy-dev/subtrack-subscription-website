@@ -672,11 +672,6 @@ form.looking-up [name=title] {
   background: #0068ff;
 }
 
-.handoff .not-set {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
 .subby-chips {
   display: flex;
   gap: 0.4rem;
