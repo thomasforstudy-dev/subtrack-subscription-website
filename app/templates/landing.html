@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}SubTrack — Renew on purpose. Cancel in time.{% endblock %}
+{% block body_class %}landing{% endblock %}
+{% block head %}
+  {# Mark that JavaScript runs, so pieces can start hidden and animate in.
+     Without JavaScript everything is simply shown. #}
+  <script>document.documentElement.classList.add("js");</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}" />
+{% endblock %}
+
+{# Demo data for the story. x/y = where the card lands (%), fx/fy = where it
+   flies in from (vw/vh), r = tilt, s = how fast it drifts while scrolling. #}
+{% set rush = [
+  {"name": "Netflix", "tile": "N", "price": "15.49", "due": "in 2 days", "color": "#e50914", "x": 2, "y": 2, "r": -7, "fx": -70, "fy": -30, "s": 0.35},
+  {"name": "Spotify", "tile": "S", "price": "11.99", "due": "today", "color": "#1db954", "x": 52, "y": 0, "r": 5, "fx": 60, "fy": -40, "s": 0.2},
+  {"name": "YouTube Premium", "tile": "▶", "price": "13.99", "due": "in 3 days", "color": "#ff0033", "x": 26, "y": 15, "r": -3, "fx": -20, "fy": -60, "s": 0.5},
+  {"name": "ChatGPT Plus", "tile": "G", "price": "20.00", "due": "in 2 days", "color": "#10a37f", "x": 58, "y": 25, "r": 8, "fx": 80, "fy": 10, "s": 0.3},
+  {"name": "Claude Pro", "tile": "C", "price": "20.00", "due": "in 5 days", "color": "#d97757", "x": 0, "y": 34, "r": 4, "fx": -80, "fy": 20, "s": 0.45},
+  {"name": "Gemini", "tile": "✦", "price": "19.99", "due": "tomorrow", "color": "#4285f4", "x": 33, "y": 43, "r": -8, "fx": 10, "fy": 60, "s": 0.25},
+  {"name": "iCloud+", "tile": "i", "price": "2.99", "due": "in 4 days", "color": "#3693f3", "x": 62, "y": 52, "r": -4, "fx": 70, "fy": 50, "s": 0.55},
+  {"name": "Adobe CC", "tile": "A", "price": "59.99", "due": "in 2 days", "color": "#fa0f00", "x": 4, "y": 63, "r": 7, "fx": -60, "fy": 70, "s": 0.3},
+  {"name": "Disney+", "tile": "D", "price": "13.99", "due": "in 6 days", "color": "#113ccf", "x": 38, "y": 72, "r": 3, "fx": 20, "fy": 80, "s": 0.4},
+  {"name": "Canva Pro", "tile": "C", "price": "14.99", "due": "in 3 days", "color": "#7d2ae8", "x": 64, "y": 82, "r": -6, "fx": 80, "fy": 70, "s": 0.2},
+] %}
+{% set ledger = [
+  {"name": "Spotify", "tile": "S", "color": "#1db954", "price": "11.99", "next": "in 2 days", "soon": true, "fx": -220, "fy": -140, "r": -12},
+  {"name": "Netflix", "tile": "N", "color": "#e50914", "price": "15.49", "next": "in 9 days", "soon": false, "fx": 240, "fy": -90, "r": 9},
+  {"name": "ChatGPT Plus", "tile": "G", "color": "#10a37f", "price": "20.00", "next": "in 13 days", "soon": false, "fx": -260, "fy": 40, "r": 7},
+  {"name": "Adobe CC", "tile": "A", "color": "#fa0f00", "price": "59.99", "next": "in 18 days", "soon": false, "fx": 220, "fy": 110, "r": -8},
+  {"name": "iCloud+", "tile": "i", "color": "#3693f3", "price": "2.99", "next": "in 20 days", "soon": false, "fx": -180, "fy": 170, "r": 11},
+] %}
+{% set chapters = ["Rush hour", "The surprise", "Add them once", "Reminders", "Pinned links", "Card payments", "Calm"] %}
+
+{% block main %}
+  <div class="progress" aria-hidden="true"></div>
+  <nav class="rail" aria-label="Chapters">
+    {% for title in chapters %}
+      <a href="#ch{{ loop.index }}" data-rail="ch{{ loop.index }}" title="{{ title }}"><span class="sr-only">{{ title }}</span></a>
+    {% endfor %}
+  </nav>
+
+  <main class="story">
+    <div class="landing-flash">{% include "_flashes.html" %}</div>
+
+    {# 1. Rush hour #}
+    <section class="chapter dark" id="ch1" data-theme="dark">
+      <div class="chapter-inner">
+        <div class="copy">
+          <p class="label hot-label">Chapter 01 · Subscription rush hour</p>
+          <h1 class="display">It's subscription <span class="hot">rush hour.</span></h1>
+          <p class="lead">Music, movies, cloud storage, three AI tools and a gym you never visit. Every one renews on its own date, and none of them warn you.</p>
+          <p class="stat-row">
+            <span class="stat"><strong>10</strong> renewals this month</span>
+            <span class="stat hot-stat"><strong>$193.42</strong> leaving quietly</span>
+          </p>
+          <a class="scroll-hint" href="#ch2">Scroll to see how it ends <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="rush" data-rush aria-label="A pile of subscriptions">
+          {% for c in rush %}
+            <div class="sub-card" style="--x: {{ c.x }}; --y: {{ c.y }}; --r: {{ c.r }}deg; --fx: {{ c.fx }}vw; --fy: {{ c.fy }}vh; --s: {{ c.s }}; --i: {{ loop.index0 }}; --brand: {{ c.color }}">
+              <div class="sub-card-in">
+                <span class="tile">{{ c.tile }}</span>
+                <span class="sub-name"><span>{{ c.name }}</span><small>renews {{ c.due }}</small></span>
+                <span class="sub-price">${{ c.price }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track">
+          {% for _ in range(2) %}
+            {% for c in rush %}<span>−${{ c.price }} {{ c.name }}</span>{% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    {# 2. The surprise #}
+    <section class="chapter dark" id="ch2" data-theme="dark">
+      <div class="chapter-inner">
+        <div class="copy">
+          <p class="label hot-label">Chapter 02 · The surprise</p>
+          <h2 class="display">Then the charges <span class="hot">hit your bank.</span></h2>
+          <p class="lead">No email. No heads-up. Just a quiet Tuesday morning and a bank alert for a free trial you forgot you started.</p>
+        </div>
+        <div class="surprise">
+          <div class="phone">
+            <p class="phone-top">Tuesday 7:42 AM</p>
+            <div class="notif" style="--i: 0"><strong>First Bank</strong>Card •••• 4108 charged <b>$20.00</b> by CHATGPT PLUS</div>
+            <div class="notif" style="--i: 1"><strong>First Bank</strong>Card •••• 4108 charged <b>$59.99</b> by ADOBE CREATIVE CLOUD</div>
+            <div class="notif" style="--i: 2"><strong>First Bank</strong>Card •••• 4108 charged <b>$13.99</b> by DISNEY+</div>
+            <div class="notif warn" style="--i: 3"><strong>⚠ Low balance</strong>Your balance dropped below $50</div>
+            <p class="phone-total">Unexpected this month <span class="hot">$<span data-count="347.82" data-decimals="2">347.82</span></span></p>
+          </div>
+          <div class="cal" aria-label="A month crowded with renewals">
+            <p class="cal-title">This month</p>
+            <div class="cal-grid">
+              {% for day in range(1, 29) %}
+                <span class="day{% if day in [2, 3, 5, 8, 9, 12, 14, 15, 17, 20, 21, 23, 26, 27] %} busy{% endif %}" style="--i: {{ day }}">{{ day }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# The night fades into calm here #}
+    <div class="bridge" aria-hidden="true">
+      <p>…until you put them all in one place.</p>
+    </div>
+
+    {# 3. Add them once #}
+    <section class="chapter light" id="ch3" data-theme="light">
+      <div class="chapter-inner">
+        <div class="copy">
+          <p class="label">Chapter 03 · Put it all in one place</p>
+          <h2 class="display">Add them once. <span class="calm">We'll keep watch.</span></h2>
+          <p class="lead">The pile snaps into one tidy list. Every price, every renewal date, and what it all costs per month.</p>
+          <p class="stat-row">
+            <span class="stat light-stat"><strong>5</strong> tracked</span>
+            <span class="stat light-stat"><strong>$<span data-count="110.46" data-decimals="2">110.46</span></strong> per month</span>
+          </p>
+        </div>
+        <div class="ledger card">
+          <p class="ledger-head">Your subscriptions <span class="pill mint">✓ All tracked</span></p>
+          {% for row in ledger %}
+            <div class="row{% if row.soon %} soon{% endif %}" style="--fx: {{ row.fx }}px; --fy: {{ row.fy }}px; --r: {{ row.r }}deg; --i: {{ loop.index0 }}">
+              <span class="tile" style="--brand: {{ row.color }}">{{ row.tile }}</span>
+              <span class="sub-name"><span>{{ row.name }}</span><small>{% if row.soon %}<b>renews {{ row.next }}</b>{% else %}renews {{ row.next }}{% endif %}</small></span>
+              <span class="sub-price">${{ row.price }}</span>
+            </div>
+          {% endfor %}
+          <p class="ledger-total">Monthly total <strong>$<span data-count="110.46" data-decimals="2">110.46</span></strong></p>
+        </div>
+      </div>
+    </section>
+
+    {# 4. Reminders #}
+    <section class="chapter light" id="ch4" data-theme="light">
+      <div class="chapter-inner">
+        <div class="copy">
+          <p class="label">Chapter 04 · We remind you before</p>
+          <h2 class="display">We email you <span class="calm">before</span> it renews.</h2>
+          <p class="lead">Not on the morning of the charge. Early enough to decide calmly: keep it, or cancel in time.</p>
+          <p class="hint">👉 Try it: pick when you want the email.</p>
+        </div>
+        <div class="remind">
+          <div class="timeline card">
+            <div class="line"><span class="line-fill"></span></div>
+            <div class="whens" role="group" aria-label="Remind me">
+              <button type="button" class="when" data-days="14" style="--i: 0">14 days</button>
+              <button type="button" class="when on" data-days="7" style="--i: 1">7 days</button>
+              <button type="button" class="when" data-days="3" style="--i: 2">3 days</button>
+              <span class="when end" style="--i: 3">Renews</span>
+            </div>
+          </div>
+          <div class="mail card">
+            <p class="mail-from"><span class="logo small">S</span> SubTrack Reminders <span class="muted">· just now</span></p>
+            <p class="mail-subject">Adobe Creative Cloud renews in <span data-days-text>7 days</span></p>
+            <p class="muted">Your plan ($59.99) renews soon. Keep it, or cancel in time. Your saved cancel page is one tap away.</p>
+            <p class="mail-actions"><span class="button">Open cancel page</span> <span class="button secondary">Keep it</span></p>
+            <p class="set"><span class="tick-dot">✓</span> Reminder set</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# 5. Pinned links #}
+    <section class="chapter light" id="ch5" data-theme="light">
+      <div class="chapter-inner">
+        <div class="copy">
+          <p class="label sun-label">Chapter 05 · Pinned links</p>
+          <h2 class="display">Keep the links you'll <span class="calm">need later.</span></h2>
+          <p class="lead">Cancel pages, billing pages, support chats. Paste a link once, we fill in the title, and it's pinned right where you need it.</p>
+        </div>
+        <div class="link-grid">
+          {% for l in [("Cancel", "Netflix: cancel plan", "netflix.com/cancelplan"), ("Billing", "Adobe: billing & invoices", "account.adobe.com"), ("Support", "Spotify: chat with support", "support.spotify.com"), ("Card", "First Bank: card statement", "firstbank.example/statements")] %}
+            <div class="lcard card" style="--i: {{ loop.index0 }}">
+              <span class="pinned" aria-hidden="true">📌</span>
+              <span class="pill">{{ l[0] }}</span>
+              <strong>{{ l[1] }}</strong>
+              <span class="muted">{{ l[2] }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    {# 6. Card payments #}
+    <section class="chapter light" id="ch6" data-theme="light">
+      <div class="chapter-inner">
+        <div class="copy">
+          <p class="label">Chapter 06 · Credit card payments</p>
+          <h2 class="display">Never miss a card <span class="calm">payment either.</span></h2>
+          <p class="lead">Add your card's payment due date and get the same early reminder, before late fees and interest show up.</p>
+        </div>
+        <div class="stmt">
+          <p class="stmt-top">Visa •••• 4108 <span class="pill mint">Reminder on</span></p>
+          <p class="stmt-label">Statement balance</p>
+          <p class="stmt-amount">$<span data-count="1420.50" data-decimals="2">1,420.50</span></p>
+          <p class="stmt-label">Payment due in</p>
+          <div class="countdown">
+            <span><b data-count="4" data-from="30">4</b>days</span>
+            <span><b data-count="16" data-from="59">16</b>hours</span>
+            <span><b data-count="28" data-from="59">28</b>mins</span>
+          </div>
+          <p class="stmt-note">We'll email you 3 days before.</p>
+        </div>
+      </div>
+    </section>
+
+    {# 7. Calm #}
+    <section class="chapter light final" id="ch7" data-theme="light">
+      <div class="final-inner">
+        <svg class="tick" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" /><path d="M20 33l8 8 16-18" /></svg>
+        <p class="label mint-label">Final chapter · Calm</p>
+        <h2 class="display">Renew on purpose. <span class="calm">Cancel in time.</span></h2>
+        <p class="lead">Add your first subscription in under a minute.</p>
+        <p class="cta">
+          <a class="button big" href="{{ url_for('auth.register') }}">Get started free</a>
+          <a class="button secondary big" href="{{ url_for('auth.login') }}">Log in</a>
+        </p>
+      </div>
+      <footer class="foot">
+        <span class="brand"><span class="logo small">S</span> SubTrack</span>
+        <span class="muted">© 2026 SubTrack · A student portfolio project</span>
+      </footer>
+    </section>
+  </main>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='landing.js') }}" defer></script>
+{% endblock %}

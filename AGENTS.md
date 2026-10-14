@@ -97,8 +97,8 @@ Two AIs may work at the same time **only if they are in different lanes**.
 ## Code style
 
 - Clear names, short functions, comments that explain *why*, in plain English.
-- Match the existing look: black buttons, light grey page, `Segoe UI` font,
-  `--text`, `--muted`, `--line` colours in `style.css`. Pages must work at phone width (390px).
+- Match the look in `DESIGN.md` (v2): violet buttons, lilac page, Plus Jakarta Sans,
+  colours as variables in `style.css` `:root`. Pages must work at phone width (390px).
 - User-facing text is friendly and short. Show errors with `flash(...)`.
 - Windows paths and `.bat`/PowerShell commands in instructions (the owner uses Windows).
 
