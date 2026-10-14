@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Subtrack{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="{{ url_for('main.index') }}">Subtrack</a>
+      <nav>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('subscriptions.list_subscriptions') }}">Subscriptions</a>
+          <a href="{{ url_for('subscriptions.create') }}">Add</a>
+          <a href="{{ url_for('links.list_links') }}">Links</a>
+          {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.users') }}">Admin</a>
+          {% endif %}
+          <span class="muted">{{ current_user.email }}</span>
+          <a href="{{ url_for('auth.logout') }}">Log out</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">Log in</a>
+          <a href="{{ url_for('auth.register') }}">Sign up</a>
+        {% endif %}
+      </nav>
+    </header>
+    <main>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <ul class="flash">
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

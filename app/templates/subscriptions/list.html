@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Subscriptions — Subtrack{% endblock %}
+{% block content %}
+  <h1>Subscriptions</h1>
+  <p><a class="button" href="{{ url_for('subscriptions.create') }}">Add subscription</a></p>
+  {% if items %}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Amount</th>
+          <th>Cycle</th>
+          <th>Next renewal</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          <tr class="{% if item.next_renewal_at <= today %}due{% endif %}">
+            <td>{{ item.name }}</td>
+            <td>{{ item.amount }} {{ item.currency }}</td>
+            <td>{{ item.cycle }}</td>
+            <td>{{ item.next_renewal_at }}</td>
+            <td>
+              <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}">Edit</a>
+              <form class="inline" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}">
+                <button type="submit">Archive</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">None yet. Add Netflix, school tools, or anything that renews.</p>
+  {% endif %}
+{% endblock %}

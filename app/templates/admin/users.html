@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Admin — Subtrack{% endblock %}
+{% block content %}
+  <h1>Registered users</h1>
+  <p class="muted">Stored in SQL. This page lists rows; it is not a live SQL console.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Admin</th>
+        <th>Created</th>
+        <th>Last login</th>
+        <th>Subscriptions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in accounts %}
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ "yes" if user.is_admin else "no" }}</td>
+          <td>{{ user.created_at }}</td>
+          <td>{{ user.last_login_at or "—" }}</td>
+          <td>{{ counts[user.id] }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
