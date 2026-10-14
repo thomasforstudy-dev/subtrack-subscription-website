@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Sign up — Subtrack{% endblock %}
+{% block content %}
+  <h1>Sign up</h1>
+  <p class="muted">The first account becomes admin so you can see who registers later.</p>
+  <form method="post">
+    <label>Email <input type="email" name="email" required /></label>
+    <label>Password <input type="password" name="password" required minlength="8" /></label>
+    <button type="submit">Create account</button>
+  </form>
+{% endblock %}

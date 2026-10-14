@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Links — Subtrack{% endblock %}
+{% block content %}
+  <h1>Pinned links</h1>
+
+  <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}">
+    <input name="url" placeholder="Paste a link…" required aria-label="Link" />
+    <input name="title" placeholder="Title (auto-filled)" aria-label="Title" />
+    <input name="tags" placeholder="Tags, e.g. school, tools" aria-label="Tags" />
+    <button type="submit">Save link</button>
+  </form>
+
+  <form class="search" method="get" action="{{ url_for('links.list_links') }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search title, link, tags, notes" aria-label="Search" />
+    {% if tag %}<input type="hidden" name="tag" value="{{ tag }}" />{% endif %}
+    <button type="submit">Search</button>
+  </form>
+
+  {% if all_tags %}
+    <p class="chips">
+      <a class="chip {% if not tag %}on{% endif %}" href="{{ url_for('links.list_links', q=q or None) }}">All</a>
+      {% for t in all_tags %}
+        <a class="chip {% if t == tag %}on{% endif %}" href="{{ url_for('links.list_links', tag=t, q=q or None) }}">{{ t }}</a>
+      {% endfor %}
+    </p>
+  {% endif %}
+
+  {% if items %}
+    <ul class="links">
+      {% for link in items %}
+        <li class="{% if link.is_pinned %}pinned{% endif %}">
+          <form class="inline pin" method="post" action="{{ url_for('links.toggle_pin', link_id=link.id) }}">
+            <button type="submit" title="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}" aria-label="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}">{{ '★' if link.is_pinned else '☆' }}</button>
+          </form>
+          <div class="link-body">
+            <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
+            <span class="muted">{{ link.hostname }}</span>
+            {% if link.tag_list %}
+              <span class="chips small">
+                {% for t in link.tag_list %}<a class="chip" href="{{ url_for('links.list_links', tag=t) }}">{{ t }}</a>{% endfor %}
+              </span>
+            {% endif %}
+            {% if link.notes %}<p class="muted note">{{ link.notes }}</p>{% endif %}
+          </div>
+          <div class="link-actions">
+            <a href="{{ url_for('links.edit', link_id=link.id) }}">Edit</a>
+            <form class="inline" method="post" action="{{ url_for('links.delete', link_id=link.id) }}">
+              <button type="submit">Delete</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% elif q or tag %}
+    <p class="muted">No links match. <a href="{{ url_for('links.list_links') }}">Show all</a></p>
+  {% else %}
+    <p class="muted">No links yet. Paste one above — course pages, tools, articles you want to keep.</p>
+  {% endif %}
+  <script src="{{ url_for('static', filename='link-preview.js') }}" defer></script>
+{% endblock %}

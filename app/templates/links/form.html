@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{% if item %}Edit{% else %}Add{% endif %} link — Subtrack{% endblock %}
+{% block content %}
+  <h1>{% if item %}Edit{% else %}Add{% endif %} link</h1>
+  <form method="post" action="{{ url_for('links.edit', link_id=item.id) if item else url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}">
+    <input type="hidden" name="form" value="full" />
+    <label>Link <input name="url" required value="{{ form.get('url', item.url if item else '') }}" /></label>
+    <label>Title <input name="title" placeholder="Leave empty to fill in automatically" value="{{ form.get('title', item.title if item else '') }}" /></label>
+    <label>Tags <input name="tags" placeholder="comma separated" value="{{ form.get('tags', item.tags if item else '') }}" /></label>
+    <label>Notes <textarea name="notes">{{ form.get('notes', item.notes if item else '') }}</textarea></label>
+    <label class="check"><input type="checkbox" name="is_pinned" {% if (form.get('is_pinned') == 'on') or (not form and item and item.is_pinned) %}checked{% endif %} /> Pin to top</label>
+    <button type="submit">Save</button>
+  </form>
+  <p><a href="{{ url_for('links.list_links') }}">Back to links</a></p>
+  <script src="{{ url_for('static', filename='link-preview.js') }}" defer></script>
+{% endblock %}
