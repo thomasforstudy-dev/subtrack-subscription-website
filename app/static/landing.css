@@ -1,0 +1,1037 @@
+/* Landing page story. Colours come from style.css (:root).
+   Animation idea: each piece has a "before" position. When its chapter scrolls
+   into view, landing.js adds .in-view and CSS transitions move it into place.
+   The "before" rules only apply when JavaScript runs (.js on <html>). */
+
+.landing {
+  --night: #0e0b2b;
+  --night-line: #2a2557;
+  --night-text: #c9c5ff;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.3, 1.4, 0.5, 1);
+  background: var(--night);
+}
+
+/* ---------- Top bar: see-through on dark chapters, white on light ones ---------- */
+.landing .bar {
+  position: fixed;
+  inset: 0 0 auto;
+  transition: background 0.4s, border-color 0.4s;
+}
+
+.landing[data-theme="dark"] .bar {
+  background: rgba(14, 11, 43, 0.55);
+  border-color: transparent;
+}
+
+.landing[data-theme="dark"] .bar .brand,
+.landing[data-theme="dark"] .bar nav a:not(.button) {
+  color: #fff;
+}
+
+.landing-flash {
+  position: fixed;
+  top: 4.5rem;
+  left: 50%;
+  z-index: 30;
+  width: min(30rem, calc(100% - 2rem));
+  transform: translateX(-50%);
+}
+
+/* ---------- Chapter layout ---------- */
+.story {
+  max-width: none;
+  padding: 0;
+}
+
+.chapter {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 6rem 1.5rem 4rem;
+  overflow: hidden;
+}
+
+.chapter.dark {
+  background: var(--night);
+  color: #fff;
+}
+
+.chapter.light {
+  background: var(--lilac);
+}
+
+.chapter-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 4rem;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.label {
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: #e9e3ff;
+  color: var(--violet-deep);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hot-label {
+  background: rgba(255, 90, 95, 0.15);
+  color: #ff8a8d;
+}
+
+.sun-label {
+  background: #fff1c2;
+  color: #8a5a00;
+}
+
+.mint-label {
+  background: #d7f7ec;
+  color: #0b7a5e;
+}
+
+.display {
+  margin: 0 0 1.25rem;
+  font-size: clamp(2.1rem, 4.6vw, 4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.hot {
+  color: var(--coral);
+}
+
+.calm {
+  color: var(--violet);
+}
+
+.lead {
+  max-width: 34rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.dark .lead {
+  color: var(--night-text);
+}
+
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+}
+
+.stat {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--night-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.9rem;
+}
+
+.stat strong {
+  margin-right: 0.3rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.hot-stat strong {
+  color: var(--coral);
+}
+
+.light-stat {
+  border-color: var(--line);
+  background: #fff;
+}
+
+.light-stat strong {
+  color: var(--violet);
+}
+
+.scroll-hint {
+  color: var(--night-text);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.scroll-hint span {
+  display: inline-block;
+  animation: nudge 1.4s ease-in-out infinite;
+}
+
+@keyframes nudge {
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+.hint {
+  font-weight: 600;
+  color: var(--violet-deep);
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--lilac);
+  color: var(--violet-deep);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pill.mint {
+  background: #d7f7ec;
+  color: #0b7a5e;
+}
+
+.logo.small {
+  display: inline-grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+/* Headline + text slide up a little when the chapter appears */
+.copy > * {
+  transition: opacity 0.7s var(--ease-out), translate 0.7s var(--ease-out);
+}
+
+.copy > :nth-child(2) { transition-delay: 0.1s; }
+.copy > :nth-child(3) { transition-delay: 0.2s; }
+.copy > :nth-child(4) { transition-delay: 0.3s; }
+.copy > :nth-child(5) { transition-delay: 0.4s; }
+
+.js .chapter:not(.in-view) .copy > * {
+  opacity: 0;
+  translate: 0 24px;
+}
+
+/* ---------- Chapter 1: the rush ---------- */
+.rush {
+  --card-w: 15rem;
+  position: relative;
+  height: 32rem;
+}
+
+/* Outer box: drifts up at its own speed while you scroll (set by landing.js). */
+.sub-card {
+  position: absolute;
+  /* x (0-70) and y (0-85) spread the cards over the free space, so even
+     the right-most card stays inside the box on a phone. */
+  left: calc((100% - var(--card-w)) * var(--x) / 70);
+  top: calc((100% - 4rem) * var(--y) / 85);
+  width: var(--card-w);
+  transform: translateY(calc(var(--drift, 0) * var(--s) * -1px));
+}
+
+/* Inner card: flies in, tilts, then bobs gently. */
+.sub-card-in {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), inset 4px 0 var(--brand);
+  rotate: var(--r);
+  transition: translate 1s var(--ease-out), opacity 0.4s;
+  transition-delay: calc(var(--i) * 80ms);
+  animation: bob 3.5s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.45s);
+}
+
+/* Motion streak behind each card */
+.sub-card-in::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 7rem;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(to left, var(--brand), transparent);
+  opacity: 0.7;
+  transition: opacity 0.6s 1.2s;
+}
+
+.in-view .sub-card-in::before {
+  opacity: 0.35;
+}
+
+.js .chapter:not(.in-view) .sub-card-in {
+  opacity: 0;
+  translate: var(--fx) var(--fy);
+}
+
+@keyframes bob {
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+}
+
+.sub-name {
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+/* One line each; very long names end with "…" instead of wrapping. */
+.sub-name > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-name small {
+  color: var(--coral);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.sub-price {
+  font-weight: 800;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Charges running along the bottom, like a stock ticker */
+.ticker {
+  position: absolute;
+  inset: auto 0 0;
+  overflow: hidden;
+  border-top: 1px solid var(--night-line);
+  background: rgba(255, 90, 95, 0.06);
+  white-space: nowrap;
+}
+
+.ticker-track {
+  display: inline-flex;
+  gap: 2.5rem;
+  padding: 0.6rem 0;
+  color: #ff8a8d;
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: ticker 40s linear infinite;
+}
+
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- Chapter 2: the surprise ---------- */
+.surprise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.phone {
+  width: 19rem;
+  padding: 1rem;
+  border: 8px solid #221d4f;
+  border-radius: 36px;
+  background: #15113a;
+}
+
+.phone-top {
+  margin: 0 0 0.75rem;
+  color: var(--night-text);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.notif {
+  margin-bottom: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  background: #221d4f;
+  font-size: 0.8rem;
+  color: var(--night-text);
+  transition: opacity 0.4s, translate 0.5s var(--ease-spring);
+  transition-delay: calc(0.3s + var(--i) * 0.45s);
+}
+
+.notif strong {
+  display: block;
+  color: #fff;
+}
+
+.notif b {
+  color: #fff;
+}
+
+.notif.warn {
+  background: rgba(255, 90, 95, 0.18);
+  border: 1px solid rgba(255, 90, 95, 0.5);
+}
+
+.notif.warn strong {
+  color: #ff8a8d;
+}
+
+.in-view .notif {
+  animation: shake 0.4s ease-in-out;
+  animation-delay: calc(0.75s + var(--i) * 0.45s);
+}
+
+.js .chapter:not(.in-view) .notif {
+  opacity: 0;
+  translate: 0 -30px;
+}
+
+@keyframes shake {
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.phone-total {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--night-line);
+  color: var(--night-text);
+  font-size: 0.8rem;
+}
+
+.phone-total .hot {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal {
+  width: 15rem;
+  padding: 1rem;
+  border: 1px solid var(--night-line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cal-title {
+  margin: 0 0 0.6rem;
+  font-weight: 600;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.3rem;
+}
+
+.day {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  color: var(--night-text);
+  font-size: 0.7rem;
+  transition: background 0.3s, color 0.3s;
+  transition-delay: calc(var(--i) * 40ms);
+}
+
+.in-view .day.busy {
+  background: var(--coral);
+  color: #fff;
+}
+
+/* ---------- Bridge: night fades into calm ---------- */
+.bridge {
+  display: grid;
+  place-items: center;
+  height: 45vh;
+  padding: 0 1.5rem;
+  background: linear-gradient(var(--night), #3b2a8f 45%, var(--lilac));
+  text-align: center;
+}
+
+.bridge p {
+  margin: 0 0 12vh;
+  color: #fff;
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 600;
+}
+
+/* ---------- Chapter 3: snap into the list ---------- */
+.ledger {
+  padding: 1.25rem;
+}
+
+.ledger-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 0.75rem;
+  font-weight: 800;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  transition: translate 0.9s var(--ease-spring), rotate 0.9s var(--ease-spring), opacity 0.4s;
+  transition-delay: calc(0.2s + var(--i) * 0.12s);
+}
+
+.row.soon {
+  background: var(--due);
+}
+
+.row .sub-name small {
+  color: var(--muted);
+}
+
+.row.soon .sub-name small b {
+  color: var(--coral);
+}
+
+.js .chapter:not(.in-view) .row {
+  opacity: 0;
+  translate: var(--fx) var(--fy);
+  rotate: var(--r);
+}
+
+.ledger-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 1rem 0 0;
+  color: var(--muted);
+}
+
+.ledger-total strong {
+  color: var(--text);
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Chapter 4: reminders ---------- */
+.remind {
+  display: grid;
+  gap: 1rem;
+}
+
+.timeline {
+  position: relative;
+  padding: 1.5rem 1.25rem 1.25rem;
+}
+
+.line {
+  position: absolute;
+  top: 2.6rem;
+  left: 2rem;
+  right: 2rem;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.line-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--violet), var(--coral));
+  transform-origin: left;
+  transition: transform 1.4s var(--ease-out) 0.3s;
+}
+
+.js .chapter:not(.in-view) .line-fill {
+  transform: scaleX(0);
+}
+
+.whens {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.when {
+  padding: 0.45rem 0.8rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.85rem;
+  transition: background 0.2s, color 0.2s, scale 0.5s var(--ease-spring), opacity 0.3s;
+  transition-delay: 0s, 0s, calc(0.4s + var(--i) * 0.3s), calc(0.4s + var(--i) * 0.3s);
+}
+
+.when:hover {
+  background: var(--lilac);
+  transform: none;
+}
+
+.when.on {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: #fff;
+}
+
+.when.end {
+  border-color: var(--coral);
+  color: var(--coral);
+  font-weight: 600;
+}
+
+.js .chapter:not(.in-view) .when {
+  opacity: 0;
+  scale: 0.6;
+}
+
+.mail {
+  padding: 1.25rem;
+  transition: opacity 0.6s, translate 0.8s var(--ease-out);
+  transition-delay: 1s;
+}
+
+.js .chapter:not(.in-view) .mail {
+  opacity: 0;
+  translate: 60px 0;
+}
+
+.mail p {
+  margin: 0 0 0.6rem;
+}
+
+.mail-from {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mail-subject {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.mail-subject [data-days-text] {
+  color: var(--violet);
+}
+
+.mail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mail-actions .button {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: default;
+}
+
+.set {
+  color: #0b7a5e;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.tick-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: var(--mint);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+/* ---------- Chapter 5: pinned links ---------- */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.lcard {
+  position: relative;
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+  padding: 1.25rem;
+  transition: opacity 0.5s, translate 0.7s var(--ease-spring);
+  transition-delay: calc(0.2s + var(--i) * 0.15s);
+}
+
+.lcard:first-child {
+  background: var(--pin);
+}
+
+.lcard .pill {
+  width: fit-content;
+}
+
+.lcard .muted {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.pinned {
+  position: absolute;
+  top: -0.8rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  transition: scale 0.5s var(--ease-spring), opacity 0.2s;
+  transition-delay: calc(0.8s + var(--i) * 0.15s);
+}
+
+.js .chapter:not(.in-view) .lcard {
+  opacity: 0;
+  translate: 0 -50px;
+}
+
+.js .chapter:not(.in-view) .pinned {
+  opacity: 0;
+  scale: 2.5;
+}
+
+/* ---------- Chapter 6: card payment ---------- */
+.stmt {
+  padding: 1.5rem;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #1b1550, #3b2a8f);
+  color: #fff;
+  box-shadow: 0 20px 50px rgba(59, 42, 143, 0.35);
+  transition: opacity 0.6s, translate 0.8s var(--ease-out), rotate 0.8s var(--ease-out);
+}
+
+.js .chapter:not(.in-view) .stmt {
+  opacity: 0;
+  translate: 0 60px;
+  rotate: -4deg;
+}
+
+.stmt p {
+  margin: 0;
+}
+
+.stmt-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem !important;
+  font-weight: 600;
+}
+
+.stmt-label {
+  color: var(--night-text);
+  font-size: 0.8rem;
+}
+
+.stmt-amount {
+  margin-bottom: 1rem !important;
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.countdown span {
+  display: grid;
+  justify-items: center;
+  min-width: 4.5rem;
+  padding: 0.6rem;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.countdown b {
+  color: var(--text);
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stmt-note {
+  color: var(--night-text);
+  font-size: 0.85rem;
+}
+
+/* ---------- Chapter 7: calm ---------- */
+.final {
+  align-items: stretch;
+  padding-bottom: 0;
+  background: radial-gradient(circle at 50% 40%, #fff, var(--lilac) 60%);
+}
+
+.final-inner {
+  align-self: center;
+  max-width: 44rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.final .lead {
+  margin-inline: auto;
+}
+
+.tick {
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto 1rem;
+  fill: #d7f7ec;
+  stroke: var(--mint);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tick path {
+  stroke-dasharray: 40;
+  transition: stroke-dashoffset 0.8s var(--ease-out) 0.4s;
+}
+
+.js .chapter:not(.in-view) .tick path {
+  stroke-dashoffset: 40;
+}
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.button.big {
+  padding: 0.9rem 1.6rem;
+  font-size: 1.05rem;
+}
+
+.final .button.big:first-child {
+  animation: glow 2.5s ease-in-out infinite;
+}
+
+@keyframes glow {
+  50% {
+    box-shadow: 0 0 0 10px rgba(109, 74, 255, 0.12);
+  }
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-self: end;
+  width: 100%;
+  max-width: 1200px;
+  margin: 3rem auto 0;
+  padding: 1.25rem 0 5.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+
+/* ---------- Chapter rail (big screens) and progress bar (phones) ---------- */
+.rail {
+  position: fixed;
+  top: 50%;
+  right: 1.25rem;
+  z-index: 15;
+  display: grid;
+  gap: 0.6rem;
+  transform: translateY(-50%);
+}
+
+.rail a {
+  display: block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 2px solid var(--violet);
+  border-radius: 999px;
+  transition: height 0.3s, background 0.3s;
+}
+
+.landing[data-theme="dark"] .rail a {
+  border-color: var(--night-text);
+}
+
+.rail a.on {
+  height: 1.6rem;
+  background: var(--violet);
+  border-color: var(--violet) !important;
+}
+
+.progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 25;
+  display: none;
+  width: 100%;
+  height: 3px;
+  background: var(--violet);
+  transform-origin: left;
+  transform: scaleX(var(--progress, 0));
+}
+
+/* ---------- Laptop (16:10) and smaller ---------- */
+@media (max-height: 940px) and (min-width: 901px) {
+  .chapter {
+    padding-top: 5rem;
+  }
+
+  .rush {
+    --card-w: 13.5rem;
+    height: 28rem;
+  }
+}
+
+/* ---------- Phone (9:16) ---------- */
+@media (max-width: 900px) {
+  .chapter {
+    min-height: auto;
+    padding: 5.5rem 1rem 4rem;
+  }
+
+  .chapter-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
+  .lead {
+    font-size: 1rem;
+  }
+
+  .rush {
+    --card-w: 11.5rem;
+    height: 27rem;
+  }
+
+  .sub-card-in {
+    grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .tile {
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 0.85rem;
+  }
+
+  .sub-name {
+    font-size: 0.75rem;
+  }
+
+  .sub-price {
+    font-size: 0.8rem;
+  }
+
+  #ch1 {
+    padding-bottom: 5rem;
+  }
+
+  .phone,
+  .cal {
+    width: 100%;
+    max-width: 22rem;
+  }
+
+  .whens {
+    flex-wrap: wrap;
+  }
+
+  .when {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.65rem;
+  }
+
+  .line {
+    display: none;
+  }
+
+  .link-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .countdown span {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .rail {
+    display: none;
+  }
+
+  .progress {
+    display: block;
+  }
+
+  .foot {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .rush {
+    --card-w: 10rem;
+  }
+}
+
+/* Animations off: everything just shows, nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track,
+  .sub-card-in,
+  .scroll-hint span {
+    animation: none;
+  }
+
+  .sub-card {
+    transform: none;
+  }
+}

@@ -48,7 +48,6 @@ Tick a box when the feature works **and** its tests pass.
 
 Things one lane needs from another. Delete a line when it's done.
 
-- UI lane: build the landing page from `docs/design/landing-v2-*.png` + `DESIGN.md` v2 (Plus Jakarta Sans, chaos→calm colours, scroll animation plan in DESIGN.md section 6).
 - Backend lane (later): help bot "Subby" — Gemini answers, voice in/out (browser speech), hand-off to owner via Messenger/Zalo. Designs: `docs/design/subby-*.png`.
 
 ## Log
@@ -60,3 +59,4 @@ Newest at the bottom. One line each: `date — tool — what changed`.
 - 2026-10-14 — Claude — Added file lanes (AGENTS.md) and the day-by-day work split between Claude, Codex, Gemini and Antigravity (this file).
 - 2026-10-15 — Claude — Wrote `DESIGN.md` (from `style.css`), linked Stitch project via `.stitch.json`, designed the 7-chapter scroll-story landing page for laptop 16:10, desktop 16:9 and phone 9:16. Mockups: `docs/design/landing-story-*.png`. No app code changed.
 - 2026-10-15 — Claude — DESIGN.md v2 (colourful chaos→calm, Plus Jakarta Sans, Subby bot, scroll animation plan). New Stitch mockups: landing v2 (laptop/desktop/phone) + Subby chat and voice mode.
+- 2026-10-15 — Claude — (owner asked Claude to do the UI lane this time) Built the animated landing page (`landing.html/css/js`), restyled every page to DESIGN.md v2, added Subby chat panel with pre-written answers (`_subby.html`, `subby.js`, Messenger/Zalo links from `.env`). Tests in `tests/test_pages.py`.

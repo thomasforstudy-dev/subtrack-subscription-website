@@ -19,6 +19,12 @@ login_manager.login_view = "auth.login"
 EXPECTED_TABLES = {"users", "subscriptions", "reminder_logs", "links"}
 
 
+def safe_link(url: str) -> str:
+    """Return the URL only if it is a normal https link, otherwise ''."""
+    url = url.strip()
+    return url if url.startswith("https://") else ""
+
+
 def create_app() -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
@@ -50,6 +56,16 @@ def create_app() -> Flask:
     app.register_blueprint(subscriptions_bp)
     app.register_blueprint(links_bp)
     app.register_blueprint(admin_bp)
+
+    @app.context_processor
+    def contact_links():
+        # Where Subby sends people when it can't answer. Set in .env.
+        return {
+            "contact": {
+                "messenger": safe_link(os.getenv("MESSENGER_URL", "")),
+                "zalo": safe_link(os.getenv("ZALO_URL", "")),
+            }
+        }
 
     with app.app_context():
         # SQL Server tables come from database/01_schema.sql.

@@ -1,0 +1,62 @@
+{# Subby, the help bot. Answers live in static/subby.js for now; Gemini comes later. #}
+{% set face %}<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="13" r="1.6" fill="currentColor" stroke="none"/><path d="M19 12.5l3 1.5-3 1.5"/><path d="M10 20c3.5 3 8.5 3 12 0"/></svg>{% endset %}
+<div class="subby" data-subby>
+  <p class="subby-teaser" data-teaser>Confused? Ask me. I promise I'm funnier than your bank.</p>
+
+  <section class="subby-panel" id="subby-panel" role="dialog" aria-label="Chat with Subby" hidden>
+    <header class="subby-head">
+      <span class="subby-avatar">{{ face }}</span>
+      <div>
+        <p class="subby-name">Subby</p>
+        <p class="subby-status">Online · cheeky but helpful</p>
+      </div>
+      <button class="subby-close" type="button" data-close aria-label="Close chat">×</button>
+    </header>
+
+    <div class="subby-toggles">
+      <label><input type="checkbox" data-fun checked /> Fun mode 😜</label>
+      <label title="Coming soon"><input type="checkbox" disabled /> Read aloud (soon)</label>
+    </div>
+
+    <div class="subby-log" data-log aria-live="polite"></div>
+
+    <div class="subby-chips">
+      <button type="button" data-ask>How do reminders work?</button>
+      <button type="button" data-ask>How do I add Netflix?</button>
+      <button type="button" data-ask>What are pinned links?</button>
+      <button type="button" data-ask>Can you cancel for me?</button>
+    </div>
+
+    <form class="subby-input" data-form>
+      <input name="q" maxlength="300" autocomplete="off" placeholder="Ask Subby anything…" aria-label="Your question" />
+      <button type="button" data-mic aria-label="Talk to Subby (coming soon)" title="Voice is coming soon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <button class="send" type="submit" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2-7z"/></svg>
+      </button>
+    </form>
+
+    {# Copied into the chat when Subby can't answer. #}
+    <template data-handoff>
+      <div class="handoff">
+        <strong>Talk to the owner 👋</strong>
+        <div class="handoff-buttons">
+          {% if contact.messenger %}
+            <a class="button messenger" href="{{ contact.messenger }}" target="_blank" rel="noopener noreferrer">Messenger</a>
+          {% else %}
+            <span class="button messenger not-set">Messenger (not set up yet)</span>
+          {% endif %}
+          {% if contact.zalo %}
+            <a class="button zalo" href="{{ contact.zalo }}" target="_blank" rel="noopener noreferrer">Zalo</a>
+          {% else %}
+            <span class="button zalo not-set">Zalo (not set up yet)</span>
+          {% endif %}
+        </div>
+        <p class="muted">Usually replies within a few hours.</p>
+      </div>
+    </template>
+  </section>
+
+  <button class="subby-fab" type="button" data-open aria-controls="subby-panel" aria-expanded="false" aria-label="Ask Subby for help">{{ face }}</button>
+</div>

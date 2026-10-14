@@ -1,26 +1,28 @@
 {% extends "base.html" %}
-{% block title %}{% if item %}Edit{% else %}Add{% endif %} — Subtrack{% endblock %}
+{% block title %}{% if item %}Edit{% else %}Add{% endif %} — SubTrack{% endblock %}
 {% block content %}
   <h1>{% if item %}Edit{% else %}Add{% endif %} subscription</h1>
-  <form method="post">
-    <label>Name <input name="name" required value="{{ item.name if item else '' }}" /></label>
-    <label>Amount <input name="amount" type="number" step="0.01" min="0" value="{{ item.amount if item else '0' }}" /></label>
-    <label>Currency <input name="currency" value="{{ item.currency if item else 'USD' }}" /></label>
-    <label>
-      Cycle
-      <select name="cycle">
-        {% set cycle = item.cycle if item else 'monthly' %}
-        <option value="monthly" {% if cycle == 'monthly' %}selected{% endif %}>Monthly</option>
-        <option value="yearly" {% if cycle == 'yearly' %}selected{% endif %}>Yearly</option>
-        <option value="weekly" {% if cycle == 'weekly' %}selected{% endif %}>Weekly</option>
-      </select>
-    </label>
-    <label>
-      Next renewal
-      <input type="date" name="next_renewal_at" required value="{{ item.next_renewal_at.isoformat() if item else '' }}" />
-    </label>
-    <label>Remind days before <input type="number" name="remind_days" min="0" value="{{ item.remind_days if item else 7 }}" /></label>
-    <label>Notes <textarea name="notes">{{ item.notes if item else '' }}</textarea></label>
-    <button type="submit">Save</button>
-  </form>
+  <div class="card">
+    <form method="post">
+      <label>Name <input name="name" required value="{{ item.name if item else '' }}" /></label>
+      <label>Amount <input name="amount" type="number" step="0.01" min="0" value="{{ item.amount if item else '0' }}" /></label>
+      <label>Currency <input name="currency" value="{{ item.currency if item else 'USD' }}" /></label>
+      <label>
+        Cycle
+        <select name="cycle">
+          {% set cycle = item.cycle if item else 'monthly' %}
+          <option value="monthly" {% if cycle == 'monthly' %}selected{% endif %}>Monthly</option>
+          <option value="yearly" {% if cycle == 'yearly' %}selected{% endif %}>Yearly</option>
+          <option value="weekly" {% if cycle == 'weekly' %}selected{% endif %}>Weekly</option>
+        </select>
+      </label>
+      <label>
+        Next renewal
+        <input type="date" name="next_renewal_at" required value="{{ item.next_renewal_at.isoformat() if item else '' }}" />
+      </label>
+      <label>Remind days before <input type="number" name="remind_days" min="0" value="{{ item.remind_days if item else 7 }}" /></label>
+      <label>Notes <textarea name="notes">{{ item.notes if item else '' }}</textarea></label>
+      <button type="submit">Save</button>
+    </form>
+  </div>
 {% endblock %}

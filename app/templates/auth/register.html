@@ -1,11 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Sign up — Subtrack{% endblock %}
+{% block title %}Sign up — SubTrack{% endblock %}
 {% block content %}
-  <h1>Sign up</h1>
-  <p class="muted">The first account becomes admin so you can see who registers later.</p>
-  <form method="post">
-    <label>Email <input type="email" name="email" required /></label>
-    <label>Password <input type="password" name="password" required minlength="8" /></label>
-    <button type="submit">Create account</button>
-  </form>
+  <div class="card auth-card">
+    <h1>Create your account</h1>
+    <p class="muted">Add your subscriptions once. We'll remind you before they renew.</p>
+    <form method="post">
+      <label>Email <input type="email" name="email" required autocomplete="email" /></label>
+      <label>Password <input type="password" name="password" required minlength="8" autocomplete="new-password" /></label>
+      <button type="submit">Create account</button>
+    </form>
+    <p class="muted">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </div>
 {% endblock %}
