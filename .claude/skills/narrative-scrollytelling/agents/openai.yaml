@@ -1,0 +1,4 @@
+interface:
+  display_name: "Narrative Scrollytelling"
+  short_description: "Readable stories enhanced by native scrolling"
+  default_prompt: "Use $narrative-scrollytelling to turn this ordered sequence into a readable scroll story with reduced-motion and no-JavaScript fallbacks."

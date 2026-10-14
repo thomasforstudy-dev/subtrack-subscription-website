@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "narrative-scrollytelling": {
+      "source": "glebis/humane-agentic-design",
+      "sourceType": "github",
+      "skillPath": "humane/skills/narrative-scrollytelling/SKILL.md",
+      "computedHash": "4b7000889b976fbb23cc96218d80e149a6a6943b569ea74d2936370524dc8009"
+    }
+  }
+}

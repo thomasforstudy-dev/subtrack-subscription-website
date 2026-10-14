@@ -41,10 +41,30 @@ helper, and install a Chrome extension for reminders.
 | `docs/PROGRESS.md` | Plan + work log. **Read it first, update it last.** |
 | `run_local.bat` / `run_tests.bat` | Start the site / run the tests |
 
+## Who owns which files (lanes)
+
+Two AIs may work at the same time **only if they are in different lanes**.
+
+| Lane | Files | Who |
+|---|---|---|
+| **Backend** | `app/*.py`, `database/`, `tests/`, `requirements.txt`, `.env.example` | Claude, Codex |
+| **UI** | `app/templates/`, `app/static/` (CSS, JS, images) | Antigravity (from Gemini's designs) |
+| **PC setup** | `.bat` files, `deploy/`, Windows services, Cloudflare Tunnel, Task Scheduler | Codex |
+| **Extension** | `extension/` | Codex |
+
+- UI work must not change Python, routes or form field `name=`s. If the UI needs
+  new data from the server, write it in `docs/PROGRESS.md` under "Requests" for the backend lane.
+- Designs from **Stitch** (via its MCP server) come as HTML using Tailwind.
+  Don't paste that in: rebuild it with Jinja templates + classes in `style.css`,
+  keep the existing form fields and routes, and save the mockup image in `docs/design/`.
+- Backend work that needs a new page adds a **plain, working template**;
+  the UI lane makes it pretty later.
+- `AGENTS.md` and `docs/PROGRESS.md` can be edited by anyone; keep edits small.
+
 ## How to work here
 
-1. **One AI at a time.** Before starting, run `git status`. If there are
-   uncommitted changes you didn't make, stop and ask the owner.
+1. **Check before you start.** Run `git status`. If there are uncommitted
+   changes **in your lane** that you didn't make, stop and ask the owner.
 2. Read `docs/PROGRESS.md` to see what's done and what's next.
 3. Make the change. Keep it small and focused on what was asked.
 4. Run the tests: `run_tests.bat` (or `.venv\Scripts\python -m pytest -q`).
@@ -56,7 +76,8 @@ helper, and install a Chrome extension for reminders.
 
 ## Rules that must never be broken
 
-- **Never commit `.env`**, passwords, API keys or tokens. Never print their values.
+- **Never commit `.env`**, passwords, API keys or tokens (including the Stitch API key —
+  MCP servers are set up in each tool's own user settings, never in this folder). Never print their values.
   New settings go in `.env.example` with a placeholder value.
 - **Every database query for user data filters by the logged-in user**
   (`filter_by(user_id=current_user.id)`), so nobody can see someone else's data.
