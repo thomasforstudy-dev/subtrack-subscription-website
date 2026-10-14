@@ -9,7 +9,7 @@ Tick a box when the feature works **and** its tests pass.
 |---|---|---|---|
 | 1 | Wed 14 Oct | SQL Server ready, project on GitHub, app connects to SQL Server | 🟡 code done; owner still to run `01_schema.sql` and add `DB_` lines to `.env` |
 | 2 | Thu 15 Oct | T-SQL schema + **Pinned links** (save, tag, search, pin, auto title) | ✅ |
-| 3 | Fri 16 Oct | Go live on the domain: waitress + Cloudflare Tunnel, auto-start on boot | ⬜ |
+| 3 | Fri 16 Oct | Go live on the domain: waitress + Cloudflare Tunnel, auto-start on boot | 🟡 live since 15 Oct; auto-start still to do |
 | 4 | Sat 17 Oct | Email setup (Resend): confirm email at sign-up, forgot password | ⬜ |
 | 5 | Sun 18 Oct | **Reminder emails**: daily job, no duplicates, renewal date moves forward | ⬜ |
 | 6 | Mon 19 Oct | Dashboard: monthly spend, upcoming renewals, reminder banner, mobile | ⬜ |
@@ -33,7 +33,7 @@ Tick a box when the feature works **and** its tests pass.
 |---|---|---|---|
 | 1 | — | — | **Codex**: switch to SQL Server (run `01_schema.sql`, `.env`, `check-db`) |
 | 2 | ✅ Claude: links | — | — |
-| 3 | **Claude**: production server files | **Gemini** → design system + mockups | **Codex**: Cloudflare Tunnel + auto-start |
+| 3 | **Claude**: production server files | **Gemini** → design system + mockups | ✅ Claude: Cloudflare Tunnel · **Antigravity**: auto-start on boot |
 | 4 | **Claude**: email (Resend), confirm email, forgot password | **Antigravity**: apply design to existing pages | Owner: Resend account + DNS in Cloudflare |
 | 5 | **Claude**: reminder emails | **Antigravity**: landing page | **Codex**: daily reminder task in Task Scheduler |
 | 6 | **Claude**: dashboard data | **Antigravity**: dashboard page | — |
@@ -48,6 +48,7 @@ Tick a box when the feature works **and** its tests pass.
 
 Things one lane needs from another. Delete a line when it's done.
 
+- **Antigravity** (PC setup): make the site start by itself when Windows boots: `.venv\Scripts\python.exe serve.py` (port 8000) and `cloudflared tunnel --no-autoupdate run --url http://127.0.0.1:8000 subtrack`. Use Task Scheduler "At startup" tasks; check https://alloutdeepclean.com after a restart.
 - Backend lane (later): help bot "Subby" — Gemini answers, voice in/out (browser speech), hand-off to owner via Messenger/Zalo. Designs: `docs/design/subby-*.png`.
 
 ## Log
@@ -60,5 +61,6 @@ Newest at the bottom. One line each: `date — tool — what changed`.
 - 2026-10-15 — Claude — Wrote `DESIGN.md` (from `style.css`), linked Stitch project via `.stitch.json`, designed the 7-chapter scroll-story landing page for laptop 16:10, desktop 16:9 and phone 9:16. Mockups: `docs/design/landing-story-*.png`. No app code changed.
 - 2026-10-15 — Claude — DESIGN.md v2 (colourful chaos→calm, Plus Jakarta Sans, Subby bot, scroll animation plan). New Stitch mockups: landing v2 (laptop/desktop/phone) + Subby chat and voice mode.
 - 2026-10-15 — Claude — (owner asked Claude to do the UI lane this time) Built the animated landing page (`landing.html/css/js`), restyled every page to DESIGN.md v2, added Subby chat panel with pre-written answers (`_subby.html`, `subby.js`, Messenger/Zalo links from `.env`). Tests in `tests/test_pages.py`.
-- 2026-10-15 — Claude — Site live at https://alloutdeepclean.com via Cloudflare Tunnel `subtrack` → waitress (`serve.py`, port 8000). Not auto-started yet: Codex to make serve.py + `cloudflared tunnel run subtrack` start on boot.
+- 2026-10-15 — Claude — Site live at https://alloutdeepclean.com via Cloudflare Tunnel `subtrack` → waitress (`serve.py`, port 8000). Not auto-started yet: Antigravity to make serve.py + `cloudflared tunnel run subtrack` start on boot.
 - 2026-10-15 — Claude — Subby hand-off shows only the contact apps set in .env (Messenger now; Zalo hidden). Next day: Subby's brain (Gemini), voice, hand-off messages.
+- 2026-10-15 — Claude — Owner moved the auto-start-on-boot task from Codex to Antigravity. Added ponytail + scroll-craft skills to the repo (portfolio: shows which AI skills were used).
