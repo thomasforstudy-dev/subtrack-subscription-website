@@ -1,87 +1,111 @@
 # SubTrack Design System
 
-Source of truth for how SubTrack looks. Extracted from `app/static/style.css`.
-Every new screen (Stitch designs, templates, CSS) should match this file.
+Source of truth for how SubTrack looks. Every new screen (Stitch designs,
+templates, CSS) should match this file.
+
+Version 2 (2026-10-15): colourful "chaos → calm" story, Plus Jakarta Sans,
+help bot. `app/static/style.css` still has version 1 (black/white, Segoe UI)
+until the UI lane rebuilds it.
 
 ## 1. Visual theme and atmosphere
 
-Calm, plain and trustworthy. A near-white page (`#fafafa`) with white panels,
-thin grey borders and **black** as the only strong colour. No gradients, no
-shadows, no decoration: the content (service names, prices, dates) is the
-design. Neutral temperature, light mode only, low density, generous whitespace.
+The page tells a story with colour. It starts as **subscription rush hour**:
+a deep navy night full of loud brand colours, flying cards, ticking countdowns
+and red "renews in 2 days" badges. As the visitor scrolls, SubTrack tidies it
+up and the page turns **bright, calm and friendly**: soft lilac background,
+violet buttons, mint "you're safe" ticks.
 
-Mood words: calm, clean, quiet, honest, utilitarian, "a tidy paper ledger".
+Mood words: chaos → calm, rush hour, energetic, playful, friendly, trustworthy at the end.
 
 ## 2. Color palette and roles
 
+**SubTrack brand (calm side, used everywhere in the app)**
+
 | Name | Hex | Role |
 |---|---|---|
-| Ink Black (`--text`) | `#1a1a1a` | Body text, headings, **primary buttons**, active chips |
-| Slate Grey (`--muted`) | `#5c5c5c` | Secondary text, notes, captions |
-| Hairline Grey (`--line`) | `#d9d9d9` | Every border and table divider |
-| Paper (`--bg`) | `#fafafa` | Page background |
-| Pure White | `#ffffff` | Top bar, tables, cards, inputs, link lists |
-| Due Blush (`--due`) | `#fff4f0` | Row highlight for a subscription that renews soon |
-| Pin Cream | `#fffbea` | Background of a pinned link |
-| Lookup Grey | `#f3f3f3` | Field shown while a link title is loading |
+| SubTrack Violet | `#6d4aff` | Primary buttons, links, active chips, progress rail |
+| Violet Deep | `#4b2fd6` | Button hover, headline highlight |
+| Mint Safe | `#16c79a` | Success, "reminder set", "you're covered" ticks |
+| Sun Yellow | `#ffc83d` | Pinned links, small highlights, bot accent |
+| Coral Due | `#ff5a5f` | Renews soon / unexpected charge (text, badges, borders) |
+| Lilac Mist | `#f4f1ff` | Calm page background |
+| White | `#ffffff` | Cards, tables, inputs, chat bubbles |
+| Ink | `#16142b` | Body text and headings on light backgrounds |
+| Slate | `#5f5d78` | Secondary text, captions |
+| Hairline | `#e4e0f5` | Borders and dividers on light backgrounds |
+
+**Rush-hour side (landing chapters 1–2 only)**
+
+| Name | Hex | Role |
+|---|---|---|
+| Midnight Navy | `#0e0b2b` | Background of the chaos chapters |
+| Night Line | `#2a2557` | Borders on dark |
+| Real brand colours | Spotify `#1db954`, Netflix `#e50914`, YouTube `#ff0033`, ChatGPT `#10a37f`, Adobe `#fa0f00`, iCloud `#3693f3` | Only on the service cards, to make the pile-up feel loud |
 
 Rules:
-- Black is the only accent. Do not add blue/purple/gradient brand colours.
-- "Urgent" is shown with Due Blush, never with saturated red fills.
-- Text on white or Paper is always Ink Black or Slate Grey (passes contrast).
-
-*Landing page only (new, not yet in `style.css`):* one small status accent may
-be used sparingly for reminder states: Amber `#b45309` (renews soon) and
-Alert Red `#b91c1c` (unexpected charge). Text or thin borders only, no big fills.
+- The transition navy → lilac happens between chapter 2 and chapter 3 ("Add them once").
+- Coral is for warnings only, never for normal buttons.
+- Text on Midnight Navy is White or `#c9c5ff`; text on Lilac/White is Ink or Slate.
 
 ## 3. Typography rules
 
-- Family: `Segoe UI, system-ui, sans-serif`. No other font.
-- Body: 16px (1rem), weight 400, line-height 1.45.
-- Page title (`h1`): 24px (1.5rem), margin-bottom 1rem.
-- Brand name: weight 650.
-- Link title / emphasis: weight 600.
-- Form label: 14.4px (0.9rem). Chip and small text: 13.6px (0.85rem).
-- Muted notes: Slate Grey, 14.4px.
-- Numbers (prices, dates) use the same font, never monospace.
-
-*Landing page only:* big chapter headlines may scale up to 48px (desktop) /
-32px (phone), weight 650, line-height 1.1. Same font.
+- Family: **Plus Jakarta Sans** (Google Fonts, weights 400/500/600/800), fallback `system-ui, sans-serif`. Supports Vietnamese.
+- Display (chapter headline): 64px desktop / 48px laptop / 34px phone, weight 800, line-height 1.05, letter-spacing -0.02em.
+- Heading (h1): 28px, weight 800. Subheading (h2): 20px, weight 600.
+- Body: 16px, weight 400, line-height 1.5. Small / labels: 14px, weight 500.
+- Chapter label: 12px, weight 600, uppercase, letter-spacing 0.12em.
+- Prices and countdown numbers: same font, weight 800, `font-variant-numeric: tabular-nums`.
 
 ## 4. Component stylings
 
-- **Top bar:** white, 1px Hairline bottom border, padding 12px 20px, brand left, links right, gap 1rem.
-- **Primary button:** Ink Black fill, white text, **no border, square corners**, padding 8px 14px, width fits content.
-- **Text button (`.inline`):** transparent, underlined, no padding. Used for "Delete" style actions.
-- **Input / select / textarea:** inherits font, padding 7px 8px, thin border, square corners. Labels sit above, gap 4px.
-- **Table:** white, full width, 1px Hairline row dividers, cell padding 9px 10px, left aligned. A due row uses Due Blush.
-- **Chip:** pill (999px radius), 1px Hairline border, white fill, 13.6px text. Active chip: Ink Black fill, white text.
-- **Link list:** white box with 1px Hairline border, rows separated by Hairline, row padding 10px 12px. Pinned row uses Pin Cream.
-- **Flash message:** white box, 1px Hairline border, padding 10px 13px, friendly one-liner.
-- **Landing-page cards (new):** white, 1px Hairline border, 8px radius, no shadow (or one very soft shadow for floating cards in the hero).
+- **Top bar:** transparent over navy in chaos chapters, white with Hairline border once calm. Brand left; Log in link + Violet "Sign up" button right.
+- **Primary button:** Violet fill, white text, 12px radius, padding 12px 20px, weight 600. Hover: Violet Deep, lifts 2px.
+- **Secondary button:** white fill, Hairline border, Ink text, 12px radius.
+- **Card:** white, 16px radius, 1px Hairline border, soft shadow `0 8px 24px rgba(22,20,43,.08)`.
+- **Service card (chaos):** brand-coloured left stripe or logo tile, price + "renews in X days" Coral badge, tilted -6° to 6°, motion streaks behind it.
+- **Input:** white, 1px Hairline, 10px radius, Violet focus ring.
+- **Table / list:** white card, Hairline dividers; a "renews soon" row gets a pale Coral tint `#fff0f0`; a pinned row gets pale Sun `#fff8e1`.
+- **Chip:** pill, Hairline border; active chip Violet fill, white text.
+- **Help bot (see section 7).**
 
 ## 5. Layout principles
 
-- Content column: max width 52rem (832px), centred, padding 24px 20px 48px.
-- Forms: single column, max 24rem, gap 12px. Quick-add rows may span full width.
-- Base spacing unit: 4px (multiples of 4: 4, 8, 12, 16, 20, 24, 48).
-- Breakpoint: 640px. Below it, grids become one column and row actions wrap under the text.
-- Must work at **390px** phone width with no sideways scrolling.
-- Screen sizes the owner designs for: laptop 16:10 (1440x900), desktop 16:9 (1920x1080), phone 9:16 (390x844).
+- Base spacing unit: 4px (4, 8, 12, 16, 24, 32, 48, 64).
+- App content column: max 52rem. Landing content column: max 1200px.
+- Breakpoint 640px; must work at **390px** with no sideways scroll.
+- Target screens: laptop 16:10 (1440×900), desktop 16:9 (1920×1080), phone 9:16 (390×844).
+- Landing: each chapter is one screen tall. Text + visual side by side on laptop/desktop, stacked (text first) on phone. Chapter progress rail on the right (desktop), thin progress bar under the top bar (phone).
 
-*Landing page:* full-width chapters, each about one screen tall; text and visual
-sit side by side on laptop/desktop and stack (text first) on phone. A thin chapter
-progress rail on the right edge on laptop/desktop, a top progress bar on phone.
+## 6. Scroll animation plan (vanilla JS + CSS, no libraries)
 
-## 6. Stitch generation notes
+Built later with `IntersectionObserver` + CSS transitions. Everything must also
+look fine with animations off (`prefers-reduced-motion`).
 
-Keywords: calm, minimal, near-white paper, hairline borders, black buttons,
-Segoe UI, whitespace, no gradients, no heavy shadows, plain and honest.
+| Chapter | Effect while scrolling |
+|---|---|
+| 1 Rush hour | Service cards fly in from all edges and pile up, slightly tilted; countdown badges tick down; a charge ticker scrolls along the bottom. |
+| 2 The surprise | Bank notifications drop in one by one with a shake; the red total counts up. |
+| 3 Add them once | Background fades navy → lilac; the flying cards snap into a tidy list one by one; the monthly total counts up. |
+| 4 We remind you | Timeline markers (14 / 7 / 3 days) light up in order; the email card slides in. |
+| 5 Pinned links | Link cards drop in and a yellow pin "sticks" on each. |
+| 6 Card payments | Countdown days roll like an odometer. |
+| 7 Calm | Mint tick draws itself; confetti-free, just a soft glow on the button. |
 
-Palette to name in prompts: Ink Black #1a1a1a, Slate Grey #5c5c5c, Hairline Grey
-#d9d9d9, Paper #fafafa, White #ffffff, Due Blush #fff4f0, Pin Cream #fffbea.
+## 7. Help bot ("Subby")
+
+- Floating round Violet button bottom-right with a small face icon; on phone it sits above the bottom edge.
+- Chat panel: white card, 20px radius, header with bot name "Subby", status dot, and a Fun-mode badge.
+- Bot bubbles: Lilac Mist; user bubbles: Violet with white text.
+- Personality: **cheeky and funny like Grok**, but always gives the real answer first and never insults the user.
+- Input row: text field + **mic button** (hold or tap to talk) + send. While listening: big pulsing Violet mic, live waveform, the words appear as they are heard. Bot replies can be **read aloud** (speaker icon, auto-speak toggle).
+- Suggested question chips: "How do reminders work?", "Is it free?", "How do I add Netflix?".
+- **Hand-off card** when Subby doesn't know: "This one's above my pay grade 😅 — talk to the human:" with two buttons, **Messenger** (`#0084ff`) and **Zalo** (`#0068ff`), plus "Send my question to the owner".
+
+## 8. Stitch generation notes
+
+Keywords: chaos to calm, subscription rush hour, midnight navy, brand-coloured flying cards, motion streaks, lilac mist, violet buttons, mint ticks, rounded cards, Plus Jakarta Sans, playful, friendly.
 
 Component prompts:
-- "A subscriptions table on a white panel with hairline row dividers: service, price, next renewal date. Rows renewing within 7 days have a pale blush background. A black square 'Add subscription' button sits above the table."
-- "A pinned links list in a white bordered box: each row has a bold page title, a small grey note, and Open / Edit actions. Pinned rows have a pale cream background. Filter chips (pill shaped, black when active) sit above."
-- "A simple sign-up form, single column, 24rem wide, labels above fields, one black 'Sign up' button, friendly error message in a white bordered box."
+- "Rush-hour hero on midnight navy: dozens of tilted subscription cards in real brand colours flying in with motion streaks, coral 'renews in 2 days' badges, a ticker of charges along the bottom, huge white headline."
+- "A calm subscriptions list on lilac background: white rounded card, service logo, price, next renewal date, coral tint on rows renewing soon, violet 'Add subscription' button, monthly total in big bold numbers."
+- "A help chat panel called Subby: lilac bot bubbles, violet user bubbles, suggested question chips, a mic button with live waveform, and a hand-off card with Messenger and Zalo buttons."
