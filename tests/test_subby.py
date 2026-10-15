@@ -6,6 +6,8 @@ from app import subby
 
 
 class FakeGemini:
+    status_code = 200
+
     def __init__(self, text):
         self.text = text
         self.sent = None
@@ -82,3 +84,20 @@ def test_too_many_questions_are_slowed_down(client, monkeypatch):
     for _ in range(subby.LIMIT_PER_HOUR):
         assert ask(client).status_code == 200
     assert ask(client).status_code == 429
+
+
+def test_busy_model_falls_back_to_next(client, monkeypatch):
+    monkeypatch.setenv("GEMINI_MODEL", "busy-model,backup-model")
+    tried = []
+
+    class Busy(FakeGemini):
+        status_code = 503
+
+    def fake_post(url, headers, json, timeout):
+        tried.append(url.split("/models/")[1].split(":")[0])
+        return Busy("") if "busy" in url else FakeGemini("From the backup.")(url, headers, json, timeout)
+
+    monkeypatch.setattr(subby.requests, "post", fake_post)
+    assert ask(client).get_json()["answer"] == "From the backup."
+    assert tried == ["busy-model", "backup-model"]
+
