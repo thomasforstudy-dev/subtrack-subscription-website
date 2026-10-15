@@ -49,6 +49,8 @@ def create_app() -> Flask:
     from app.auth import bp as auth_bp
     from app.links import bp as links_bp
     from app.main import bp as main_bp
+    from app.oauth import bp as oauth_bp
+    from app.subby import bp as subby_bp
     from app.subscriptions import bp as subscriptions_bp
 
     app.register_blueprint(main_bp)
@@ -56,6 +58,8 @@ def create_app() -> Flask:
     app.register_blueprint(subscriptions_bp)
     app.register_blueprint(links_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(oauth_bp)
+    app.register_blueprint(subby_bp)
 
     @app.context_processor
     def contact_links():

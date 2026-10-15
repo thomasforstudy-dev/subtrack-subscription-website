@@ -1,5 +1,5 @@
-// Subby, the help bot. For now it answers from the small list below.
-// Later the server will ask Gemini instead (see docs/PROGRESS.md).
+// Subby, the help bot. Questions go to the server, which asks Gemini
+// (app/subby.py). If that fails, Subby uses the small answer list below.
 (function () {
   const root = document.querySelector("[data-subby]");
   if (!root) return;
@@ -75,24 +75,53 @@
     return p;
   }
 
-  function reply(question) {
-    const typing = say("Subby is typing…", "bot typing");
-    setTimeout(() => {
-      typing.remove();
-      const answer = findAnswer(question);
-      if (answer) {
-        say(answer, "bot");
-        return;
-      }
-      say(
-        funBox.checked
-          ? "That one is above my pay grade 😅 Let me get the human."
-          : "I don't know that one yet. You can ask the owner directly:",
-        "bot"
-      );
-      log.append(handoff.content.cloneNode(true));
-      log.scrollTop = log.scrollHeight;
-    }, 600);
+  // Earlier messages, so Gemini understands follow-up questions.
+  const history = [];
+
+  function showHandoff(text) {
+    say(text, "bot");
+    log.append(handoff.content.cloneNode(true));
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // Ask the server (Gemini). Returns {answer, handoff} or null if it failed.
+  async function askServer(question) {
+    try {
+      const res = await fetch(root.dataset.askUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, fun: funBox.checked, history: history.slice(-6) }),
+      });
+      const data = await res.json();
+      return data.answer ? data : null;
+    } catch (err) {
+      return null; // offline or server error: use the built-in answers
+    }
+  }
+
+  async function reply(question) {
+    const typing = say("Subby is thinking…", "bot typing");
+    const data = await askServer(question);
+    typing.remove();
+
+    if (data) {
+      if (data.handoff) showHandoff(data.answer);
+      else say(data.answer, "bot");
+      history.push({ role: "user", text: question }, { role: "bot", text: data.answer });
+      return;
+    }
+
+    // Gemini isn't available: fall back to the small list above.
+    const answer = findAnswer(question);
+    if (answer) {
+      say(answer, "bot");
+      return;
+    }
+    showHandoff(
+      funBox.checked
+        ? "That one is above my pay grade 😅 Let me get the human."
+        : "I don't know that one yet. You can ask the owner directly:"
+    );
   }
 
   function ask(question) {

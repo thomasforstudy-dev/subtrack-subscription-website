@@ -14,7 +14,7 @@ Tick a box when the feature works **and** its tests pass.
 | 5 | Sun 18 Oct | **Reminder emails**: daily job, no duplicates, renewal date moves forward | ⬜ |
 | 6 | Mon 19 Oct | Dashboard: monthly spend, upcoming renewals, reminder banner, mobile | ⬜ |
 | 7 | Tue 20 Oct | Plans + "Add to Google Calendar" buttons + calendar feed | ⬜ |
-| 8 | Wed 21 Oct | **AI helper** (Gemini API) | ⬜ |
+| 8 | Wed 21 Oct | **AI helper** (Gemini API) | 🟡 code done 15 Oct; owner to add `GEMINI_API_KEY` |
 | 9 | Thu 22 Oct | **Chrome extension** (badge count + daily notification) | ⬜ |
 | 10 | Fri 23 Oct | Security check, nightly backups, uptime monitor, privacy page | ⬜ |
 | 11 | Sat 24 Oct | README with screenshots, demo account, demo video | ⬜ |
@@ -64,3 +64,4 @@ Newest at the bottom. One line each: `date — tool — what changed`.
 - 2026-10-15 — Claude — Subby hand-off shows only the contact apps set in .env (Messenger now; Zalo hidden). Next day: Subby's brain (Gemini), voice, hand-off messages.
 - 2026-10-15 — Claude — Owner moved the auto-start-on-boot task from Codex to Antigravity. Added ponytail + scroll-craft skills to the repo (portfolio: shows which AI skills were used).
 - 2026-10-15 — Antigravity — Created auto-start on boot Task Scheduler scripts and docs (deploy/install_autostart.bat, deploy/install_tasks.ps1, deploy/status.bat, deploy/uninstall_autostart.bat, deploy/README.md) for waitress and Cloudflare Tunnel.
+- 2026-10-15 — Claude — Subby's brain: `app/subby.py` (`POST /subby/ask` → Gemini, key stays on server, 30 questions/hour per visitor, `[HANDOFF]` → Messenger card; browser falls back to built-in answers). Sign in with Google/GitHub (`app/oauth.py`, buttons appear once keys are in `.env`). Sign-up now has Confirm password. Tests: `test_auth.py`, `test_oauth.py`, `test_subby.py` (45 pass).
