@@ -24,7 +24,9 @@ def client(app):
 
 
 def sign_up(client, email="a@example.com", password="password123"):
-    return client.post("/register", data={"email": email, "password": password})
+    return client.post(
+        "/register", data={"email": email, "password": password, "confirm": password}
+    )
 
 
 @pytest.fixture()

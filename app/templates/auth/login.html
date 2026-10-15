@@ -4,6 +4,7 @@
   <div class="card auth-card">
     <h1>Welcome back 👋</h1>
     <p class="muted">Log in to see what's renewing next.</p>
+    {% include "auth/_social.html" %}
     <form method="post">
       <label>Email <input type="email" name="email" required autocomplete="email" /></label>
       <label>Password <input type="password" name="password" required autocomplete="current-password" /></label>

@@ -4,11 +4,25 @@
   <div class="card auth-card">
     <h1>Create your account</h1>
     <p class="muted">Add your subscriptions once. We'll remind you before they renew.</p>
-    <form method="post">
-      <label>Email <input type="email" name="email" required autocomplete="email" /></label>
+    {% include "auth/_social.html" %}
+    <form method="post" id="register-form">
+      <label>Email <input type="email" name="email" required autocomplete="email" value="{{ request.form.get('email', '') }}" /></label>
       <label>Password <input type="password" name="password" required minlength="8" autocomplete="new-password" /></label>
+      <label>Confirm password <input type="password" name="confirm" required minlength="8" autocomplete="new-password" /></label>
       <button type="submit">Create account</button>
     </form>
     <p class="muted">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
   </div>
+  <script>
+    // Tell the user right away if the two passwords differ.
+    // The server checks again, so this is only a convenience.
+    (function () {
+      const form = document.getElementById("register-form");
+      const confirm = form.elements.confirm;
+      const check = () =>
+        confirm.setCustomValidity(confirm.value === form.elements.password.value ? "" : "The passwords don't match.");
+      form.elements.password.addEventListener("input", check);
+      confirm.addEventListener("input", check);
+    })();
+  </script>
 {% endblock %}
