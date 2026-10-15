@@ -16,7 +16,8 @@ if %errorlevel% neq 0 (
     echo  Administrator rights required.
     echo  Requesting elevation...
     echo ============================================================
-    powershell -Command "Start-Process cmd -ArgumentList '/c `"%~f0`"' -Verb RunAs"
+    REM Re-open this same file as admin. Windows shows a Yes/No prompt.
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
     exit /b
 )
 

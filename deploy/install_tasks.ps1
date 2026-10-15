@@ -140,8 +140,8 @@ $tunnelTask = Get-ScheduledTask -TaskName "SubTrack-Tunnel"
 
 Write-Host ""
 Write-Host "Status Summary:" -ForegroundColor Cyan
-Write-Host "  SubTrack-Server: $($serverTask.State)" -ForegroundColor (If ($serverTask.State -eq 'Running') { 'Green' } Else { 'Yellow' })
-Write-Host "  SubTrack-Tunnel: $($tunnelTask.State)" -ForegroundColor (If ($tunnelTask.State -eq 'Running') { 'Green' } Else { 'Yellow' })
+Write-Host "  SubTrack-Server: $($serverTask.State)" -ForegroundColor $(if ($serverTask.State -eq 'Running') { 'Green' } else { 'Yellow' })
+Write-Host "  SubTrack-Tunnel: $($tunnelTask.State)" -ForegroundColor $(if ($tunnelTask.State -eq 'Running') { 'Green' } else { 'Yellow' })
 
 # Test local endpoint
 try {
