@@ -96,22 +96,32 @@ def clean_history(raw) -> list[dict]:
     return turns
 
 
+def models() -> list[str]:
+    """GEMINI_MODEL can list backups, e.g. "gemini-3.1-flash-lite,gemini-flash-lite-latest"."""
+    names = [m.strip() for m in os.getenv("GEMINI_MODEL", "").split(",") if m.strip()]
+    return names or [DEFAULT_MODEL]
+
+
 def ask_gemini(key: str, question: str, history: list[dict], fun: bool) -> str:
-    model = os.getenv("GEMINI_MODEL", "").strip() or DEFAULT_MODEL
     payload = {
         "system_instruction": {"parts": [{"text": system_prompt(fun)}]},
         "contents": history + [{"role": "user", "parts": [{"text": question}]}],
         "generationConfig": {"temperature": 0.8 if fun else 0.3, "maxOutputTokens": 1024},
     }
-    res = requests.post(
-        GEMINI_URL.format(model=model),
-        headers={"x-goog-api-key": key},
-        json=payload,
-        timeout=20,
-    )
-    res.raise_for_status()
-    parts = res.json()["candidates"][0]["content"]["parts"]
-    return "".join(part.get("text", "") for part in parts).strip()
+    for model in models():
+        res = requests.post(
+            GEMINI_URL.format(model=model),
+            headers={"x-goog-api-key": key},
+            json=payload,
+            timeout=20,
+        )
+        # 429 = quota used up, 5xx = Google is busy: try the next model.
+        if res.status_code == 429 or res.status_code >= 500:
+            continue
+        res.raise_for_status()
+        parts = res.json()["candidates"][0]["content"]["parts"]
+        return "".join(part.get("text", "") for part in parts).strip()
+    raise requests.ConnectionError("All Gemini models are busy right now.")
 
 
 @bp.post("/ask")
