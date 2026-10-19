@@ -1,7 +1,14 @@
-// Subby, the help bot. Provider-agnostic UI: talks to /subby/ask on the server.
-// Handles thinking, timeout, rate limit (429), offline/FAQ fallback, voice input
-// (review transcript before send), optional read-aloud (TTS), and action confirmation cards.
+// Subby: trợ lý trò chuyện hướng dẫn & tra cứu tài khoản.
+// - Hỏi máy chủ trước (POST /subby/ask -> Gemini hoặc Phi-3.5-mini trên máy chủ).
+// - Hiển thị trung thực provider (gemini / phi / fake) và cảnh báo rõ khi fallback sang mô hình đám mây (fallback: true).
+// - Hiển thị an toàn kết quả Account Tools (list_upcoming_renewals, search_saved_links, summarize_transactions, create_reminder_draft) bằng DOM API (textContent), không bao giờ dùng innerHTML và không gửi dữ liệu riêng tư vào lịch sử hội thoại.
+// - Chế độ Giọng nói (Web Speech API — SpeechRecognition & speechSynthesis):
+//   + Chỉ xin quyền micro sau khi người dùng chủ động bấm nút Mic ([data-mic] hoặc [data-voice-orb]).
+//   + Hỗ trợ đầy đủ 4 trạng thái (idle / listening / thinking / speaking), xem/chỉnh bản nháp lời nói trước khi gửi, đọc câu trả lời (TTS) theo ngôn ngữ VI/EN, và luôn giữ ô nhập bàn phím hoạt động song song.
+
 (function () {
+  "use strict";
+
   const root = document.querySelector("[data-subby]");
   if (!root) return;
 
@@ -10,14 +17,17 @@
   const closeBtn = root.querySelector("[data-close]");
   const log = root.querySelector("[data-log]");
   const form = root.querySelector("[data-form]");
-  const input = form.querySelector("[name=q]");
+  const input = form.querySelector("input[name='q']");
   const funBox = root.querySelector("[data-fun]");
   const ttsAutoBox = root.querySelector("[data-tts-auto]");
   const ttsStopBtn = root.querySelector("[data-tts-stop]");
-  const statusEl = root.querySelector("[data-subby-status]");
-  const providerBadge = root.querySelector("[data-provider-badge]");
+  const teaser = root.querySelector("[data-teaser]");
   const handoff = root.querySelector("[data-handoff]");
   const actionCardTpl = root.querySelector("[data-action-card]");
+  const statusEl = root.querySelector("[data-subby-status]");
+  const providerBadge = root.querySelector("[data-provider-badge]");
+
+  // Inline voice bar & Mic button
   const micBtn = root.querySelector("[data-mic]");
   const voiceBar = root.querySelector("[data-voice-bar]");
   const voiceState = root.querySelector("[data-voice-state]");
@@ -25,41 +35,61 @@
   const voiceStopBtn = root.querySelector("[data-voice-stop]");
   const voiceCancelBtn = root.querySelector("[data-voice-cancel]");
 
+  // Stitch Voice Mode Stage controls
+  const voiceModeToggleBtn = root.querySelector("[data-voice-mode-toggle]");
+  const voiceStage = root.querySelector("[data-voice-stage]");
+  const voiceOrbBtn = root.querySelector("[data-voice-orb]");
+  const voiceDetectorLabel = root.querySelector("[data-voice-detector-label]");
+  const voiceLiveBadge = root.querySelector("[data-voice-live-badge]");
+  const voiceTranscriptEl = root.querySelector("[data-voice-transcript]");
+  const voiceTranscriptActions = root.querySelector("[data-voice-transcript-actions]");
+  const voiceSendNowBtn = root.querySelector("[data-voice-send-now]");
+  const voiceToInputBtn = root.querySelector("[data-voice-to-input]");
+  const voiceClearDraftBtn = root.querySelector("[data-voice-clear-draft]");
+  const voiceReplyTextEl = root.querySelector("[data-voice-reply-text]");
+  const voiceSpeakPill = root.querySelector("[data-voice-speak-pill]");
+  const voiceToolSlot = root.querySelector("[data-voice-tool-slot]");
+  const voiceMuteBtn = root.querySelector("[data-voice-mute]");
+  const voiceMuteLabel = root.querySelector("[data-voice-mute-label]");
+  const voiceEndBtn = root.querySelector("[data-voice-end]");
+  const voiceKeyboardBtn = root.querySelector("[data-voice-keyboard]");
+
+  // Built-in FAQ answers used ONLY when the AI server is offline/unconfigured (honestly labelled)
   const ANSWERS = [
     {
-      words: ["remind", "email", "notify", "warn", "before", "nhắc", "lời nhắc", "thông báo"],
-      fun: "Bạn chọn số ngày muốn được nhắc trước (ví dụ 14, 7 hoặc 3 ngày) cho từng gói. Lưu ý: tính năng gửi email định kỳ tự động đang được hoàn thiện trên máy chủ — ít nhất thì mình không bao giờ nói dối là 'đã gửi' khi chưa gửi thật!",
-      plain: "Mỗi gói đăng ký có mốc ngày nhắc trước riêng (ví dụ 14, 7 hoặc 3 ngày). Tác vụ gửi email tự động định kỳ đang được hoàn thiện trên máy chủ.",
+      words: ["remind", "reminder", "email", "before", "when", "nhắc", "lời nhắc", "gia hạn", "trước"],
+      fun: "Bạn chọn số ngày muốn được nhắc trước ngày gia hạn dự kiến (tối đa 3 mốc như 14, 7, 3 ngày) và giờ nhận trong Cài đặt. Khi công việc nhắc lịch chạy trên máy chủ và email đã xác thực, hệ thống sẽ gửi thông báo để bạn chủ động giữ hoặc hủy gói!",
+      plain: "Bạn có thể đặt tối đa 3 mốc nhắc trước ngày gia hạn dự kiến (ví dụ: 14,7,3 ngày) và cấu hình múi giờ/giờ nhắc trong Cài đặt.",
     },
     {
-      words: ["add", "netflix", "spotify", "new subscription", "thêm gói", "thêm"],
-      fun: "Đăng nhập, bấm '+ Thêm gói', điền tên dịch vụ, số tiền và ngày gia hạn dự kiến rồi lưu lại. Nhanh hơn cả lúc tìm nút hủy của Netflix!",
-      plain: "Sau khi đăng nhập, bạn bấm '+ Thêm gói', nhập tên dịch vụ, giá tiền, chu kỳ và ngày gia hạn dự kiến rồi bấm Lưu.",
+      words: ["add", "new", "netflix", "spotify", "track", "how do i", "start", "thêm", "tạo", "mới", "bắt đầu"],
+      fun: "Bấm '+ Thêm gói', điền tên dịch vụ (như Netflix), số tiền, chu kỳ thanh toán, ngày gia hạn dự kiến tiếp theo và các mốc nhắc (ví dụ 14,7,3). Chưa đầy 20 giây là xong!",
+      plain: "Bấm '+ Thêm gói đăng ký', nhập tên dịch vụ, giá tiền, chu kỳ, ngày gia hạn tiếp theo, các mốc ngày nhắc và bấm Lưu.",
     },
     {
-      words: ["pin", "link", "bookmark", "ghim", "đường dẫn"],
-      fun: "Mục 'Link đã lưu' là ngăn kéo cất sẵn trang hủy gói và trang thanh toán. Dán URL vào, mình tự lấy tiêu đề trang, bạn ghim lên đầu để lúc cần là mở ngay.",
-      plain: "Link đã lưu giúp bạn cất các trang web cần dùng lại. Dán đường dẫn vào, tiêu đề sẽ tự động điền và bạn có thể ghim lên đầu danh sách.",
+      words: ["pin", "pinned", "link", "links", "bookmark", "save a link", "ghim", "đường dẫn", "lưu link"],
+      fun: "Link đã ghim là nơi cất giữ các trang quản lý/hủy gói khó tìm (như trang hủy Adobe hay Netflix). Khi dán URL, máy chủ tự lấy tiêu đề và biểu tượng trang web; tới kỳ gia hạn chỉ cần 1 cú nhấp là mở đúng chỗ!",
+      plain: "Link đã ghim giúp lưu lại URL trang quản lý hoặc hủy dịch vụ, tự động lấy tiêu đề và biểu tượng trang, hỗ trợ tìm kiếm theo thẻ.",
     },
     {
-      words: ["cancel", "unsubscribe", "stop", "hủy gói", "tự hủy", "hủy"],
-      fun: "Mình không có tay để bấm hủy dịch vụ bên ngoài giúp bạn đâu 🙃! Nhưng bạn có thể lưu sẵn link trang hủy gói vào 'Link đã lưu' để tự hủy chỉ với 1 chạm.",
-      plain: "SubTrack không thể tự hủy dịch vụ bên ngoài thay bạn, nhưng bạn có thể lưu sẵn đường dẫn trang hủy gói để mở nhanh khi tới hạn.",
+      words: ["cancel", "unsubscribe", "stop a subscription", "hủy", "tự hủy"],
+      fun: "Mình không tự bấm nút hủy thay bạn (vì SubTrack không bao giờ giữ mật khẩu Netflix hay thẻ ngân hàng của bạn). Thay vào đó, mình giữ sẵn đường dẫn hủy đã ghim để bạn tự hủy ngay khi nhận lời nhắc!",
+      plain: "SubTrack không đăng nhập vào tài khoản dịch vụ của bạn. Bạn hãy lưu URL hủy vào mục Link đã lưu hoặc ô đường dẫn quản lý để mở nhanh khi cần.",
     },
     {
-      words: ["credit", "card", "payment", "bill", "thẻ tín dụng", "sao kê", "hóa đơn"],
-      fun: "Bạn có thể theo dõi hạn thanh toán thẻ tín dụng và tải hóa đơn PDF/Ảnh lên mục Hóa đơn để đối chiếu từng khoản thu trước khi xác nhận.",
-      plain: "Bạn có thể thêm ngày đến hạn thanh toán thẻ tín dụng để nhắc lịch và kiểm tra chứng từ tại mục Hóa đơn / Giao dịch.",
+      words: ["bill", "bills", "ocr", "receipt", "statement", "hóa đơn", "sao kê", "chứng từ"],
+      fun: "Khu vực Hóa đơn & Chứng từ hỗ trợ xem đối chiếu tài liệu 2 cột (Tài liệu gốc & Trường trích xuất). Hiện tại giao diện này đang ở chế độ xem mẫu (Demo) chờ kết nối bộ đọc OCR trên máy chủ!",
+      plain: "Mục Hóa đơn & Chứng từ minh họa quy trình đối chiếu hóa đơn 2 cột trước khi lưu. Tính năng OCR máy chủ đang được phát triển.",
     },
     {
-      words: ["sign up", "signup", "register", "account", "password", "đăng ký", "mật khẩu"],
-      fun: "Bấm Đăng ký, chọn tên đăng nhập (3–30 ký tự), email và mật khẩu mạnh (12+ ký tự có chữ hoa, số và ký tự đặc biệt).",
-      plain: "Bấm Đăng ký và nhập tên đăng nhập, email cùng mật khẩu từ 12–128 ký tự (gồm chữ hoa, chữ số và ký tự đặc biệt).",
+      words: ["password", "login", "account", "sign up", "mật khẩu", "đăng nhập", "tài khoản", "đăng ký"],
+      fun: "Mật khẩu được băm bảo mật (tối thiểu 12 ký tự gồm chữ hoa, chữ thường, số và ký tự đặc biệt). Mỗi tài khoản chỉ nhìn thấy dữ liệu của chính mình!",
+      plain: "Đăng ký bằng tên người dùng, email và mật khẩu từ 12 ký tự trở lên. Dữ liệu của mỗi người dùng được cách ly hoàn toàn.",
     },
     {
       words: ["hello", "hi ", "hey ", "chào", "xin chào"],
-      fun: "Chào bạn! Mình là Subby 👋 Mình rành chuyện gói đăng ký, hạn thẻ và link đã lưu. Bạn muốn hỏi gì nào?",
-      plain: "Xin chào! Mình là Subby. Bạn có thể hỏi mình về cách dùng SubTrack.",
+      fun: "Chào bạn! Mình là Subby 👋 Mình rành chuyện gói đăng ký, lịch gia hạn và link đã lưu. Bạn muốn hỏi bằng chữ hay thử bấm Mic nói chuyện nào?",
+      plain: "Xin chào! Mình là Subby. Bạn có thể nhập câu hỏi hoặc bấm nút Mic để hỏi bằng giọng nói.",
     },
   ];
 
@@ -86,29 +116,135 @@
     root.dataset.connectionState = state;
   }
 
-  // Safe text-to-speech (never auto-plays unless user explicitly checks data-tts-auto)
-  function speakText(text) {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
+  // ---------- Voice State & Speech Synthesis (TTS) ----------
+  let voiceMuted = false;
+  let activeSpeakBtn = null;
+
+  function setVoiceStageState(state, customLabel) {
+    if (voiceStage) {
+      voiceStage.dataset.stageState = state;
+    }
+    if (voiceDetectorLabel) {
+      if (customLabel) {
+        voiceDetectorLabel.textContent = customLabel;
+      } else if (state === "listening") {
+        voiceDetectorLabel.textContent = "🎤 Active Speech Detected · Đang nghe (Nhấn Mic để dừng)";
+      } else if (state === "thinking") {
+        voiceDetectorLabel.textContent = "🤔 Subby đang suy nghĩ câu trả lời…";
+      } else if (state === "speaking") {
+        voiceDetectorLabel.textContent = "🔊 Subby đang đọc câu trả lời…";
+      } else {
+        voiceDetectorLabel.textContent = "Nhấn biểu tượng Mic ở giữa để bắt đầu nói";
+      }
+    }
+    if (voiceLiveBadge) {
+      if (state === "listening") {
+        voiceLiveBadge.textContent = "● Live audio";
+        voiceLiveBadge.classList.add("is-live");
+      } else if (state === "thinking") {
+        voiceLiveBadge.textContent = "● Đang gửi…";
+        voiceLiveBadge.classList.remove("is-live");
+      } else {
+        voiceLiveBadge.textContent = "● Chờ giọng nói";
+        voiceLiveBadge.classList.remove("is-live");
+      }
+    }
+    if (voiceSpeakPill) {
+      if (state === "speaking") {
+        voiceSpeakPill.textContent = "🔊 Speaking…";
+        voiceSpeakPill.classList.add("is-speaking");
+      } else if (voiceMuted) {
+        voiceSpeakPill.textContent = "🔇 Đã tắt tiếng";
+        voiceSpeakPill.classList.remove("is-speaking");
+      } else {
+        voiceSpeakPill.textContent = "🔈 Sẵn sàng";
+        voiceSpeakPill.classList.remove("is-speaking");
+      }
+    }
+  }
+
+  function resetActiveSpeakBtn() {
+    if (activeSpeakBtn) {
+      activeSpeakBtn.textContent = "🔊 Đọc";
+      activeSpeakBtn.classList.remove("is-speaking");
+      activeSpeakBtn.setAttribute("aria-pressed", "false");
+      activeSpeakBtn = null;
+    }
+  }
+
+  function stopSpeaking() {
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (ttsStopBtn) ttsStopBtn.hidden = true;
+    resetActiveSpeakBtn();
+    if (voiceStage && voiceStage.dataset.stageState === "speaking") {
+      setVoiceStageState("idle");
+    }
+  }
+
+  function pickPreferredVoice(langCode) {
+    if (!("speechSynthesis" in window) || typeof window.speechSynthesis.getVoices !== "function") {
+      return null;
+    }
+    const voices = window.speechSynthesis.getVoices() || [];
+    const prefix = langCode.slice(0, 2).toLowerCase();
+    return (
+      voices.find((v) => v.lang && v.lang.toLowerCase() === langCode.toLowerCase()) ||
+      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(prefix)) ||
+      null
+    );
+  }
+
+  function speakText(text, triggerBtn) {
+    if (!("speechSynthesis" in window) || !text) return;
+    if (triggerBtn && triggerBtn === activeSpeakBtn) {
+      stopSpeaking();
+      return;
+    }
+    stopSpeaking();
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text)
-      ? "vi-VN"
-      : "en-US";
+    const isVi = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
+    utter.lang = isVi ? "vi-VN" : "en-US";
+    const matchedVoice = pickPreferredVoice(utter.lang);
+    if (matchedVoice) utter.voice = matchedVoice;
+
     if (ttsStopBtn) ttsStopBtn.hidden = false;
+    if (triggerBtn) {
+      activeSpeakBtn = triggerBtn;
+      triggerBtn.textContent = "⏹ Dừng đọc";
+      triggerBtn.classList.add("is-speaking");
+      triggerBtn.setAttribute("aria-pressed", "true");
+    }
+    setVoiceStageState("speaking");
+
     utter.onend = () => {
       if (ttsStopBtn) ttsStopBtn.hidden = true;
+      resetActiveSpeakBtn();
+      if (voiceStage && voiceStage.dataset.stageState === "speaking") {
+        setVoiceStageState("idle");
+      }
     };
     utter.onerror = () => {
       if (ttsStopBtn) ttsStopBtn.hidden = true;
+      resetActiveSpeakBtn();
+      if (voiceStage && voiceStage.dataset.stageState === "speaking") {
+        setVoiceStageState("idle");
+      }
     };
-    window.speechSynthesis.speak(utter);
+    try {
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      stopSpeaking();
+    }
   }
 
   if (ttsStopBtn) {
-    ttsStopBtn.addEventListener("click", () => {
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-      ttsStopBtn.hidden = true;
-    });
+    ttsStopBtn.addEventListener("click", () => stopSpeaking());
   }
 
   // Uses textContent so user or bot text never executes as raw HTML
@@ -136,7 +272,8 @@
       speakBtn.className = "msg-tool-btn";
       speakBtn.textContent = "🔊 Đọc";
       speakBtn.setAttribute("aria-label", "Đọc to câu trả lời này");
-      speakBtn.addEventListener("click", () => speakText(text));
+      speakBtn.setAttribute("aria-pressed", "false");
+      speakBtn.addEventListener("click", () => speakText(text, speakBtn));
       footer.append(speakBtn);
 
       if (metaOption && metaOption.retryQuestion) {
@@ -163,7 +300,10 @@
     log.append(wrap);
     log.scrollTop = log.scrollHeight;
 
-    if (who === "bot" && ttsAutoBox && ttsAutoBox.checked) {
+    const shouldSpeak =
+      who === "bot" &&
+      ((ttsAutoBox && ttsAutoBox.checked) || (voiceStage && !voiceStage.hidden && !voiceMuted));
+    if (shouldSpeak) {
       speakText(text);
     }
     return wrap;
@@ -254,15 +394,18 @@
     }
   }
 
-  function showToolResult(result, wrap) {
-    if (!wrap || !result.tool || !result.toolData) return;
+  function buildToolElements(result) {
+    const container = document.createDocumentFragment();
+    if (!result.tool || !result.toolData) return container;
     const items = Array.isArray(result.toolData.items) ? result.toolData.items.slice(0, 10) : [];
     if (items.length) {
       const list = document.createElement("ul");
+      list.className = "subby-tool-list";
       list.setAttribute("data-tool-result", result.tool);
       items.forEach((item) => {
         if (!item || typeof item !== "object") return;
         const line = document.createElement("li");
+        line.className = "subby-tool-item";
         if (result.tool === "search_saved_links") {
           try {
             const url = new URL(item.url);
@@ -273,30 +416,63 @@
             link.target = "_blank";
             link.textContent = String(item.title || item.url);
             line.append(link);
-          } catch (err) { return; }
+          } catch (err) {
+            return;
+          }
         } else {
-          line.textContent = [item.name, item.amount, item.currency, item.next_renewal_at,
-            item.status, item.total].filter((value) => value !== undefined && value !== null).join(" · ");
+          line.textContent = [
+            item.name,
+            item.amount,
+            item.currency,
+            item.next_renewal_at,
+            item.status,
+            item.total,
+          ]
+            .filter((value) => value !== undefined && value !== null)
+            .join(" · ");
         }
         list.append(line);
       });
-      wrap.append(list);
+      container.append(list);
     }
     if (result.tool === "create_reminder_draft" && result.confirmUrl) {
       try {
         const url = new URL(result.confirmUrl, window.location.origin);
-        if (url.origin !== window.location.origin || url.pathname !== "/subscriptions/new") return;
-        const button = document.createElement("a");
-        button.className = "button secondary btn-sm";
-        button.href = url.pathname + url.search;
-        button.textContent = "Kiểm tra và lưu / Check and save";
-        wrap.append(button);
-      } catch (err) { /* An invalid draft link is never clickable. */ }
+        if (url.origin === window.location.origin && url.pathname === "/subscriptions/new") {
+          const button = document.createElement("a");
+          button.className = "button secondary btn-sm subby-draft-btn";
+          button.href = url.pathname + url.search;
+          button.textContent = "Kiểm tra và lưu / Check and save";
+          container.append(button);
+        }
+      } catch (err) {
+        /* An invalid draft link is never clickable. */
+      }
+    }
+    return container;
+  }
+
+  function showToolResult(result, wrap) {
+    if (!wrap || !result.tool || !result.toolData) return;
+    wrap.append(buildToolElements(result));
+    if (voiceToolSlot) {
+      voiceToolSlot.textContent = "";
+      voiceToolSlot.append(buildToolElements(result));
     }
     log.scrollTop = log.scrollHeight;
   }
 
+  function updateVoiceReplyCard(answerText, clearTools) {
+    if (voiceReplyTextEl && answerText) {
+      voiceReplyTextEl.textContent = answerText;
+    }
+    if (clearTools && voiceToolSlot) {
+      voiceToolSlot.textContent = "";
+    }
+  }
+
   async function reply(question) {
+    setVoiceStageState("thinking");
     const typing = say("Subby đang suy nghĩ…", "bot typing");
     const result = await askServer(question);
     typing.remove();
@@ -318,6 +494,7 @@
       }
 
       updateProviderStatus(isFallback ? "cloud-fallback" : "online", statusLabel, prov);
+      updateVoiceReplyCard(result.answer, !result.tool);
       const msgOption = {
         badge: badgeLabel,
         provider: prov,
@@ -337,8 +514,11 @@
         renderedWrap.append(fbNote);
       }
 
-      if (isMutationIntent(question)) {
+      if (!result.tool && isMutationIntent(question)) {
         showActionConfirmation(question);
+      }
+      if (voiceStage && voiceStage.dataset.stageState === "thinking") {
+        setVoiceStageState("idle");
       }
       history.push({ role: "user", text: question });
       // Tool answers contain private account data; never send them back to a model.
@@ -348,10 +528,12 @@
 
     if (result.status === "rate-limit") {
       updateProviderStatus("rate-limit", "Tạm giới hạn lượt hỏi (429)", "Rate limit");
+      updateVoiceReplyCard(result.answer, true);
       say(result.answer, "bot", {
         badge: "⏳ Giới hạn lượt hỏi — Chờ ít phút",
         retryQuestion: question,
       });
+      setVoiceStageState("idle");
       return;
     }
 
@@ -369,7 +551,10 @@
         "FAQ Fallback"
       );
     } else {
-      const reasonText = result.reason === "model-offline" ? "Mô hình AI ngoại tuyến (model-offline)" : "AI tạm nghỉ (" + (result.reason || "offline") + ")";
+      const reasonText =
+        result.reason === "model-offline"
+          ? "Mô hình AI ngoại tuyến (model-offline)"
+          : "AI tạm nghỉ (" + (result.reason || "offline") + ")";
       updateProviderStatus(
         "fallback",
         reasonText + " · Đang dùng bộ câu trả lời có sẵn (FAQ Fallback)",
@@ -379,6 +564,7 @@
 
     const answer = findAnswer(question);
     if (answer) {
+      updateVoiceReplyCard(answer, true);
       say(answer, "bot", {
         badge: "📋 Câu trả lời hướng dẫn có sẵn (FAQ Fallback — máy chủ AI chưa kết nối)",
         retryQuestion: question,
@@ -386,47 +572,75 @@
       if (isMutationIntent(question)) {
         showActionConfirmation(question);
       }
+      setVoiceStageState("idle");
       return;
     }
 
-    showHandoff(
+    const handoffMsg =
       funBox && funBox.checked
         ? "Máy chủ AI hiện chưa phản hồi và câu này cũng nằm ngoài sổ tay FAQ có sẵn của mình 😅 Bạn có thể thử lại hoặc nhắn trực tiếp cho chủ sở hữu:"
-        : "Hiện máy chủ AI chưa phản hồi cho câu hỏi này. Bạn có thể bấm Thử lại hoặc liên hệ trực tiếp với chủ sở hữu:",
-      {
-        badge: "📋 Chế độ FAQ Fallback (Không giả lập câu trả lời AI động)",
-        retryQuestion: question,
-      }
-    );
+        : "Hiện máy chủ AI chưa phản hồi cho câu hỏi này. Bạn có thể bấm Thử lại hoặc liên hệ trực tiếp với chủ sở hữu:";
+    updateVoiceReplyCard(handoffMsg, true);
+    showHandoff(handoffMsg, {
+      badge: "📋 Chế độ FAQ Fallback (Không giả lập câu trả lời AI động)",
+      retryQuestion: question,
+    });
+    setVoiceStageState("idle");
   }
 
   function ask(question) {
     question = (question || "").trim();
     if (!question) return;
+    if (voiceTranscriptEl) {
+      voiceTranscriptEl.textContent = "“" + question + "”";
+    }
+    if (voiceTranscriptActions) {
+      voiceTranscriptActions.hidden = true;
+    }
     say(question, "user");
     reply(question);
+  }
+
+  function setVoiceModeOpen(open) {
+    if (!voiceStage) return;
+    voiceStage.hidden = !open;
+    root.classList.toggle("voice-mode-open", open);
+    if (voiceModeToggleBtn) {
+      voiceModeToggleBtn.classList.toggle("on", open);
+      voiceModeToggleBtn.setAttribute("aria-pressed", String(open));
+    }
+    if (!open) {
+      stopVoiceRecognition(true);
+    }
   }
 
   function setOpen(open) {
     panel.hidden = !open;
     root.classList.toggle("open", open);
     openBtn.setAttribute("aria-expanded", String(open));
+    if (teaser) teaser.hidden = true;
     if (open) {
       if (!log.children.length) {
         say(
-          "Chào bạn, mình là Subby! Bạn có thể hỏi về lời nhắc gia hạn, link đã ghim, hóa đơn hoặc cách dùng SubTrack. 👋",
+          "Chào bạn, mình là Subby! Bạn có thể hỏi về lời nhắc gia hạn, link đã ghim, hóa đơn hoặc bấm 🎙️ Voice để nói chuyện trực tiếp. 👋",
           "bot"
         );
       }
       setTimeout(() => input.focus(), 20);
     } else {
       stopVoiceRecognition(true);
+      stopSpeaking();
       openBtn.focus();
     }
   }
 
   openBtn.addEventListener("click", () => setOpen(panel.hidden));
   if (closeBtn) closeBtn.addEventListener("click", () => setOpen(false));
+  if (voiceModeToggleBtn) {
+    voiceModeToggleBtn.addEventListener("click", () => {
+      setVoiceModeOpen(voiceStage ? voiceStage.hidden : false);
+    });
+  }
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !panel.hidden) {
@@ -442,12 +656,20 @@
   });
 
   root.querySelectorAll("[data-ask]").forEach((chip) => {
-    chip.addEventListener("click", () => ask(chip.textContent));
+    chip.addEventListener("click", () => ask(chip.getAttribute("data-en") && document.documentElement.getAttribute("data-ui-lang") === "en" ? chip.getAttribute("data-en") : chip.textContent));
   });
 
   // ---------- Voice Input (SpeechRecognition — requests mic ONLY when clicked) ----------
   let recognition = null;
   let heardTranscript = "";
+
+  function syncMicButtons(isListening) {
+    [micBtn, voiceOrbBtn].forEach((btn) => {
+      if (!btn) return;
+      btn.classList.toggle("listening", isListening);
+      btn.setAttribute("aria-pressed", String(isListening));
+    });
+  }
 
   function stopVoiceRecognition(cancelled) {
     if (recognition) {
@@ -461,87 +683,198 @@
       }
       recognition = null;
     }
-    if (micBtn) {
-      micBtn.classList.remove("listening");
-      micBtn.setAttribute("aria-pressed", "false");
-    }
+    syncMicButtons(false);
     if (voiceBar) voiceBar.hidden = true;
-    if (!cancelled && heardTranscript.trim()) {
-      input.value = (input.value ? input.value + " " : "") + heardTranscript.trim();
+
+    const cleanText = heardTranscript.trim();
+    if (!cancelled && cleanText) {
+      input.value = cleanText;
+      if (voiceTranscriptEl) {
+        voiceTranscriptEl.textContent = "“" + cleanText + "”";
+      }
+      if (voiceTranscriptActions) {
+        voiceTranscriptActions.hidden = false;
+      }
+      setVoiceStageState(
+        "idle",
+        "✓ Đã ghi nhận câu hỏi — Bấm '🚀 Gửi câu hỏi này' hoặc chỉnh dưới ô chữ"
+      );
       input.focus();
+    } else if (cancelled) {
+      heardTranscript = "";
+      if (voiceTranscriptActions) voiceTranscriptActions.hidden = true;
+      setVoiceStageState("idle");
+    } else {
+      setVoiceStageState("idle");
     }
+  }
+
+  function startOrToggleMic(openStageToo) {
+    if (openStageToo && voiceStage && voiceStage.hidden) {
+      setVoiceModeOpen(true);
+    }
+    if (recognition) {
+      stopVoiceRecognition(false);
+      return;
+    }
+    stopSpeaking();
+
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      setVoiceStageState(
+        "idle",
+        "🔇 Trình duyệt này chưa hỗ trợ Web Speech API — Hãy nhập câu hỏi bằng bàn phím bên dưới"
+      );
+      say(
+        "🎤 Trình duyệt hiện tại chưa hỗ trợ nhận diện giọng nói (Web Speech API). Bạn hãy nhập câu hỏi bằng bàn phím vào ô bên dưới nhé!",
+        "bot",
+        { badge: "Thông báo trình duyệt" }
+      );
+      input.focus();
+      return;
+    }
+
     heardTranscript = "";
+    recognition = new SpeechRec();
+    const uiLang = document.documentElement.getAttribute("data-ui-lang") || document.documentElement.lang || "vi";
+    recognition.lang = uiLang === "en" ? "en-US" : "vi-VN";
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    syncMicButtons(true);
+    setVoiceStageState("listening");
+    if (voiceBar && (!voiceStage || voiceStage.hidden)) {
+      voiceBar.hidden = false;
+    }
+    if (voiceState) {
+      voiceState.textContent = "🎤 Đang nghe… (Bấm Dừng để xem lại chữ trước khi gửi)";
+    }
+    if (voicePreview) {
+      voicePreview.textContent = "Hãy nói câu hỏi của bạn…";
+    }
+    if (voiceTranscriptEl) {
+      voiceTranscriptEl.textContent = "“Đang lắng nghe giọng nói của bạn…”";
+    }
+    if (voiceTranscriptActions) {
+      voiceTranscriptActions.hidden = true;
+    }
+
+    recognition.onresult = (event) => {
+      let text = "";
+      for (let i = 0; i < event.results.length; i++) {
+        text += event.results[i][0].transcript;
+      }
+      heardTranscript = text;
+      const trimmed = text.trim();
+      if (voicePreview) {
+        voicePreview.textContent =
+          'Bản nháp: "' + trimmed + '" (Bấm Dừng & Xem chữ để chỉnh sửa trước khi gửi)';
+      }
+      if (voiceTranscriptEl) {
+        voiceTranscriptEl.textContent = "“" + trimmed + "”";
+      }
+      if (voiceTranscriptActions && trimmed) {
+        voiceTranscriptActions.hidden = false;
+      }
+    };
+
+    recognition.onerror = (event) => {
+      const reason =
+        event.error === "not-allowed"
+          ? "Bạn đã từ chối quyền micro hoặc trình duyệt chặn micro. Hãy nhập câu hỏi bằng bàn phím nhé."
+          : "Không nhận diện được giọng nói (" + event.error + "). Bạn có thể thử lại hoặc nhập văn bản.";
+      stopVoiceRecognition(true);
+      setVoiceStageState("idle", "⚠ " + reason);
+      say("🎤 " + reason, "bot", { badge: "Trạng thái Micro" });
+      input.focus();
+    };
+
+    recognition.onend = () => {
+      if (recognition) {
+        stopVoiceRecognition(false);
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (e) {
+      stopVoiceRecognition(true);
+    }
   }
 
   if (micBtn) {
-    micBtn.addEventListener("click", () => {
-      if (recognition) {
-        stopVoiceRecognition(false);
-        return;
-      }
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRec) {
-        say(
-          "🎤 Trình duyệt hiện tại chưa hỗ trợ nhận diện giọng nói (Web Speech API). Bạn hãy nhập câu hỏi bằng bàn phím vào ô bên dưới nhé!",
-          "bot",
-          { badge: "Thông báo trình duyệt" }
-        );
-        input.focus();
-        return;
-      }
-
-      heardTranscript = "";
-      recognition = new SpeechRec();
-      recognition.lang = document.documentElement.lang === "en" ? "en-US" : "vi-VN";
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      micBtn.classList.add("listening");
-      micBtn.setAttribute("aria-pressed", "true");
-      if (voiceBar) voiceBar.hidden = false;
-      if (voiceState) voiceState.textContent = "🎤 Đang nghe… (Bấm Dừng để xem lại chữ trước khi gửi)";
-      if (voicePreview) voicePreview.textContent = "Hãy nói câu hỏi của bạn…";
-
-      recognition.onresult = (event) => {
-        let text = "";
-        for (let i = 0; i < event.results.length; i++) {
-          text += event.results[i][0].transcript;
-        }
-        heardTranscript = text;
-        if (voicePreview) {
-          voicePreview.textContent = 'Bản nháp: "' + text + '" (Bấm Dừng & Xem chữ để chỉnh sửa trước khi gửi)';
-        }
-      };
-
-      recognition.onerror = (event) => {
-        const reason =
-          event.error === "not-allowed"
-            ? "Bạn đã từ chối quyền micro hoặc trình duyệt chặn micro. Hãy nhập câu hỏi bằng văn bản nhé."
-            : "Không nhận diện được giọng nói (" + event.error + "). Bạn có thể thử lại hoặc nhập văn bản.";
-        stopVoiceRecognition(true);
-        say("🎤 " + reason, "bot", { badge: "Trạng thái Micro" });
-        input.focus();
-      };
-
-      recognition.onend = () => {
-        if (recognition) {
-          stopVoiceRecognition(false);
-        }
-      };
-
-      try {
-        recognition.start();
-      } catch (e) {
-        stopVoiceRecognition(true);
-      }
-    });
+    micBtn.addEventListener("click", () => startOrToggleMic(true));
   }
-
+  if (voiceOrbBtn) {
+    voiceOrbBtn.addEventListener("click", () => startOrToggleMic(false));
+  }
   if (voiceStopBtn) {
     voiceStopBtn.addEventListener("click", () => stopVoiceRecognition(false));
   }
   if (voiceCancelBtn) {
     voiceCancelBtn.addEventListener("click", () => stopVoiceRecognition(true));
+  }
+
+  if (voiceSendNowBtn) {
+    voiceSendNowBtn.addEventListener("click", () => {
+      const textToSend = (heardTranscript || input.value || "").trim();
+      if (recognition) stopVoiceRecognition(true);
+      heardTranscript = "";
+      input.value = "";
+      if (textToSend) ask(textToSend);
+    });
+  }
+
+  if (voiceToInputBtn) {
+    voiceToInputBtn.addEventListener("click", () => {
+      const textToEdit = (heardTranscript || input.value || "").trim();
+      if (recognition) stopVoiceRecognition(false);
+      if (textToEdit) input.value = textToEdit;
+      input.focus();
+    });
+  }
+
+  if (voiceClearDraftBtn) {
+    voiceClearDraftBtn.addEventListener("click", () => {
+      stopVoiceRecognition(true);
+      input.value = "";
+      if (voiceTranscriptEl) {
+        voiceTranscriptEl.textContent = "“Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”";
+      }
+      input.focus();
+    });
+  }
+
+  if (voiceMuteBtn) {
+    voiceMuteBtn.addEventListener("click", () => {
+      voiceMuted = !voiceMuted;
+      voiceMuteBtn.setAttribute("aria-pressed", String(voiceMuted));
+      voiceMuteBtn.classList.toggle("is-muted", voiceMuted);
+      if (voiceMuteLabel) {
+        voiceMuteLabel.textContent = voiceMuted ? "Đã tắt tiếng" : "Đọc tiếng";
+      }
+      if (voiceMuted) {
+        stopSpeaking();
+      }
+      setVoiceStageState(voiceStage ? voiceStage.dataset.stageState || "idle" : "idle");
+    });
+  }
+
+  if (voiceEndBtn) {
+    voiceEndBtn.addEventListener("click", () => {
+      stopVoiceRecognition(true);
+      stopSpeaking();
+      setVoiceModeOpen(false);
+      input.focus();
+    });
+  }
+
+  if (voiceKeyboardBtn) {
+    voiceKeyboardBtn.addEventListener("click", () => {
+      stopVoiceRecognition(false);
+      setVoiceModeOpen(false);
+      input.focus();
+    });
   }
 
   // Keep chat panel comfortable when mobile virtual keyboard opens
