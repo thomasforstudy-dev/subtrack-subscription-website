@@ -6,11 +6,13 @@ No DROP, TRUNCATE, production connection, email send, or service change.
 """
 
 import json
+import io
 import os
 import re
 import sqlite3
 import sys
 from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 from urllib.parse import quote_plus
 from unittest.mock import patch
@@ -20,8 +22,8 @@ import pyodbc
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 DATABASES = {
-    "clean": ("SubTrack_CodexTest_20261019_Clean", "CREATE DATABASE [SubTrack_CodexTest_20261019_Clean]"),
-    "legacy": ("SubTrack_CodexTest_20261019_Legacy", "CREATE DATABASE [SubTrack_CodexTest_20261019_Legacy]"),
+    "clean": ("SubTrack_CodexBills_20261019_Clean", "CREATE DATABASE [SubTrack_CodexBills_20261019_Clean]"),
+    "legacy": ("SubTrack_CodexBills_20261019_Legacy", "CREATE DATABASE [SubTrack_CodexBills_20261019_Legacy]"),
 }
 
 
@@ -151,7 +153,8 @@ def application_checks():
     with app.app_context():
         reminders.run(datetime(2026, 11, 3, 9), dry_run=True)
         item_id = Reminder.query.one().id
-    provider = ROOT / "instance" / "sql-fake-provider.db"
+    bill_results = bill_checks(app, me, other, post)
+    provider = ROOT / "instance" / "sql-bills-fake-provider.db"
     assert not provider.exists(), "Fake provider target already exists"
     with sqlite3.connect(provider) as conn:
         conn.execute("CREATE TABLE deliveries (idempotency_key TEXT PRIMARY KEY,payload TEXT NOT NULL)")
@@ -171,7 +174,59 @@ def application_checks():
         db.session.remove()
         db.engine.dispose()
     return {"crud_csrf_isolation_rollback": "passed", "separate_process_claim": "passed",
-            "crash_retry_identical_payload": "passed", "real_emails_sent": 0}
+            "crash_retry_identical_payload": "passed", "bills": bill_results, "real_emails_sent": 0}
+
+
+def bill_checks(app, me, other, post):
+    from app import db
+    from app.models import Bill, BillLine, Document
+    from app.schema import schema_issues
+
+    with app.app_context():
+        assert schema_issues(db.engine) == []
+    assert app.test_cli_runner().invoke(args=["check-db"]).exit_code == 0
+    # Generate a real PNG; no private invoice or external request.
+    from PIL import Image
+    buffer = io.BytesIO()
+    Image.new("RGB", (2, 2), "white").save(buffer, format="PNG")
+    png = buffer.getvalue()
+    assert me.post("/bills/upload", data={"file": (io.BytesIO(png), "synthetic.png")}).status_code == 400
+    assert post(me, "/bills/upload", {"file": (io.BytesIO(png), "synthetic.png")}).status_code == 302
+    with app.app_context():
+        document_id = Document.query.one().id
+    form = {"merchant": "Synthetic SQL receipt", "currency": "USD", "total": "9999999999.99",
+            "kind": "receipt", "document_id": str(document_id), "item_name_1": "SQL boundary",
+            "item_qty_1": "1", "item_price_1": "9999999999.99"}
+    assert post(other, "/bills/new", form).status_code == 404
+    assert post(me, "/bills/new", form).status_code == 302
+    with app.app_context():
+        bill = Bill.query.one()
+        bill_id = bill.id
+        assert bill.document_id == document_id and bill.source == "upload"
+        assert bill.total == Decimal("9999999999.99")
+        assert BillLine.query.one().amount == Decimal("9999999999.99")
+        bill.merchant = "Rolled back edit"
+        db.session.flush()
+        db.session.rollback()
+        assert Bill.query.one().merchant == "Synthetic SQL receipt"
+    overflow = {**form, "merchant": "Must not save", "item_qty_1": "9999999", "item_price_1": "99999999.99"}
+    response = post(me, f"/bills/{bill_id}/edit", overflow)
+    assert response.status_code == 200 and b"too big" in response.data
+    with app.app_context():
+        assert Bill.query.one().merchant == "Synthetic SQL receipt"
+        assert BillLine.query.one().amount == Decimal("9999999999.99")
+    for path in (f"/bills/{bill_id}/edit", f"/bills/files/{document_id}", f"/bills/new?document_id={document_id}"):
+        assert other.get(path).status_code == 404
+    for action in ("paid", "archive", "restore"):
+        assert post(other, f"/bills/{bill_id}/{action}").status_code == 404
+        assert me.post(f"/bills/{bill_id}/{action}").status_code == 400
+        assert post(me, f"/bills/{bill_id}/{action}").status_code == 302
+    for format in ("json", "csv", "md"):
+        assert me.get(f"/bills/export.{format}").status_code == 200
+        assert b"Synthetic SQL receipt" not in other.get(f"/bills/export.{format}").data
+    assert me.get(f"/bills/files/{document_id}").data == png
+    return {"schema_readiness": "passed", "crud_rollback_ownership_csrf": "passed",
+            "decimal_boundary_and_rejected_product": "passed", "private_file_association_and_exports": "passed"}
 
 
 def main():

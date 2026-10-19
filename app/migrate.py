@@ -57,4 +57,10 @@ def upgrade_sqlite(engine) -> list[str]:
                 added.append(f"{table}.{column}")
         for statement in AFTER_COLUMNS:
             conn.execute(text(statement))
+        for table, statement in {
+            "bills": "CREATE INDEX IF NOT EXISTS IX_bills_user_date ON bills (user_id, status, transaction_date)",
+            "bill_lines": "CREATE INDEX IF NOT EXISTS IX_bill_lines_bill ON bill_lines (bill_id, position)",
+        }.items():
+            if table in tables:
+                conn.execute(text(statement))
     return added

@@ -7,9 +7,10 @@ from dotenv import load_dotenv
 from flask import Flask, flash, redirect, request, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import inspect, text
+from sqlalchemy import text
 
 from app.config import database_url
+from app.schema import EXPECTED_TABLES, schema_issues
 
 load_dotenv()
 
@@ -17,9 +18,6 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 
-EXPECTED_TABLES = {
-    "users", "subscriptions", "reminder_logs", "links", "auth_tokens", "renewals", "reminders",
-}
 DEV_SECRET = "dev-only-change-me"
 
 
@@ -157,19 +155,19 @@ def create_app() -> Flask:
                     click.echo(f"Server: {row[0]}  Database: {row[1]}  Login: {row[2]}")
                 else:
                     conn.execute(text("SELECT 1"))
-        except Exception as exc:  # noqa: BLE001 - show any connection error
-            click.secho(f"Could not connect: {exc}", fg="red")
+        except Exception:
+            # Driver errors can include connection strings and credentials.
+            click.secho("Could not connect. Check the local database configuration and service.", fg="red")
             raise SystemExit(1)
 
-        found = set(inspect(engine).get_table_names())
-        missing = EXPECTED_TABLES - found
-        if missing:
+        problems = schema_issues(engine)
+        if problems:
             click.secho(
-                f"Connected, but tables are missing: {', '.join(sorted(missing))}. "
-                "Run the scripts in database/ (01_schema.sql, 02_accounts.sql, ...) in SSMS.",
+                "Connected, but schema is incomplete: " + "; ".join(problems) + ". "
+                "Run the numbered scripts through database/06_bills.sql in SSMS.",
                 fg="yellow",
             )
             raise SystemExit(1)
-        click.secho("OK: connected and all tables exist.", fg="green")
+        click.secho("OK: connected; required tables, bill columns and indexes exist.", fg="green")
 
     return app
