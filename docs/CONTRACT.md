@@ -261,6 +261,48 @@ Save in Google. The review page explains this. The UI lane can restyle
 `calendar/index.html` and `calendar/review.html`, preserving these routes and
 the privacy/date explanations. No reusable public feed token is implemented.
 
+## Bills (since 19 Oct, D slice 1: typed in + upload, no OCR yet)
+
+Plain templates `bills/list.html` and `bills/form.html` for the UI lane to style
+(and to connect the demo in `subscriptions/_bills_section.html`). Every POST needs `csrf_token`.
+
+| Route | What |
+|---|---|
+| `GET /bills/` | List. Query: `q` (shop / invoice number / notes), `kind`, `category`, `status` (`confirmed` / `archived`), `page`. Template gets `items`, `pages`, `totals` (per currency, receipts only, Decimal), `unpaid` (card bills not paid, by due date), `waiting` (uploaded files not typed in yet), `kinds`, `categories`, `today` |
+| `GET/POST /bills/new` | Add. Optional `document_id` (query on GET, hidden field on POST) = typed from that uploaded file |
+| `GET/POST /bills/<id>/edit` | Edit. A field **not sent** keeps its saved value; sent but empty = cleared. No `item_name_*` fields at all = items kept |
+| `POST /bills/<id>/paid` | `paid=1` (paid today) or `paid=0` |
+| `POST /bills/<id>/archive`, `/restore` | Nothing is ever deleted |
+| `POST /bills/upload` | `multipart/form-data`, field **`file`**. PNG/JPG/WEBP/PDF/DOCX by content (not name), ≤ 10 MB, PDF ≤ 5 pages. Refused: old `.doc`, password-protected PDF/DOCX, zip bombs. Same file again = the saved one. Redirects to `/bills/new?document_id=…` (or that bill's edit page) with a flash |
+| `GET /bills/files/<id>` | The owner's file only. Always a download, except photos with `?view=1` (for `<img>` next to the form). PDFs/DOCX are never shown inline |
+| `GET /bills/export.json` / `.csv` / `.md` | Saved (confirmed) bills. CSV is safe to open in Excel (formula cells are made plain text) |
+
+Form fields (names match the demo where it had them):
+
+| Field | Rule |
+|---|---|
+| `kind` | `receipt` (default) or `card_bill` |
+| `merchant` | Required, ≤ 200 (shop, or card/bank name) |
+| `branch`, `address`, `invoice_number` | Optional, ≤ 200 / 500 / 64. Only what the bill shows |
+| `invoice_date`, `transaction_date` | Optional `YYYY-MM-DD` |
+| `transaction_time` | Optional `HH:MM`. **Empty = the bill has no time** (never shown as 00:00) |
+| `timezone` | Optional IANA name (`Asia/Ho_Chi_Minh`) |
+| `currency` | Required, 3 letters |
+| `subtotal`, `tax`, `total` | Optional Decimal ≥ 0, dot for decimals, max 2 decimals |
+| `category` | `software`, `streaming`, `education`, `utilities`, `shopping`, `food`, `travel`, `other` |
+| `card_last4` | Optional, exactly 4 digits. A full card number is refused **and not shown back** |
+| `statement_start`, `statement_end`, `due_date` | Dates. `due_date` required for `card_bill`; end ≥ start |
+| `item_name_N`, `item_qty_N`, `item_price_N` | N = 1–30. Rows without a name are skipped. Qty > 0, ≤ 3 decimals; amount = qty × price |
+| `notes` | ≤ 2000 |
+
+Export JSON (one object per bill): `id, document_id, kind, invoice_number, invoice_date,
+transaction_datetime ("2026-10-18" or "2026-10-18T14:30"), timezone, merchant_name,
+merchant_branch, merchant_address, currency, subtotal, tax, total,
+line_items [{description, quantity, unit_price, amount}], category, card_last4,
+statement_start, statement_end, due_date, paid_at, notes, source ("manual"/"upload"),
+review_status ("confirmed")`. Money and quantities are strings, dates ISO, anything not on
+the bill is `null`. Per-field source page/text arrives with the OCR slice.
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:
