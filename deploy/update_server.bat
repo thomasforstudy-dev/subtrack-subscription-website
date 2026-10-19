@@ -43,8 +43,10 @@ git switch main || exit /b 1
 git pull --ff-only origin main || exit /b 1
 "%PY%" -m pip install -q -r requirements.txt || goto :rollback
 
-REM 3. Tests must pass before the new version goes live.
-"%PY%" -m pytest -q
+REM 3. Tests must pass before the new version goes live. Their temporary files go
+REM    to their own folder: run as Administrator, pytest's normal temp folder would
+REM    belong to the admin account and break later test runs without admin.
+"%PY%" -m pytest -q -p no:cacheprovider --basetemp "%TEMP%\subtrack-update-tests"
 if errorlevel 1 goto :rollback
 
 REM 4. Stop the site. The task's python can leave a child process holding

@@ -802,13 +802,15 @@ form.looking-up [name=title] {
    Antigravity UI/UX Overhaul (Sections 1-7) — DESIGN.md v2 System Extensions
    ========================================================================== */
 
+/* "clip" stops sideways scrolling like "hidden", but doesn't turn <body> into
+   its own scroll box, which would stop the sticky header from sticking. */
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .app-main {
@@ -3657,3 +3659,627 @@ main {
 }
 
 
+
+/* ==========================================================================
+   App shell v3 (20 Oct 2026): header with a sliding menu pill, account menu,
+   footer, and a bottom tab bar with a raised + button on phones.
+   Ideas from the owner's references (UI-UX idea folder); plain CSS, no library.
+   ========================================================================== */
+:root {
+  --shell-max: 76rem;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* overshoots a little, then settles */
+  --shadow-soft: 0 4px 18px rgba(22, 20, 43, 0.07);
+  --tabbar-space: calc(6.25rem + env(safe-area-inset-bottom));
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+/* ---------- Header ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.75rem 1.25rem;
+  transition: background 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease;
+}
+
+.topbar.is-scrolled {
+  padding-block: 0.5rem;
+  background: rgba(244, 241, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 var(--line), 0 8px 24px rgba(22, 20, 43, 0.06);
+}
+
+.topbar-inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.12rem;
+  letter-spacing: -0.02em;
+}
+
+.shell-brand-mark {
+  display: block;
+  border-radius: 10px;
+  box-shadow: 0 6px 14px rgba(109, 74, 255, 0.28);
+  transition: transform 0.4s var(--spring);
+}
+
+.shell-brand:hover .shell-brand-mark {
+  transform: rotate(-8deg) scale(1.06);
+}
+
+/* The menu: links on a white pill; a dark highlight slides behind them. */
+.nav-pills {
+  justify-self: center;
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.15rem;
+  padding: 0.3rem;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.nav-pill {
+  position: relative;
+  z-index: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.nav-pills .nav-pill:hover {
+  color: var(--text);
+}
+
+/* Without JavaScript: the current page is simply painted dark. */
+.nav-pill.is-active {
+  background: var(--navy);
+  color: #fff;
+}
+
+/* With JavaScript (nav.js adds .js-nav): the sliding highlight does it. */
+.js-nav .nav-pill.is-active {
+  background: transparent;
+}
+
+.js-nav .nav-pill,
+.js-nav .nav-pill.is-active {
+  color: var(--muted);
+}
+
+.js-nav .nav-pill.is-lit,
+.js-nav .nav-pill.is-lit:hover {
+  color: #fff;
+}
+
+.nav-indicator {
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--navy);
+  box-shadow: 0 6px 16px rgba(14, 11, 43, 0.22);
+  opacity: 0;
+  transition: transform 0.45s var(--spring), width 0.45s var(--spring), opacity 0.2s ease;
+}
+
+.nav-indicator.no-anim {
+  transition: none;
+}
+
+/* Right side: Add button, language, account */
+.top-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.top-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(109, 74, 255, 0.3);
+}
+
+.top-add .icon {
+  transition: transform 0.35s var(--spring);
+}
+
+.top-add:hover .icon {
+  transform: rotate(90deg);
+}
+
+.lang-switch {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font: 700 0.75rem/1 var(--font);
+  cursor: pointer;
+}
+
+.lang-switch:hover {
+  color: var(--text);
+  border-color: #cfc5ff;
+}
+
+.top-login {
+  padding: 0.45rem 0.8rem;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.top-login:hover {
+  color: var(--violet);
+}
+
+/* Account menu: a <details> element, opens without JavaScript. */
+.user-menu {
+  position: relative;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.25rem 0.6rem 0.25rem 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  list-style: none;
+  transition: border-color 0.2s ease;
+}
+
+.user-chip::-webkit-details-marker {
+  display: none;
+}
+
+.user-chip:hover,
+.user-menu[open] .user-chip {
+  border-color: #cfc5ff;
+}
+
+.user-chip .icon {
+  color: var(--muted);
+  transition: transform 0.3s var(--spring);
+}
+
+.user-menu[open] .user-chip .icon {
+  transform: rotate(180deg);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b6dff, var(--violet-deep));
+  color: #fff;
+  font-weight: 800;
+}
+
+.user-text {
+  display: grid;
+  line-height: 1.15;
+  max-width: 11rem;
+}
+
+.user-text strong,
+.user-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-text strong {
+  font-size: 0.85rem;
+}
+
+.user-text small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 60;
+  width: 15rem;
+  padding: 0.45rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(22, 20, 43, 0.16);
+  transform-origin: top right;
+  animation: menu-in 0.22s var(--spring);
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
+.menu-who {
+  margin: 0;
+  padding: 0.5rem 0.7rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.menu-panel a,
+.menu-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--text);
+  font: 600 0.9rem var(--font);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-panel a:hover,
+.menu-logout:hover {
+  background: var(--lilac);
+  color: var(--violet-deep);
+}
+
+.menu-panel form {
+  margin: 0.3rem 0 0;
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--line);
+}
+
+.menu-logout {
+  color: var(--coral);
+}
+
+.only-phone {
+  display: none;
+}
+
+/* Pages fade up gently when they open (not the landing page, it has its own story). */
+body:not(.landing) main {
+  animation: page-in 0.45s ease both;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ---------- Footer ---------- */
+/* On short pages (log in, settings) the footer sits at the bottom of the
+   screen instead of floating halfway: the page is a column and <main>
+   grows to fill the empty space ("flex: 1"). */
+body:not(.landing) {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body:not(.landing) > main {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+.site-footer {
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+.footer-inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 1.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr);
+  gap: 2rem;
+}
+
+.footer-brand p {
+  max-width: 22rem;
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+nav.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.footer-heading {
+  margin: 0 0 0.6rem;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.footer-cols ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+/* Links get an underline that grows from the left on hover. */
+.footer-cols a,
+.footer-link {
+  padding: 0;
+  border: 0;
+  background: linear-gradient(var(--violet), var(--violet)) 0 100% / 0 2px no-repeat;
+  color: var(--muted);
+  font: 500 0.92rem var(--font);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease, background-size 0.3s ease;
+}
+
+.footer-cols a:hover,
+.footer-link:hover {
+  color: var(--violet-deep);
+  background-size: 100% 2px;
+}
+
+.footer-bottom {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 1rem 1.25rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* ---------- Phone tab bar ---------- */
+.tabbar {
+  display: none;
+}
+
+/* ---------- Landing page: header floats over the story ---------- */
+.landing .topbar {
+  position: fixed;
+  inset: 0 0 auto;
+}
+
+.landing[data-theme=dark] .topbar.is-scrolled {
+  background: rgba(14, 11, 43, 0.78);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.landing[data-theme=dark] .shell-brand,
+.landing[data-theme=dark] .top-login {
+  color: #fff;
+}
+
+.landing[data-theme=dark] .lang-switch {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 1100px) {
+  .user-text {
+    display: none;
+  }
+
+  .nav-pill {
+    padding-inline: 0.8rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .nav-pills,
+  .top-add {
+    display: none;
+  }
+
+  .topbar-inner {
+    grid-template-columns: 1fr auto;
+  }
+
+  .only-phone {
+    display: flex;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
+  }
+
+  body.has-tabbar {
+    padding-bottom: var(--tabbar-space);
+  }
+
+  /* Keep Subby's round button above the tab bar. */
+  body.has-tabbar .subby {
+    bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+
+  /* A white floating bar. The + button wears a ring in the page colour,
+     which looks like a round notch cut out of the bar. */
+  .tabbar {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    z-index: 45;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    height: 4.25rem;
+    padding: 0 0.25rem;
+    border-radius: 1.6rem;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(22, 20, 43, 0.16);
+  }
+
+  .tab {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.15rem;
+    padding: 0.4rem 0;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .tab span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tab:active {
+    transform: scale(0.92);
+  }
+
+  .tab.is-active {
+    color: var(--violet);
+  }
+
+  /* The small dot above the current tab pops in. */
+  .tab.is-active::before {
+    content: "";
+    position: absolute;
+    top: -0.2rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--violet);
+    animation: dot-pop 0.4s var(--spring);
+  }
+
+  @keyframes dot-pop {
+    from {
+      transform: scale(0);
+    }
+  }
+
+  .tab-fab {
+    justify-self: center;
+    display: grid;
+    place-items: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    margin-top: -2.4rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b6dff, var(--violet-deep));
+    color: #fff;
+    box-shadow: 0 0 0 0.4rem var(--bg), 0 12px 24px rgba(109, 74, 255, 0.45);
+    transition: transform 0.3s var(--spring);
+  }
+
+  .tab-fab:hover .icon,
+  .tab-fab:focus-visible .icon {
+    transform: rotate(90deg);
+  }
+
+  .tab-fab .icon {
+    transition: transform 0.35s var(--spring);
+  }
+
+  .tab-fab:active {
+    transform: scale(0.9);
+  }
+}
+
+@media (max-width: 420px) {
+  nav.footer-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topbar {
+    padding-inline: 0.85rem;
+  }
+}
+
+/* People who turn off animations in their system settings get none here. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-indicator,
+  .shell-brand-mark,
+  .top-add .icon,
+  .user-chip .icon,
+  .tab,
+  .tab-fab,
+  .tab-fab .icon,
+  .footer-cols a,
+  .footer-link {
+    transition: none;
+  }
+
+  .menu-panel,
+  .tab.is-active::before,
+  body:not(.landing) main {
+    animation: none;
+  }
+}
+
+@media print {
+  .topbar,
+  .tabbar,
+  .site-footer {
+    display: none;
+  }
+}

@@ -2,13 +2,14 @@
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     {% if csrf_token is defined %}
       <meta name="csrf-token" content="{{ csrf_token() }}" />
     {% endif %}
     <meta name="theme-color" content="#6d4aff" />
     <title>{% block title %}SubTrack — Quản lý gói đăng ký, link & hóa đơn{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.svg') }}" />
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,59 +17,87 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
     {% block head %}{% endblock %}
   </head>
-  <body class="{% block body_class %}{% endblock %}">
+  {% from "_icons.html" import icon %}
+  {% set signed_in = current_user.is_authenticated %}
+  {# One list of the main pages, used by the top menu, the phone tab bar and the footer:
+     (data-nav-target, endpoint, path prefix, Vietnamese, English, icon) #}
+  {% set nav_items = [
+    ("overview", "dashboard.show", "/dashboard", "Tổng quan", "Overview", "home"),
+    ("subscriptions", "subscriptions.list_subscriptions", "/subscriptions", "Gói đăng ký", "Subscriptions", "repeat"),
+    ("bills", "bills.list_bills", "/bills", "Hóa đơn", "Bills", "receipt"),
+    ("links", "links.list_links", "/links", "Link đã lưu", "Links", "link"),
+    ("calendar", "calendar.index", "/calendar", "Lịch", "Calendar", "calendar"),
+  ] %}
+  <body class="{% block body_class %}{% endblock %}{% if signed_in %} has-tabbar{% endif %}">
     <a class="skip-link" href="#main-content" data-vi="Chuyển tới nội dung chính" data-en="Skip to main content">Chuyển tới nội dung chính</a>
-    <header class="bar" role="banner">
-      <div class="bar-start">
-        <a class="brand" href="{{ url_for('main.index') }}" title="SubTrack (Logo SVG tạm thời — có thể thay sau khi chủ sở hữu duyệt)">
-          <span class="logo" aria-hidden="true">
-            <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
-              <rect x="4" y="9" width="24" height="17" rx="5" fill="#ffffff"/>
-              <path d="M10 17.5l4 4 8.5-8.5" stroke="#16c79a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="24" cy="8" r="3.5" fill="#ffc83d"/>
-            </svg>
-          </span>
-          <span class="brand-text">SubTrack</span>
-          <span class="brand-temp-tag" data-vi="Logo tạm" data-en="Temp logo">Logo tạm</span>
-        </a>
-      </div>
 
-      <nav aria-label="Điều hướng chính" class="main-nav">
-        {% if current_user.is_authenticated %}
-          {% set has_dashboard_route = (current_user.timezone is defined) %}
-          <a href="{{ url_for('dashboard.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions') + '#overview' }}" class="nav-link {% if request.path.startswith('/dashboard') %}active{% endif %}" data-nav-target="overview" data-vi="Tổng quan" data-en="Dashboard">Tổng quan</a>
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}" class="nav-link {% if request.path.startswith('/subscriptions') %}active{% endif %}" data-nav-target="subscriptions" data-vi="Gói đăng ký" data-en="Subscriptions">Gói đăng ký</a>
-          <a href="{{ url_for('calendar.index') }}" class="nav-link {% if request.path.startswith('/calendar') %}active{% endif %}" data-nav-target="calendar" data-vi="Lịch" data-en="Calendar">Lịch</a>
-          <a href="{{ url_for('links.list_links') }}" class="nav-link {% if request.path.startswith('/links') %}active{% endif %}" data-nav-target="links" data-vi="Link đã lưu" data-en="Links">Link đã lưu</a>
-          <a href="{{ url_for('bills.list_bills') }}" class="nav-link {% if request.path.startswith('/bills') %}active{% endif %}" data-nav-target="bills" data-vi="Hóa đơn / Giao dịch" data-en="Bills">Hóa đơn / Giao dịch</a>
-          <a href="{{ (url_for('settings.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions')) + '#reminders' }}" class="nav-link" data-nav-target="reminders" data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</a>
-          <a href="{{ url_for('settings.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions') + '#settings' }}" class="nav-link {% if request.path.startswith('/settings') %}active{% endif %}" data-nav-target="settings" data-vi="Cài đặt" data-en="Settings">Cài đặt</a>
-          {% if current_user.is_admin %}
-            <a href="{{ url_for('admin.users') }}" class="nav-link {% if request.path.startswith('/admin') %}active{% endif %}" data-vi="Quản trị" data-en="Admin">Quản trị</a>
-          {% endif %}
-          <a class="button btn-sm nav-cta" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói" data-en="Add">+ Thêm gói</a>
-          <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
-          <span class="who" title="{{ current_user.email }}">{{ current_user.username if (current_user.username is defined and current_user.username) else current_user.email }}</span>
-          {% if csrf_token is defined %}
-            <form class="inline" method="post" action="{{ url_for('auth.logout') }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit" class="link nav-logout" data-vi="Đăng xuất" data-en="Log out">Đăng xuất</button>
-            </form>
-          {% else %}
-            <a href="{{ url_for('auth.logout') }}" class="nav-logout" data-vi="Đăng xuất" data-en="Log out">Đăng xuất</a>
-          {% endif %}
-        {% else %}
-          <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
-          <a href="{{ url_for('auth.login') }}" class="nav-link" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a>
-          <a class="button" href="{{ url_for('auth.register') }}" data-vi="Đăng ký" data-en="Sign up">Đăng ký</a>
+    <header class="topbar" role="banner" data-topbar>
+      <div class="topbar-inner">
+        <a class="shell-brand" href="{{ url_for('main.index') }}" aria-label="SubTrack — Trang chủ">
+          <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="36" height="36" alt="" />
+          <span class="shell-brand-text">SubTrack</span>
+        </a>
+
+        {% if signed_in %}
+          {# The highlight (nav-indicator) slides under the page you point at; see static/nav.js. #}
+          <nav class="nav-pills" aria-label="Điều hướng chính" data-nav-pills>
+            <span class="nav-indicator" aria-hidden="true" data-nav-indicator></span>
+            {% for target, endpoint, prefix, vi, en, _ in nav_items %}
+              {% set active = request.path.startswith(prefix) %}
+              <a href="{{ url_for(endpoint) }}" class="nav-pill{% if active %} is-active{% endif %}" {% if active %}aria-current="page"{% endif %} data-nav-target="{{ target }}" data-vi="{{ vi }}" data-en="{{ en }}">{{ vi }}</a>
+            {% endfor %}
+          </nav>
         {% endif %}
-      </nav>
+
+        <div class="top-actions">
+          {% if signed_in %}
+            <a class="button btn-sm top-add" href="{{ url_for('subscriptions.create') }}">
+              {{ icon("plus", 18) }}<span data-vi="Thêm gói" data-en="Add plan">Thêm gói</span>
+            </a>
+          {% endif %}
+          <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
+
+          {% if signed_in %}
+            {% set display_name = current_user.username or current_user.email %}
+            {# <details> opens and closes without any JavaScript; nav.js only adds
+               "close when clicking outside" and the Escape key. #}
+            <details class="user-menu" data-user-menu>
+              <summary class="user-chip" aria-label="Tài khoản của bạn">
+                <span class="avatar" aria-hidden="true">{{ display_name[:1] | upper }}</span>
+                <span class="user-text">
+                  <strong>{{ display_name }}</strong>
+                  <small>{{ current_user.email }}</small>
+                </span>
+                {{ icon("chevron", 16) }}
+              </summary>
+              <div class="menu-panel">
+                <p class="menu-who">{{ current_user.email }}</p>
+                <a href="{{ url_for('settings.show') }}">{{ icon("settings", 18) }}<span data-vi="Cài đặt" data-en="Settings">Cài đặt</span></a>
+                <a href="{{ url_for('settings.show') }}#reminders">{{ icon("bell", 18) }}<span data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</span></a>
+                <a class="only-phone" href="{{ url_for('calendar.index') }}">{{ icon("calendar", 18) }}<span data-vi="Lịch" data-en="Calendar">Lịch</span></a>
+                {% if current_user.is_admin %}
+                  <a href="{{ url_for('admin.users') }}">{{ icon("shield", 18) }}<span data-vi="Quản trị" data-en="Admin">Quản trị</span></a>
+                {% endif %}
+                {% if csrf_token is defined %}
+                  <form method="post" action="{{ url_for('auth.logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="menu-logout">{{ icon("logout", 18) }}<span data-vi="Đăng xuất" data-en="Log out">Đăng xuất</span></button>
+                  </form>
+                {% endif %}
+              </div>
+            </details>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="top-login" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a>
+            <a class="button btn-sm" href="{{ url_for('auth.register') }}" data-vi="Đăng ký" data-en="Sign up">Đăng ký</a>
+          {% endif %}
+        </div>
+      </div>
     </header>
 
     {% block main %}
       <main id="main-content">
         {% include "_flashes.html" %}
-        {% if current_user.is_authenticated and (current_user.email_verified is defined and not current_user.email_verified) %}
+        {% if signed_in and (current_user.email_verified is defined and not current_user.email_verified) %}
           <form class="verify-banner" method="post" action="{{ url_for('auth.resend_verification') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <span data-vi="Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn." data-en="Please confirm your email ({{ current_user.email }}) so we can send your reminders.">
@@ -79,11 +108,78 @@
         {% endif %}
         {% block content %}{% endblock %}
       </main>
+
+      {# The landing page has its own footer, so this one lives inside the "main" block. #}
+      <footer class="site-footer" role="contentinfo">
+        <div class="footer-inner">
+          <div class="footer-brand">
+            <a class="shell-brand" href="{{ url_for('main.index') }}">
+              <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="32" height="32" alt="" />
+              <span class="shell-brand-text">SubTrack</span>
+            </a>
+            <p data-vi="Gói đăng ký, hóa đơn và link quan trọng ở cùng một chỗ. Gia hạn có chủ đích, hủy kịp lúc." data-en="Subscriptions, bills and important links in one place. Renew on purpose, cancel in time.">Gói đăng ký, hóa đơn và link quan trọng ở cùng một chỗ. Gia hạn có chủ đích, hủy kịp lúc.</p>
+          </div>
+
+          <nav class="footer-cols" aria-label="Liên kết cuối trang">
+            <div>
+              <p class="footer-heading" data-vi="Ứng dụng" data-en="App">Ứng dụng</p>
+              <ul>
+                {% for target, endpoint, prefix, vi, en, _ in nav_items %}
+                  <li><a href="{{ url_for(endpoint) }}" data-vi="{{ vi }}" data-en="{{ en }}">{{ vi }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div>
+              <p class="footer-heading" data-vi="Tài khoản" data-en="Account">Tài khoản</p>
+              <ul>
+                {% if signed_in %}
+                  <li><a href="{{ url_for('settings.show') }}" data-vi="Cài đặt" data-en="Settings">Cài đặt</a></li>
+                  <li><a href="{{ url_for('settings.show') }}#reminders" data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</a></li>
+                  <li><a href="{{ url_for('subscriptions.create') }}" data-vi="Thêm gói mới" data-en="Add a plan">Thêm gói mới</a></li>
+                {% else %}
+                  <li><a href="{{ url_for('auth.login') }}" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a></li>
+                  <li><a href="{{ url_for('auth.register') }}" data-vi="Tạo tài khoản" data-en="Create an account">Tạo tài khoản</a></li>
+                  <li><a href="{{ url_for('auth.forgot_password') }}" data-vi="Quên mật khẩu" data-en="Forgot password">Quên mật khẩu</a></li>
+                {% endif %}
+              </ul>
+            </div>
+            <div>
+              <p class="footer-heading" data-vi="Trợ giúp" data-en="Help">Trợ giúp</p>
+              <ul>
+                <li><button type="button" class="footer-link" data-open-subby data-vi="Hỏi trợ lý Subby" data-en="Ask Subby">Hỏi trợ lý Subby</button></li>
+                <li><a href="https://github.com/thomasforstudy-dev/subtrack-subscription-website" target="_blank" rel="noopener noreferrer" data-vi="Mã nguồn trên GitHub" data-en="Source code on GitHub">Mã nguồn trên GitHub</a></li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 SubTrack</span>
+          <span data-vi="Dự án portfolio sinh viên · Flask · Python" data-en="Student portfolio project · Flask · Python">Dự án portfolio sinh viên · Flask · Python</span>
+        </div>
+      </footer>
     {% endblock %}
+
+    {% if signed_in %}
+      {# Phone only (hidden on wide screens by CSS): the bottom tab bar with a raised + button. #}
+      <nav class="tabbar" aria-label="Điều hướng nhanh">
+        {% for target, endpoint, prefix, vi, en, icon_name in nav_items %}
+          {% if loop.index == 3 %}
+            <a class="tab-fab" href="{{ url_for('subscriptions.create') }}" aria-label="Thêm gói đăng ký">{{ icon("plus", 26) }}</a>
+          {% endif %}
+          {% if target != "calendar" %}
+            {% set active = request.path.startswith(prefix) %}
+            <a class="tab{% if active %} is-active{% endif %}" href="{{ url_for(endpoint) }}" {% if active %}aria-current="page"{% endif %}>
+              {{ icon(icon_name, 22) }}<span data-vi="{{ vi }}" data-en="{{ en }}">{{ vi }}</span>
+            </a>
+          {% endif %}
+        {% endfor %}
+      </nav>
+    {% endif %}
 
     {% include "_subby.html" %}
     <script src="{{ url_for('static', filename='app-ui.js') }}" defer></script>
     <script src="{{ url_for('static', filename='subby.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='nav.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

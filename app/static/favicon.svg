@@ -1,8 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Temporary SubTrack icon (can be replaced once owner approves final brand mark) -->
-  <rect width="64" height="64" rx="16" fill="#6d4aff"/>
-  <path d="M20 24c0-4.4 3.6-8 8-8h10c4.4 0 8 3.6 8 8" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
-  <rect x="14" y="22" width="36" height="26" rx="8" fill="#ffffff"/>
-  <path d="M23 35.5l5.5 5.5 12.5-12.5" stroke="#16c79a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="46" cy="18" r="6" fill="#ffc83d" stroke="#6d4aff" stroke-width="2.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SubTrack">
+  <!-- SubTrack mark: a card (subscriptions, bills) + a chain link shaped like an S (saved links). -->
+  <defs>
+    <linearGradient id="st-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b6dff"/>
+      <stop offset="1" stop-color="#4b2fd6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#st-bg)"/>
+  <!-- the card, tilted a little so the mark feels in motion -->
+  <g transform="rotate(-12 28 26)">
+    <rect x="8" y="13" width="40" height="26" rx="6" fill="#ffffff"/>
+    <rect x="8" y="19" width="40" height="5.5" fill="#2a2350"/>
+    <rect x="13" y="29" width="7.5" height="5.5" rx="1.6" fill="#ffc83d"/>
+  </g>
+  <!-- the chain link: two rings at 45 degrees. Each ring first gets a wide violet
+       outline, which cuts a gap where the second ring crosses the first. -->
+  <g transform="rotate(-45 39 42)" fill="none">
+    <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#4b2fd6" stroke-width="7.5"/>
+    <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#16c79a" stroke-width="3.6"/>
+    <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#4b2fd6" stroke-width="7.5"/>
+    <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#16c79a" stroke-width="3.6"/>
+  </g>
 </svg>
