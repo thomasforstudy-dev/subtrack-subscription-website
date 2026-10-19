@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Quên mật khẩu — SubTrack{% endblock %}
+{% block content %}
+  <div class="card auth-card">
+    <div class="auth-header">
+      <h1 data-vi="Quên mật khẩu?" data-en="Forgot your password?">Quên mật khẩu?</h1>
+      <p class="muted" data-vi="Nhập địa chỉ email của bạn, chúng tôi sẽ gửi liên kết để đặt mật khẩu mới (có hiệu lực trong 30 phút)." data-en="Type your email and we'll send you a link to choose a new one.">
+        Nhập địa chỉ email của bạn, chúng tôi sẽ gửi liên kết để đặt mật khẩu mới (có hiệu lực trong 30 phút).
+      </p>
+    </div>
+
+    <form method="post" class="auth-form" data-submitting-text="Đang gửi yêu cầu…">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% endif %}
+      <div class="field-group">
+        <label for="forgot-email" data-vi="Địa chỉ Email" data-en="Email">Địa chỉ Email</label>
+        <input
+          id="forgot-email"
+          type="email"
+          name="email"
+          required
+          autocomplete="email"
+          spellcheck="false"
+          autocapitalize="none"
+          autocorrect="off"
+          inputmode="email"
+          placeholder="ban@example.com"
+        />
+      </div>
+      <button type="submit" class="auth-submit" data-vi="Gửi liên kết đặt lại mật khẩu" data-en="Send the link">Gửi liên kết đặt lại mật khẩu</button>
+    </form>
+
+    <p class="muted auth-footer-link">
+      <a href="{{ url_for('auth.login') }}" data-vi="← Quay lại trang đăng nhập" data-en="Back to log in">← Quay lại trang đăng nhập</a>
+    </p>
+  </div>
+{% endblock %}

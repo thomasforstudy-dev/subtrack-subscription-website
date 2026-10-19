@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Temporary SubTrack icon (can be replaced once owner approves final brand mark) -->
+  <rect width="64" height="64" rx="16" fill="#6d4aff"/>
+  <path d="M20 24c0-4.4 3.6-8 8-8h10c4.4 0 8 3.6 8 8" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+  <rect x="14" y="22" width="36" height="26" rx="8" fill="#ffffff"/>
+  <path d="M23 35.5l5.5 5.5 12.5-12.5" stroke="#16c79a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="18" r="6" fill="#ffc83d" stroke="#6d4aff" stroke-width="2.5"/>
+</svg>

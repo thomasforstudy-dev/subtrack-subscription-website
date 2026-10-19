@@ -1,30 +1,59 @@
 {% extends "base.html" %}
-{% block title %}Admin — SubTrack{% endblock %}
+{% block title %}Quản trị người dùng — SubTrack{% endblock %}
 {% block content %}
-  <h1>Registered users</h1>
-  <p class="muted">Stored in SQL. This page lists rows; it is not a live SQL console.</p>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Email</th>
-        <th>Admin</th>
-        <th>Created</th>
-        <th>Last login</th>
-        <th>Subscriptions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user in accounts %}
+  <div class="page-head">
+    <div>
+      <h1 data-vi="Danh sách tài khoản đăng ký" data-en="Registered users">Danh sách tài khoản đăng ký</h1>
+      <p class="muted" data-vi="Dữ liệu lưu trong cơ sở dữ liệu SQL. Trang này chỉ hiển thị danh sách tổng hợp, không phải bảng điều khiển truy vấn SQL trực tiếp." data-en="Stored in SQL. This page lists rows; it is not a live SQL console.">
+        Dữ liệu lưu trong cơ sở dữ liệu SQL. Trang này chỉ hiển thị danh sách tổng hợp, không phải bảng điều khiển truy vấn SQL trực tiếp.
+      </p>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
         <tr>
-          <td>{{ user.id }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ "yes" if user.is_admin else "no" }}</td>
-          <td>{{ user.created_at }}</td>
-          <td>{{ user.last_login_at or "—" }}</td>
-          <td>{{ counts[user.id] }}</td>
+          <th>ID</th>
+          {% if accounts and accounts[0].username is defined %}
+            <th data-vi="Tên đăng nhập" data-en="Username">Tên đăng nhập</th>
+          {% endif %}
+          <th>Email</th>
+          {% if accounts and accounts[0].email_verified is defined %}
+            <th data-vi="Xác thực Email" data-en="Confirmed">Xác thực Email</th>
+          {% endif %}
+          <th data-vi="Quản trị" data-en="Admin">Quản trị</th>
+          <th data-vi="Ngày tạo" data-en="Created">Ngày tạo</th>
+          <th data-vi="Đăng nhập cuối" data-en="Last login">Đăng nhập cuối</th>
+          <th data-vi="Số gói" data-en="Subscriptions">Số gói</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for user in accounts %}
+          <tr>
+            <td>{{ user.id }}</td>
+            {% if user.username is defined %}
+              <td><strong>{{ user.username }}</strong></td>
+            {% endif %}
+            <td>{{ user.email }}</td>
+            {% if user.email_verified is defined %}
+              <td>
+                <span class="pill {% if user.email_verified %}mint{% else %}sun-label{% endif %}">
+                  {{ "yes" if user.email_verified else "no" }}
+                </span>
+              </td>
+            {% endif %}
+            <td>
+              <span class="pill {% if user.is_admin %}mint{% endif %}">
+                {{ "yes" if user.is_admin else "no" }}
+              </span>
+            </td>
+            <td>{{ user.created_at }}</td>
+            <td>{{ user.last_login_at or "—" }}</td>
+            <td><strong>{{ counts[user.id] }}</strong></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% endblock %}

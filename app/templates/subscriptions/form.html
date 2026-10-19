@@ -1,28 +1,144 @@
 {% extends "base.html" %}
-{% block title %}{% if item %}Edit{% else %}Add{% endif %} — SubTrack{% endblock %}
+{% block title %}{% if item %}Sửa gói đăng ký{% else %}Thêm gói đăng ký{% endif %} — SubTrack{% endblock %}
 {% block content %}
-  <h1>{% if item %}Edit{% else %}Add{% endif %} subscription</h1>
-  <div class="card">
-    <form method="post">
-      <label>Name <input name="name" required value="{{ item.name if item else '' }}" /></label>
-      <label>Amount <input name="amount" type="number" step="0.01" min="0" value="{{ item.amount if item else '0' }}" /></label>
-      <label>Currency <input name="currency" value="{{ item.currency if item else 'USD' }}" /></label>
-      <label>
-        Cycle
-        <select name="cycle">
-          {% set cycle = item.cycle if item else 'monthly' %}
-          <option value="monthly" {% if cycle == 'monthly' %}selected{% endif %}>Monthly</option>
-          <option value="yearly" {% if cycle == 'yearly' %}selected{% endif %}>Yearly</option>
-          <option value="weekly" {% if cycle == 'weekly' %}selected{% endif %}>Weekly</option>
-        </select>
-      </label>
-      <label>
-        Next renewal
-        <input type="date" name="next_renewal_at" required value="{{ item.next_renewal_at.isoformat() if item else '' }}" />
-      </label>
-      <label>Remind days before <input type="number" name="remind_days" min="0" value="{{ item.remind_days if item else 7 }}" /></label>
-      <label>Notes <textarea name="notes">{{ item.notes if item else '' }}</textarea></label>
-      <button type="submit">Save</button>
+  <div class="page-head">
+    <div>
+      <p class="breadcrumb"><a href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="← Quay lại danh sách gói" data-en="← Back to subscriptions">← Quay lại danh sách gói</a></p>
+      <h1 data-vi="{% if item %}Chỉnh sửa gói đăng ký{% else %}Thêm gói đăng ký mới{% endif %}" data-en="{% if item %}Edit subscription{% else %}Add subscription{% endif %}">
+        {% if item %}Chỉnh sửa gói đăng ký{% else %}Thêm gói đăng ký mới{% endif %}
+      </h1>
+      <p class="muted" data-vi="Ghi lại chu kỳ và ngày gia hạn dự kiến để SubTrack nhắc bạn trước hạn. SubTrack không tự động hủy dịch vụ bên ngoài." data-en="Record the cycle and expected renewal date so SubTrack can remind you early. SubTrack never cancels external services automatically.">
+        Ghi lại chu kỳ và ngày gia hạn dự kiến để SubTrack nhắc bạn trước hạn. SubTrack không tự động hủy dịch vụ bên ngoài.
+      </p>
+    </div>
+  </div>
+
+  <div class="card form-card">
+    {% if not item %}
+      <div class="preset-bar" aria-label="Chọn nhanh dịch vụ phổ biến">
+        <span class="preset-label" data-vi="Điền nhanh mẫu phổ biến:" data-en="Quick presets:">Điền nhanh mẫu phổ biến:</span>
+        <div class="chips">
+          <button type="button" class="chip" data-preset-sub='{"name":"Netflix","amount":"260000","currency":"VND","cycle":"monthly","remind":"7"}'>Netflix</button>
+          <button type="button" class="chip" data-preset-sub='{"name":"Spotify Premium","amount":"59000","currency":"VND","cycle":"monthly","remind":"5"}'>Spotify</button>
+          <button type="button" class="chip" data-preset-sub='{"name":"YouTube Premium","amount":"79000","currency":"VND","cycle":"monthly","remind":"5"}'>YouTube</button>
+          <button type="button" class="chip" data-preset-sub='{"name":"ChatGPT Plus","amount":"20.00","currency":"USD","cycle":"monthly","remind":"7"}'>ChatGPT Plus</button>
+          <button type="button" class="chip" data-preset-sub='{"name":"iCloud+ 200GB","amount":"69000","currency":"VND","cycle":"monthly","remind":"3"}'>iCloud+</button>
+          <button type="button" class="chip" data-preset-sub='{"name":"Adobe Creative Cloud","amount":"59.99","currency":"USD","cycle":"monthly","remind":"14"}'>Adobe CC</button>
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="post" class="sub-form" id="subscription-form" data-submitting-text="Đang lưu gói đăng ký…">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% endif %}
+
+      <div class="field-group">
+        <label for="sub-name" data-vi="Tên dịch vụ / gói đăng ký" data-en="Name">Tên dịch vụ / gói đăng ký</label>
+        <input
+          id="sub-name"
+          name="name"
+          required
+          maxlength="120"
+          placeholder="Ví dụ: Netflix, Spotify, ChatGPT Plus…"
+          value="{{ item.name if item else '' }}"
+        />
+      </div>
+
+      <div class="form-row-2">
+        <div class="field-group">
+          <label for="sub-amount" data-vi="Số tiền mỗi chu kỳ" data-en="Amount">Số tiền mỗi chu kỳ</label>
+          <input
+            id="sub-amount"
+            name="amount"
+            type="number"
+            step="0.01"
+            min="0"
+            max="99999999.99"
+            inputmode="decimal"
+            value="{{ item.amount if item else '0' }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="sub-currency" data-vi="Tiền tệ (Currency)" data-en="Currency">Tiền tệ (Currency)</label>
+          <input
+            id="sub-currency"
+            name="currency"
+            maxlength="8"
+            list="currency-list"
+            placeholder="USD hoặc VND"
+            value="{{ item.currency if item else 'USD' }}"
+          />
+          <datalist id="currency-list">
+            <option value="VND">VND — Đồng Việt Nam</option>
+            <option value="USD">USD — Đô la Mỹ</option>
+            <option value="EUR">EUR — Euro</option>
+            <option value="SGD">SGD — Đô la Singapore</option>
+            <option value="JPY">JPY — Yên Nhật</option>
+          </datalist>
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="field-group">
+          <label for="sub-cycle" data-vi="Chu kỳ gia hạn" data-en="Cycle">Chu kỳ gia hạn</label>
+          <select id="sub-cycle" name="cycle">
+            {% set cycle = item.cycle if item else 'monthly' %}
+            <option value="monthly" {% if cycle == 'monthly' %}selected{% endif %} data-vi="Hàng tháng (Monthly)" data-en="Monthly">Hàng tháng (Monthly)</option>
+            <option value="yearly" {% if cycle == 'yearly' %}selected{% endif %} data-vi="Hàng năm (Yearly)" data-en="Yearly">Hàng năm (Yearly)</option>
+            <option value="weekly" {% if cycle == 'weekly' %}selected{% endif %} data-vi="Hàng tuần (Weekly)" data-en="Weekly">Hàng tuần (Weekly)</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="sub-renewal" data-vi="Ngày gia hạn dự kiến tiếp theo" data-en="Next renewal">Ngày gia hạn dự kiến tiếp theo</label>
+          <input
+            id="sub-renewal"
+            type="date"
+            name="next_renewal_at"
+            required
+            value="{{ item.next_renewal_at.isoformat() if item else '' }}"
+          />
+          <small class="field-hint" data-vi="Ngày dự kiến thu phí kỳ tới (không phải ngày đã trừ tiền)." data-en="Expected next renewal date (not a confirmed bank charge).">
+            Ngày dự kiến thu phí kỳ tới (không phải ngày đã trừ tiền).
+          </small>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="sub-remind" data-vi="Nhắc trước bao nhiêu ngày?" data-en="Remind days before">Nhắc trước bao nhiêu ngày?</label>
+        <div class="remind-input-row">
+          <input
+            id="sub-remind"
+            type="number"
+            name="remind_days"
+            min="0"
+            max="365"
+            value="{{ item.remind_days if item else 7 }}"
+          />
+          <div class="chips small" role="group" aria-label="Chọn nhanh số ngày nhắc trước">
+            <button type="button" class="chip" data-set-remind="14">14 ngày</button>
+            <button type="button" class="chip" data-set-remind="7">7 ngày</button>
+            <button type="button" class="chip" data-set-remind="3">3 ngày</button>
+            <button type="button" class="chip" data-set-remind="1">1 ngày</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="sub-notes" data-vi="Ghi chú (link hủy gói, thẻ thanh toán, gói chia sẻ…)" data-en="Notes">Ghi chú (link hủy gói, thẻ thanh toán, gói chia sẻ…)</label>
+        <textarea
+          id="sub-notes"
+          name="notes"
+          placeholder="Ví dụ: Dùng thẻ Visa 4108, hủy trước 24h tại trang tài khoản nếu không dùng tiếp…"
+        >{{ item.notes if item else '' }}</textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" data-vi="Lưu gói đăng ký" data-en="Save">Lưu gói đăng ký</button>
+        <a class="button secondary" href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Hủy" data-en="Cancel">Hủy</a>
+      </div>
     </form>
   </div>
 {% endblock %}
