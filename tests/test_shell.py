@@ -34,6 +34,17 @@ def test_landing_keeps_its_own_single_footer(client):
     assert page.count('role="contentinfo"') == 1
 
 
+def test_static_files_get_a_version_so_updates_are_never_half_old(client):
+    """Cloudflare lets browsers keep CSS for 4 hours: a new ?v= after every
+    change makes them fetch the new file together with the new page."""
+    import re
+
+    page = client.get("/login").get_data(as_text=True)
+    css = re.search(r'/static/style\.css\?v=(\d+)"', page)
+    assert css, "style.css must carry ?v=<number>"
+    assert client.get(f"/static/style.css?v={css.group(1)}").status_code == 200
+
+
 def test_outside_links_in_the_footer_are_safe(client):
     page = client.get("/login").get_data(as_text=True)
     footer = page.split('class="site-footer"', 1)[1]

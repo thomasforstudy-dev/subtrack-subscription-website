@@ -3757,27 +3757,17 @@ main {
   color: var(--text);
 }
 
-/* Without JavaScript: the current page is simply painted dark. */
-.nav-pill.is-active {
+/* The current page: a dark pill. Its view-transition-name lets the browser
+   glide this pill from the old page's link to the new one when you navigate
+   (the one signature move of the app; see "Page changes" below). */
+.nav-pills .nav-pill.is-active {
   background: var(--navy);
   color: #fff;
+  box-shadow: 0 6px 16px rgba(14, 11, 43, 0.22);
+  view-transition-name: nav-current;
 }
 
-/* With JavaScript (nav.js adds .js-nav): the sliding highlight does it. */
-.js-nav .nav-pill.is-active {
-  background: transparent;
-}
-
-.js-nav .nav-pill,
-.js-nav .nav-pill.is-active {
-  color: var(--muted);
-}
-
-.js-nav .nav-pill.is-lit,
-.js-nav .nav-pill.is-lit:hover {
-  color: #fff;
-}
-
+/* A soft lilac pill slides behind the link you point at (static/nav.js). */
 .nav-indicator {
   position: absolute;
   top: 0.3rem;
@@ -3785,10 +3775,9 @@ main {
   left: 0;
   width: 0;
   border-radius: 999px;
-  background: var(--navy);
-  box-shadow: 0 6px 16px rgba(14, 11, 43, 0.22);
+  background: var(--lilac);
   opacity: 0;
-  transition: transform 0.45s var(--spring), width 0.45s var(--spring), opacity 0.2s ease;
+  transition: transform 0.4s var(--spring), width 0.4s var(--spring), opacity 0.2s ease;
 }
 
 .nav-indicator.no-anim {
@@ -3839,6 +3828,12 @@ main {
   color: var(--text);
   font-weight: 600;
   text-decoration: none;
+}
+
+/* Header words never break onto two lines ("Đăng / nhập"). */
+.top-actions > *,
+.shell-brand-text {
+  white-space: nowrap;
 }
 
 .top-login:hover {
@@ -3984,15 +3979,72 @@ main {
   display: none;
 }
 
-/* Pages fade up gently when they open (not the landing page, it has its own story). */
-body:not(.landing) main {
-  animation: page-in 0.45s ease both;
+/* ---------- Page changes ----------
+   Browsers that support it (Chrome, Edge, Safari) blend one page into the
+   next. The header and tab bar have their own names so they stay still, and
+   the dark menu pill / the tab dot glide to where you clicked. Other
+   browsers just change page as before. Off for "reduce motion". */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
 }
 
-@keyframes page-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+.topbar {
+  view-transition-name: topbar;
+}
+
+.tabbar {
+  view-transition-name: tabbar;
+}
+
+::view-transition-group(nav-current),
+::view-transition-group(tab-dot) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.2s;
+}
+
+/* ---------- Form fields fill their column ----------
+   Pages built with <div class="field-group"> (label + input side by side in
+   the HTML) had inputs at the browser's default ~150 px width. */
+.field-group {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.field-group > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.field-group > select,
+.field-group > textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.password-wrap {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.password-wrap input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Subby's "need help?" bubble: once per visit (nav.js), never on phones. */
+@media (max-width: 960px) {
+  .subby-teaser {
+    display: none;
+  }
+
+  .subby-fab {
+    width: 3.1rem;
+    height: 3.1rem;
   }
 }
 
@@ -4042,10 +4094,8 @@ nav.footer-cols {
 .footer-heading {
   margin: 0 0 0.6rem;
   color: var(--text);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .footer-cols ul {
@@ -4199,22 +4249,16 @@ nav.footer-cols {
     color: var(--violet);
   }
 
-  /* The small dot above the current tab pops in. */
-  .tab.is-active::before {
-    content: "";
+  /* The small dot above the current tab; it glides to the tab you tap
+     when the page changes (view-transition-name). */
+  .tab-dot {
     position: absolute;
     top: -0.2rem;
     width: 0.4rem;
     height: 0.4rem;
     border-radius: 50%;
     background: var(--violet);
-    animation: dot-pop 0.4s var(--spring);
-  }
-
-  @keyframes dot-pop {
-    from {
-      transform: scale(0);
-    }
+    view-transition-name: tab-dot;
   }
 
   .tab-fab {
@@ -4251,7 +4295,19 @@ nav.footer-cols {
   }
 
   .topbar {
-    padding-inline: 0.85rem;
+    padding-inline: 0.75rem;
+  }
+
+  .top-actions {
+    gap: 0.3rem;
+  }
+
+  .top-login {
+    padding-inline: 0.45rem;
+  }
+
+  .top-actions .button.btn-sm {
+    padding: 0.5rem 0.8rem;
   }
 }
 
@@ -4269,9 +4325,7 @@ nav.footer-cols {
     transition: none;
   }
 
-  .menu-panel,
-  .tab.is-active::before,
-  body:not(.landing) main {
+  .menu-panel {
     animation: none;
   }
 }
