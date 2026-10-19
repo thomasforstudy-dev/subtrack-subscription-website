@@ -9,3 +9,7 @@ pytest==9.1.1
 waitress==3.0.2
 # Time zone data: Windows has none built in, and reminders use the user's zone.
 tzdata==2026.5
+# Bill uploads: really open photos (Pillow) and PDFs (pypdf) instead of trusting
+# the first bytes; pypdf counts pages even when they are compressed (review B1).
+pillow==12.3.0
+pypdf==6.21.1
