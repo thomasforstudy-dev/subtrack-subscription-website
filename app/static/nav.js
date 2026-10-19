@@ -1,58 +1,41 @@
 // Header and menu behaviour. Everything still works without this file:
-// it only adds the animations and small conveniences.
+// it only adds the hover highlight and small conveniences.
+// (Moving the dark pill between pages is done by the browser: see
+// "Page changes" in style.css.)
 (function () {
     "use strict";
 
-    // 1. The highlight that slides under the menu link you point at,
-    //    and goes back to the current page's link when the mouse leaves.
-    function initSlidingHighlight() {
+    // 1. A soft lilac pill slides behind the menu link you point at.
+    //    The current page already has its own dark pill, so it gets none.
+    function initHoverHighlight() {
         var nav = document.querySelector("[data-nav-pills]");
         var marker = document.querySelector("[data-nav-indicator]");
         if (!nav || !marker) return;
-        var current = nav.querySelector(".nav-pill.is-active");
-        // Without JavaScript the current link is simply painted dark (CSS);
-        // "js-nav" hands that job to the sliding highlight instead.
-        nav.classList.add("js-nav");
 
-        function moveTo(link) {
-            if (!link) {
+        function show(link) {
+            if (!link || link.classList.contains("is-active")) {
                 marker.style.opacity = "0";
                 return;
             }
-            marker.style.opacity = "1";
+            var hidden = marker.style.opacity !== "1";
+            if (hidden) marker.classList.add("no-anim"); // appear in place, don't fly in
             marker.style.width = link.offsetWidth + "px";
             marker.style.transform = "translateX(" + link.offsetLeft + "px)";
-            nav.querySelectorAll(".nav-pill").forEach(function (pill) {
-                pill.classList.toggle("is-lit", pill === link);
-            });
+            if (hidden) {
+                marker.getBoundingClientRect(); // apply the jump before animating again
+                marker.classList.remove("no-anim");
+            }
+            marker.style.opacity = "1";
         }
-
-        // First placement without animation, so it doesn't fly in on every page load.
-        marker.classList.add("no-anim");
-        moveTo(current);
-        marker.getBoundingClientRect(); // apply the position before turning animation back on
-        marker.classList.remove("no-anim");
 
         nav.querySelectorAll(".nav-pill").forEach(function (pill) {
-            pill.addEventListener("mouseenter", function () { moveTo(pill); });
-            pill.addEventListener("focus", function () { moveTo(pill); });
+            pill.addEventListener("mouseenter", function () { show(pill); });
+            pill.addEventListener("focus", function () { show(pill); });
         });
-        nav.addEventListener("mouseleave", function () { moveTo(current); });
+        nav.addEventListener("mouseleave", function () { show(null); });
         nav.addEventListener("focusout", function (event) {
-            if (!nav.contains(event.relatedTarget)) moveTo(current);
+            if (!nav.contains(event.relatedTarget)) show(null);
         });
-        // Fonts loading late, resizing and switching VI/EN all change the link
-        // widths: measure again then.
-        window.addEventListener("resize", function () { moveTo(current); });
-        var langButton = document.querySelector("[data-lang-toggle]");
-        if (langButton) {
-            langButton.addEventListener("click", function () {
-                window.requestAnimationFrame(function () { moveTo(current); });
-            });
-        }
-        if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(function () { moveTo(current); });
-        }
     }
 
     // 2. A soft shadow under the header once the page is scrolled.
@@ -91,10 +74,28 @@
         });
     }
 
+    // 5. Subby's "need help?" bubble pops up on the first page of a visit only,
+    //    not on every page you open. (Private windows may block storage: then
+    //    it simply shows as before.)
+    function initSubbyTeaserOnce() {
+        var teaser = document.querySelector("[data-teaser]");
+        if (!teaser) return;
+        try {
+            if (sessionStorage.getItem("subtrack_teased")) {
+                teaser.hidden = true;
+            } else {
+                sessionStorage.setItem("subtrack_teased", "1");
+            }
+        } catch (e) {
+            /* storage blocked: keep the default */
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
-        initSlidingHighlight();
+        initHoverHighlight();
         initScrollShadow();
         initUserMenu();
         initSubbyLinks();
+        initSubbyTeaserOnce();
     });
 })();

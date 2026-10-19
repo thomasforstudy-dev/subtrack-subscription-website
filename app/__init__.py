@@ -112,6 +112,21 @@ def create_app() -> Flask:
     app.register_blueprint(bills_bp)
     app.cli.add_command(send_reminders_command)
 
+    @app.url_defaults
+    def version_static_files(endpoint, values):
+        """Add ?v=<time the file last changed> to every /static/ link.
+
+        Cloudflare tells browsers to keep CSS/JS for 4 hours. Without this, after
+        an update a browser shows the new pages with the old style.css, and the
+        layout falls apart. A new number = a new address = a fresh download.
+        """
+        if endpoint != "static" or "filename" not in values:
+            return
+        try:
+            values["v"] = int((Path(app.static_folder) / values["filename"]).stat().st_mtime)
+        except OSError:
+            pass  # a missing file just gets no number (and a 404, as before)
+
     @app.errorhandler(413)
     def too_big(error):
         if request.path == "/bills/upload":

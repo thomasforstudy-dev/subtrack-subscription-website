@@ -154,7 +154,7 @@
         </div>
         <div class="footer-bottom">
           <span>© 2026 SubTrack</span>
-          <span data-vi="Dự án portfolio sinh viên · Flask · Python" data-en="Student portfolio project · Flask · Python">Dự án portfolio sinh viên · Flask · Python</span>
+          <span data-vi="Dự án portfolio sinh viên, làm bằng Flask và Python" data-en="A student portfolio project, built with Flask and Python">Dự án portfolio sinh viên, làm bằng Flask và Python</span>
         </div>
       </footer>
     {% endblock %}
@@ -169,6 +169,7 @@
           {% if target != "calendar" %}
             {% set active = request.path.startswith(prefix) %}
             <a class="tab{% if active %} is-active{% endif %}" href="{{ url_for(endpoint) }}" {% if active %}aria-current="page"{% endif %}>
+              {% if active %}<i class="tab-dot" aria-hidden="true"></i>{% endif %}
               {{ icon(icon_name, 22) }}<span data-vi="{{ vi }}" data-en="{{ en }}">{{ vi }}</span>
             </a>
           {% endif %}

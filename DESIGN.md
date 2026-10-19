@@ -131,6 +131,13 @@ Previews: `docs/design/shell-v3-*.png`, `docs/design/logo-v1.png`.
 - **Footer** (every page except the landing story, which has its own): logo + one line,
   columns App / Account / Help (Ask Subby, source on GitHub), © line. Stays at the bottom
   of short pages.
-- **Motion**: the highlight slide, menu pop-in, + icon turning 90 degrees, links underlining
-  from the left, pages fading up. All of it is off with `prefers-reduced-motion`.
+- **Motion** (one signature move, the rest only answers what you do): when you change
+  page, the browser glides the dark menu pill (and the phone tab dot) from the old page's
+  link to the new one (cross-document View Transitions; other browsers just change page).
+  Pointing at a link slides a soft lilac pill behind it; the account menu pops open; the +
+  icon turns. No fade-in on every page. Subby's "need help?" bubble: first page of a visit
+  only, never on phones. All motion is off with `prefers-reduced-motion`.
+- **Labels** in sentence case (no ALL-CAPS), no "A · B · C" strings.
+- **Static files** carry `?v=<last change>` (app/__init__.py), because Cloudflare lets
+  browsers keep CSS/JS for 4 hours: without it an update showed new pages with old CSS.
 - Only one `<a data-nav-target>` per page (the header link): tests rely on it.
