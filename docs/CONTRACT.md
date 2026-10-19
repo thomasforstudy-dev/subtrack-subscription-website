@@ -241,6 +241,26 @@ Money is a string, dates are ISO, at most 10 items. Keys missing = a normal answ
 `GET /subscriptions/new` accepts `name`, `amount`, `currency`, `cycle`,
 `next_renewal_at` in the address to fill the form; other keys are ignored.
 
+## Calendar (manual links and ICS, Codex integration)
+
+| Route | Contract |
+|---|---|
+| `GET /calendar/` | Logged-in account's active subscriptions, across all pages |
+| `GET /calendar/renewals.ics` | Private attachment: next renewal of every active subscription |
+| `GET /calendar/subscriptions/<id>` | Owner-only review page with Google template link and single-event download |
+| `GET /calendar/subscriptions/<id>.ics` | Owner-only active subscription; archived/other user's IDs return 404 |
+
+Dates are **all-day DATE values**, with an exclusive next-day end. There is no
+automatic recurrence, calendar sync, feed, OAuth or external write. The user's
+validated IANA zone is displayed and included in calendar metadata/Google URL;
+the renewal date is never converted into a UTC midnight. Downloads use stable
+pseudonymous UIDs, CRLF, UTF-8 octet folding and escaped text. No amount, notes,
+email, management link or login credential is exported. The Google link opens
+only after the user chooses it; it shares title/date/zone and still requires
+Save in Google. The review page explains this. The UI lane can restyle
+`calendar/index.html` and `calendar/review.html`, preserving these routes and
+the privacy/date explanations. No reusable public feed token is implemented.
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:

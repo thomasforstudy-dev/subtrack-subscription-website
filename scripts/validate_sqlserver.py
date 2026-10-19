@@ -175,10 +175,46 @@ def application_checks():
 
 
 def main():
+    if "--calendar-only" in sys.argv:
+        result = calendar_checks()
+        (ROOT / "instance" / "sql-calendar-validation.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        print(json.dumps(result, indent=2))
+        return
     result = {"migrations": [migrate("clean"), migrate("legacy")], "application": application_checks()}
     target = ROOT / "instance" / "sqlserver-validation.json"
     target.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2))
+
+
+def calendar_checks():
+    """Read the synthetic account created by the completed SQL integration run."""
+    database_url = "mssql+pyodbc:///?odbc_connect=" + quote_plus(dsn(DATABASES["clean"][0]))
+    os.environ.update(DB_SERVER="", DATABASE_URL=database_url, APP_ENV="development",
+                      SECRET_KEY="sql-calendar-test-secret-longer-than-thirty-two-characters",
+                      MAIL_BACKEND="memory", RESEND_API_KEY="", GEMINI_API_KEY="", SUBBY_PROVIDER="fake")
+    with patch("dotenv.load_dotenv", return_value=False):
+        from app import create_app, db
+        from app.models import Subscription, User
+        app = create_app()
+    from tests.html_helpers import Page
+
+    client = app.test_client()
+    fields = Page(client.get("/login").get_data(as_text=True)).form_with("csrf_token")["fields"]
+    assert client.post("/login", data={"identifier": "sql_owner", "password": "SyntheticSQL2026!",
+                                     "csrf_token": fields["csrf_token"]}).status_code == 302
+    with app.app_context():
+        owner = User.query.filter_by(username="sql_owner").one()
+        item_id = Subscription.query.filter_by(user_id=owner.id).one().id
+    assert client.get("/calendar/").status_code == 200
+    assert client.get(f"/calendar/subscriptions/{item_id}").status_code == 200
+    response = client.get("/calendar/renewals.ics")
+    assert response.status_code == 200 and response.mimetype == "text/calendar"
+    assert response.data.count(b"BEGIN:VEVENT\r\n") == 1
+    assert "no-store" in response.headers["Cache-Control"]
+    with app.app_context():
+        db.session.remove()
+        db.engine.dispose()
+    return {"database": DATABASES["clean"][0], "calendar_index_review_and_ics": "passed", "events": 1}
 
 
 if __name__ == "__main__":

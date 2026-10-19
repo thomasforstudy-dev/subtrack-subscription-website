@@ -11,6 +11,7 @@
       </p>
     </div>
     <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('calendar.index') }}">Calendar / Lịch gia hạn</a>
       {% if has_server_pager %}
         <a class="button secondary" href="{{ url_for('dashboard.show') }}" data-vi="📊 Xem Tổng quan (Toàn tài khoản)" data-en="📊 Full Account Dashboard">📊 Xem Tổng quan (Toàn tài khoản)</a>
       {% endif %}

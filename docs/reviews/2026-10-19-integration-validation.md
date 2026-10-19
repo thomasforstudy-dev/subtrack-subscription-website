@@ -17,8 +17,8 @@ shared checkout and its uncommitted dashboard/settings edits are preserved.
 | Dependencies | `python -m pip check` | No broken requirements |
 | SQL Server runtime | `scripts/validate_sqlserver.py --resume`; `instance/sqlserver-validation.json` | Migrations + targeted CRUD/transactions/workers passed; details below |
 | Earlier hosted CI | Runs `39234397635` (`5a8ec43`) and `39242196173` (`d74d2ac`) | Both completed successfully; these are older revisions |
-| New exact-commit hosted CI | To be recorded after publishing this integration | Not yet verified |
-| Browser preview | `scripts/preview.py`, loopback port 8770 | Browser checks/screenshots to be recorded after this commit |
+| Exact integrated-core hosted CI | Run `39276880151`, commit `f2fb8ad` | Windows and Ubuntu jobs completed successfully |
+| Browser preview | `scripts/preview.py`, loopback port 8770 | Search, unchanged edit, settings persistence, Subby tools/draft and 390px dashboard checked; screenshots in ignored `instance/browser-evidence/` |
 
 The first union run passed 281 tests. New form/process/DST/dialect checks bring
 the suite to 292. The first sandbox run failed because a disposable temporary
@@ -109,7 +109,7 @@ regressions for malformed URLs/model JSON, safe pin redirects and field retentio
 are preserved in `tests/test_review_repairs.py` and run in the union suite.
 
 Calendar links/ICS will be implemented on a separate branch after core browser
-validation. Extension work still waits for scoped tokens; Gmail waits for consent
+validation: see `codex/calendar-ics` and its calendar handoff. Extension work still waits for scoped tokens; Gmail waits for consent
 and project decisions. Bills/upload remains a labelled UI demo until its real
 backend slice arrives. GOT-OCR and Phi-3.5-mini training remains paused. No merge
 to main, deployment, production scheduler activation or real recipient send.

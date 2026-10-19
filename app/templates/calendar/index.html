@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Calendar — SubTrack{% endblock %}
+{% block content %}
+  <h1>Calendar / Lịch gia hạn</h1>
+  <div class="card">
+    <p>Export the next renewal date of each active subscription as an all-day event.
+      Time zone: <strong>{{ zone }}</strong>. Dates are expected renewals, not confirmed payments.</p>
+    <p>This download is a snapshot. It does not sync later edits or archive actions.
+      Choose notifications in your calendar. Remove old events there when needed.</p>
+    <p>No notes, email addresses, prices or management links are included.</p>
+    <a class="button" href="{{ url_for('calendar.export_all') }}">Download all active renewals (.ics)</a>
+  </div>
+  {% if items %}
+    <ul class="card">
+      {% for item in items %}
+        <li><a href="{{ url_for('calendar.review', item_id=item.id) }}">{{ item.name }}</a>
+          — {{ item.next_renewal_at }} <span class="muted">(all day)</span></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No active subscriptions to export.</p>
+  {% endif %}
+{% endblock %}

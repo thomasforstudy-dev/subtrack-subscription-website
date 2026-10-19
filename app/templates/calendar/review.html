@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Calendar: {{ item.name }} — SubTrack{% endblock %}
+{% block content %}
+  <h1>Add a renewal to your calendar</h1>
+  <div class="card">
+    <h2>{{ item.name }}</h2>
+    <p><strong>{{ item.next_renewal_at }}</strong> · all day · {{ zone }}</p>
+    <p>This is an expected renewal, not proof of payment. Choose your reminder
+      notifications in your calendar. This event will not sync future edits.</p>
+    <p>Opening Google shares the event title, date and time zone with Google.
+      Nothing is added until you review the event and press Save there.
+      Notes, prices, email and management links are omitted.</p>
+    <p><a class="button" href="{{ google_url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Review in Google Calendar</a>
+      <a class="button secondary" href="{{ url_for('calendar.export_one', item_id=item.id) }}">Download this event (.ics)</a></p>
+    <a href="{{ url_for('calendar.index') }}">All active renewals</a>
+  </div>
+{% endblock %}
