@@ -1,79 +1,354 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Edit bill' if item else 'Add a bill' }} — SubTrack{% endblock %}
 {% block content %}
-  {# Plain page from the backend lane; the UI lane styles it (docs/CONTRACT.md → Bills).
+  {# Styled to DESIGN.md v2 (docs/CONTRACT.md → Bills).
      Every value comes from `form` first, so nothing typed is lost after an error. #}
   {% set f = form or {} %}
   {% macro val(name, saved='') -%}{{ f.get(name, saved if saved is not none else '') }}{%- endmacro %}
-  <h1>{{ 'Edit bill' if item else 'Add a bill' }}</h1>
 
-  {% if document %}
-    <div class="card">
-      <p>From your file: <strong>{{ document.original_name }}</strong>
-        (<a href="{{ url_for('bills.download', document_id=document.id) }}">download</a>)</p>
-      {% if document.kind in ('png', 'jpeg', 'webp') %}
-        <img src="{{ url_for('bills.download', document_id=document.id, view=1) }}" alt="Your uploaded bill"
-             style="max-width:100%;height:auto" loading="lazy" referrerpolicy="no-referrer" />
-      {% endif %}
-      <p class="muted">Type in only what the bill shows. Leave a box empty if it isn't on the bill.</p>
+  <div class="section-head">
+    <div>
+      <div class="section-badges">
+        <span class="pill mint" data-vi="Đối chiếu & Xác nhận thủ công" data-en="Human-verified entry">Đối chiếu & Xác nhận thủ công</span>
+        <span class="pill" data-vi="Trường không có trên hóa đơn → Để trống (null)" data-en="Unknown fields stay blank (null)">Trường không có trên hóa đơn → Để trống (null)</span>
+      </div>
+      <h1>{{ 'Edit bill' if item else 'Add a bill' }}</h1>
+      <p class="muted" data-vi="Chỉ nhập những thông tin thực sự xuất hiện trên hóa đơn hoặc sao kê. Các ô để trống sẽ được lưu là chưa xác định (null), tuyệt đối không tự điền giờ 00:00." data-en="Type in only what the bill shows. Leave any field blank if it is not shown on the document (never guessed or filled with 00:00).">
+        Chỉ nhập những thông tin thực sự xuất hiện trên hóa đơn hoặc sao kê. Các ô để trống sẽ được lưu là chưa xác định (<code>null</code>), tuyệt đối không tự điền giờ <code>00:00</code>.
+      </p>
     </div>
-  {% endif %}
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('bills.list_bills') }}" data-vi="← Quay lại danh sách Hóa đơn" data-en="← Back to Bills">← Back to Bills</a>
+    </div>
+  </div>
 
-  <form method="post" class="card">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    {% if document and not item %}<input type="hidden" name="document_id" value="{{ document.id }}" />{% endif %}
+  <div class="{% if document %}review-grid{% endif %}">
+    {% if document %}
+      <aside class="card review-col source-col" aria-label="Tệp chứng từ đính kèm">
+        <div class="source-toolbar">
+          <div>
+            <span class="pill mint">{{ document.kind|upper }}{% if document.page_count %} · {{ document.page_count }} page{{ 's' if document.page_count != 1 }}{% endif %}</span>
+            <p class="compact-top">
+              From your file: <strong>{{ document.original_name }}</strong>
+              (<a href="{{ url_for('bills.download', document_id=document.id) }}">download</a>)
+            </p>
+          </div>
+        </div>
 
-    <label>Kind
-      <select name="kind">
-        {% for k in kinds %}<option value="{{ k }}" {% if val('kind', item.kind if item else 'receipt') == k %}selected{% endif %}>{{ 'Receipt / invoice' if k == 'receipt' else 'Credit card bill' }}</option>{% endfor %}
-      </select></label>
-    <label>Shop, or card / bank name <input name="merchant" required maxlength="200" value="{{ val('merchant', item.merchant if item else '') }}" /></label>
-    <label>Branch <input name="branch" maxlength="200" value="{{ val('branch', item.branch if item else '') }}" /></label>
-    <label>Address <input name="address" maxlength="500" value="{{ val('address', item.address if item else '') }}" /></label>
-    <label>Invoice number <input name="invoice_number" maxlength="64" value="{{ val('invoice_number', item.invoice_number if item else '') }}" /></label>
-    <label>Invoice date <input type="date" name="invoice_date" value="{{ val('invoice_date', item.invoice_date if item else '') }}" /></label>
-    <label>Paid on (date) <input type="date" name="transaction_date" value="{{ val('transaction_date', item.transaction_date if item else '') }}" /></label>
-    <label>Time <input name="transaction_time" placeholder="14:30 — leave empty if the bill shows none" value="{{ val('transaction_time', item.transaction_time.strftime('%H:%M') if item and item.transaction_time else '') }}" /></label>
-    <label>Time zone <input name="timezone" placeholder="Asia/Ho_Chi_Minh" value="{{ val('timezone', item.timezone if item else '') }}" /></label>
-    <label>Currency <input name="currency" required maxlength="3" pattern="[A-Za-z]{3}" value="{{ val('currency', item.currency if item else 'VND') }}" /></label>
-    <label>Subtotal <input name="subtotal" inputmode="decimal" value="{{ val('subtotal', item.subtotal if item else '') }}" /></label>
-    <label>Tax <input name="tax" inputmode="decimal" value="{{ val('tax', item.tax if item else '') }}" /></label>
-    <label>Total <input name="total" inputmode="decimal" value="{{ val('total', item.total if item else '') }}" /></label>
-    <label>Category
-      <select name="category">
-        {% for c in categories %}<option value="{{ c }}" {% if val('category', item.category if item else 'other') == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
-      </select></label>
+        {% if document.kind in ('png', 'jpeg', 'webp') %}
+          <div class="source-viewport compact-top">
+            <img
+              src="{{ url_for('bills.download', document_id=document.id, view=1) }}"
+              alt="Your uploaded bill"
+              style="max-width:100%;height:auto;border-radius:12px"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+          </div>
+        {% else %}
+          <div class="empty-state-box compact-top">
+            <p><strong data-vi="Tệp {{ document.kind|upper }} được bảo vệ ở chế độ chỉ tải xuống" data-en="{{ document.kind|upper }} file is protected as download-only">{{ document.kind|upper }} file is protected as download-only</strong></p>
+            <p class="muted small-text" data-vi="Vì lý do an toàn bảo mật (chống mã độc nhúng trong PDF/DOCX), SubTrack không nhúng trực tiếp PDF/Word vào trang. Hãy bấm nút tải xuống bên dưới để mở xem đối chiếu." data-en="For security, PDFs and Word documents are never opened inline in the browser. Download your private copy below to view while typing.">
+              Vì lý do an toàn bảo mật, PDF và Word không mở trực tiếp trong trình duyệt. Hãy tải tệp riêng tư của bạn xuống để mở xem đối chiếu bên cạnh biểu mẫu.
+            </p>
+            <p class="compact-top">
+              <a class="button secondary btn-sm" href="{{ url_for('bills.download', document_id=document.id) }}">⬇ Download {{ document.original_name }}</a>
+            </p>
+          </div>
+        {% endif %}
 
-    <fieldset>
-      <legend>Credit card bill only</legend>
-      <label>Card: last 4 digits only <input name="card_last4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" autocomplete="off" value="{{ val('card_last4', item.card_last4 if item else '') }}" /></label>
-      <label>Statement from <input type="date" name="statement_start" value="{{ val('statement_start', item.statement_start if item else '') }}" /></label>
-      <label>Statement to <input type="date" name="statement_end" value="{{ val('statement_end', item.statement_end if item else '') }}" /></label>
-      <label>Pay by (due date) <input type="date" name="due_date" value="{{ val('due_date', item.due_date if item else '') }}" /></label>
-    </fieldset>
+        <p class="muted small-text compact-top">Type in only what the bill shows. Leave a box empty if it isn't on the bill.</p>
+      </aside>
+    {% endif %}
 
-    <fieldset>
-      <legend>Items</legend>
-      {# Tells the server this form has an item table, so removing every row removes the items. #}
+    <form method="post" class="card stack-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="item_rows" value="1" />
-      <p class="muted">Up to {{ max_lines }} items. Leave the name empty to remove a row.</p>
-      <table>
-        <thead><tr><th>Item</th><th>Qty</th><th>Unit price</th></tr></thead>
-        <tbody>
-          {% for n in range(1, rows + 1) %}
-            {% set saved = lines[n - 1] if n <= lines|length else {} %}
-            <tr>
-              <td><input name="item_name_{{ n }}" maxlength="300" aria-label="Item {{ n }}" value="{{ val('item_name_' ~ n, saved.description) }}" /></td>
-              <td><input name="item_qty_{{ n }}" inputmode="decimal" aria-label="Quantity {{ n }}" value="{{ val('item_qty_' ~ n, saved.quantity) }}" /></td>
-              <td><input name="item_price_{{ n }}" inputmode="decimal" aria-label="Unit price {{ n }}" value="{{ val('item_price_' ~ n, saved.unit_price) }}" /></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </fieldset>
+      {% if document and not item %}<input type="hidden" name="document_id" value="{{ document.id }}" />{% endif %}
 
-    <label>Notes <textarea name="notes" maxlength="2000">{{ val('notes', item.notes if item else '') }}</textarea></label>
-    <button class="button" type="submit">Save bill</button>
-    <a href="{{ url_for('bills.list_bills') }}">Cancel</a>
-  </form>
+      <div class="form-row-2">
+        <div class="field-group">
+          <label for="bill-kind-select" data-vi="Loại chứng từ (Kind)" data-en="Kind">Kind</label>
+          <select id="bill-kind-select" name="kind">
+            {% for k in kinds %}
+              <option value="{{ k }}" {% if val('kind', item.kind if item else 'receipt') == k %}selected{% endif %}>
+                {{ 'Receipt / invoice' if k == 'receipt' else 'Credit card bill' }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="bill-category-select" data-vi="Danh mục (Category)" data-en="Category">Category</label>
+          <select id="bill-category-select" name="category">
+            {% for c in categories %}
+              <option value="{{ c }}" {% if val('category', item.category if item else 'other') == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="field-group">
+          <label for="bill-merchant-input" data-vi="Đơn vị bán hoặc Ngân hàng / Thẻ (Shop, or card / bank name) *" data-en="Shop, or card / bank name *">Shop, or card / bank name</label>
+          <input
+            id="bill-merchant-input"
+            name="merchant"
+            required
+            maxlength="200"
+            placeholder="e.g. Highlands Coffee, Adobe, VPBank…"
+            value="{{ val('merchant', item.merchant if item else '') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-branch-input" data-vi="Chi nhánh (Branch — tùy chọn)" data-en="Branch">Branch</label>
+          <input
+            id="bill-branch-input"
+            name="branch"
+            maxlength="200"
+            placeholder="Leave empty if not shown"
+            value="{{ val('branch', item.branch if item else '') }}"
+          />
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="field-group">
+          <label for="bill-address-input" data-vi="Địa chỉ trên hóa đơn (Address — để trống nếu không có)" data-en="Address">Address</label>
+          <input
+            id="bill-address-input"
+            name="address"
+            maxlength="500"
+            placeholder="Only what the bill shows"
+            value="{{ val('address', item.address if item else '') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-invnum-input" data-vi="Số hóa đơn (Invoice number — tùy chọn)" data-en="Invoice number">Invoice number</label>
+          <input
+            id="bill-invnum-input"
+            name="invoice_number"
+            maxlength="64"
+            placeholder="e.g. INV-2026-001"
+            value="{{ val('invoice_number', item.invoice_number if item else '') }}"
+          />
+        </div>
+      </div>
+
+      <div class="form-row-4">
+        <div class="field-group">
+          <label for="bill-invdate-input" data-vi="Ngày lập hóa đơn (Invoice date)" data-en="Invoice date">Invoice date</label>
+          <input
+            id="bill-invdate-input"
+            type="date"
+            name="invoice_date"
+            value="{{ val('invoice_date', item.invoice_date if item else '') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-txdate-input" data-vi="Ngày thanh toán (Paid on date)" data-en="Paid on (date)">Paid on (date)</label>
+          <input
+            id="bill-txdate-input"
+            type="date"
+            name="transaction_date"
+            value="{{ val('transaction_date', item.transaction_date if item else '') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-txtime-input" data-vi="Giờ giao dịch (Time — để trống nếu không có)" data-en="Time">Time</label>
+          <input
+            id="bill-txtime-input"
+            name="transaction_time"
+            placeholder="14:30 — leave empty if the bill shows none"
+            value="{{ val('transaction_time', item.transaction_time.strftime('%H:%M') if item and item.transaction_time else '') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-tz-input" data-vi="Múi giờ (Time zone)" data-en="Time zone">Time zone</label>
+          <input
+            id="bill-tz-input"
+            name="timezone"
+            list="bill-tz-list"
+            placeholder="Asia/Ho_Chi_Minh"
+            value="{{ val('timezone', item.timezone if item else '') }}"
+          />
+          <datalist id="bill-tz-list">
+            <option value="Asia/Ho_Chi_Minh"></option>
+            <option value="UTC"></option>
+            <option value="Asia/Tokyo"></option>
+            <option value="Asia/Singapore"></option>
+            <option value="Europe/London"></option>
+            <option value="America/New_York"></option>
+          </datalist>
+        </div>
+      </div>
+
+      <div class="form-row-4">
+        <div class="field-group">
+          <label for="bill-currency-input" data-vi="Tiền tệ 3 chữ cái (Currency) *" data-en="Currency *">Currency</label>
+          <input
+            id="bill-currency-input"
+            name="currency"
+            required
+            maxlength="3"
+            pattern="[A-Za-z]{3}"
+            value="{{ val('currency', item.currency if item else 'VND') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-subtotal-input" data-vi="Tạm tính (Subtotal)" data-en="Subtotal">Subtotal</label>
+          <input
+            id="bill-subtotal-input"
+            name="subtotal"
+            inputmode="decimal"
+            placeholder="0.00"
+            value="{{ val('subtotal', item.subtotal if item else '') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-tax-input" data-vi="Thuế (Tax)" data-en="Tax">Tax</label>
+          <input
+            id="bill-tax-input"
+            name="tax"
+            inputmode="decimal"
+            placeholder="0.00"
+            value="{{ val('tax', item.tax if item else '') }}"
+          />
+        </div>
+
+        <div class="field-group">
+          <label for="bill-total-input" data-vi="Tổng thanh toán (Total)" data-en="Total">Total</label>
+          <input
+            id="bill-total-input"
+            name="total"
+            inputmode="decimal"
+            placeholder="0.00"
+            value="{{ val('total', item.total if item else '') }}"
+          />
+        </div>
+      </div>
+
+      <fieldset class="card compact-card">
+        <legend><strong data-vi="Dành riêng cho Sao kê thẻ tín dụng (Credit card bill only)" data-en="Credit card bill only">Credit card bill only</strong></legend>
+        <p id="card-last4-help" class="muted small-text" data-vi="Chỉ nhập đúng 4 chữ số cuối của thẻ. Tuyệt đối KHÔNG nhập số thẻ đầy đủ (máy chủ sẽ từ chối và xóa ngay)." data-en="Enter only the last 4 digits. Full card numbers are refused and never echoed back.">
+          Chỉ nhập đúng <strong>4 chữ số cuối</strong> của thẻ. Tuyệt đối không nhập số thẻ đầy đủ.
+        </p>
+        <div class="form-row-4 compact-top">
+          <div class="field-group">
+            <label for="bill-card-last4" data-vi="4 số cuối thẻ (Card: last 4 digits only)" data-en="Card: last 4 digits only">Card: last 4 digits only</label>
+            <input
+              id="bill-card-last4"
+              name="card_last4"
+              maxlength="4"
+              inputmode="numeric"
+              pattern="[0-9]{4}"
+              autocomplete="off"
+              aria-describedby="card-last4-help"
+              placeholder="1234"
+              value="{{ val('card_last4', item.card_last4 if item else '') }}"
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="bill-stmt-start" data-vi="Kỳ sao kê từ ngày (Statement from)" data-en="Statement from">Statement from</label>
+            <input
+              id="bill-stmt-start"
+              type="date"
+              name="statement_start"
+              value="{{ val('statement_start', item.statement_start if item else '') }}"
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="bill-stmt-end" data-vi="Đến ngày (Statement to)" data-en="Statement to">Statement to</label>
+            <input
+              id="bill-stmt-end"
+              type="date"
+              name="statement_end"
+              value="{{ val('statement_end', item.statement_end if item else '') }}"
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="bill-due-date" data-vi="Hạn thanh toán (Pay by / due date)" data-en="Pay by (due date)">Pay by (due date)</label>
+            <input
+              id="bill-due-date"
+              type="date"
+              name="due_date"
+              value="{{ val('due_date', item.due_date if item else '') }}"
+            />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="card compact-card">
+        <legend><strong data-vi="Danh sách mặt hàng trên hóa đơn (Items)" data-en="Items">Items</strong></legend>
+        <p class="muted small-text" data-vi="Các dòng để trống tên mặt hàng sẽ tự động được bỏ qua. Thành tiền từng dòng = Số lượng × Đơn giá." data-en="Rows without an item name are skipped automatically. Line amount = Qty × Unit price.">
+          Các dòng để trống tên mặt hàng sẽ tự động được bỏ qua. Thành tiền từng dòng = Số lượng × Đơn giá.
+        </p>
+        <div class="table-scroll compact-top">
+          <table class="compact-table">
+            <thead>
+              <tr>
+                <th data-vi="Tên mặt hàng (Item)" data-en="Item">Item</th>
+                <th data-vi="Số lượng (Qty)" data-en="Qty">Qty</th>
+                <th data-vi="Đơn giá (Unit price)" data-en="Unit price">Unit price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for n in range(1, rows + 1) %}
+                {% set saved = lines[n - 1] if n <= lines|length else {} %}
+                <tr>
+                  <td>
+                    <input
+                      name="item_name_{{ n }}"
+                      maxlength="300"
+                      aria-label="Item {{ n }}"
+                      placeholder="Item {{ n }}"
+                      value="{{ val('item_name_' ~ n, saved.description) }}"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      name="item_qty_{{ n }}"
+                      inputmode="decimal"
+                      aria-label="Quantity {{ n }}"
+                      placeholder="1"
+                      value="{{ val('item_qty_' ~ n, saved.quantity) }}"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      name="item_price_{{ n }}"
+                      inputmode="decimal"
+                      aria-label="Unit price {{ n }}"
+                      placeholder="0.00"
+                      value="{{ val('item_price_' ~ n, saved.unit_price) }}"
+                    />
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+
+      <div class="field-group">
+        <label for="bill-notes-input" data-vi="Ghi chú thêm (Notes — tối đa 2000 ký tự)" data-en="Notes">Notes</label>
+        <textarea id="bill-notes-input" name="notes" maxlength="2000" rows="3">{{ val('notes', item.notes if item else '') }}</textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="button" type="submit" data-vi="✓ Xác nhận & Lưu hóa đơn (Save bill)" data-en="Save bill">Save bill</button>
+        <a class="button secondary" href="{{ url_for('bills.list_bills') }}" data-vi="Hủy (Cancel)" data-en="Cancel">Cancel</a>
+      </div>
+    </form>
+  </div>
 {% endblock %}

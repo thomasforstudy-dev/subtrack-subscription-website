@@ -94,8 +94,8 @@
               <span>{{ channel|capitalize }} ({{ current_user.email }})</span>
             </label>
           {% endfor %}
-          <p class="muted small-text" data-vi="Tiện ích Chrome Extension và lịch Calendar đang trong giai đoạn phát triển (chưa phát hành)." data-en="Chrome extension and calendar are coming soon.">
-            Tiện ích Chrome Extension và lịch Calendar đang trong giai đoạn phát triển (chưa phát hành).
+          <p class="muted small-text" data-vi="Lịch gia hạn thủ công (Google Calendar & tệp .ics cả ngày) đã hoạt động tại trang Lịch (/calendar/). Tiện ích Chrome Extension và đồng bộ tự động hiện chưa phát hành." data-en="Manual Google Calendar review links and all-day .ics downloads are live at /calendar/. The Chrome extension and automatic calendar sync are unreleased.">
+            Lịch gia hạn thủ công (<a href="{{ url_for('calendar.index') }}"><strong>Google Calendar &amp; tệp .ics tại /calendar/</strong></a>) đã hoạt động. Tiện ích Chrome Extension hiện chưa phát hành.
           </p>
         </fieldset>
 
