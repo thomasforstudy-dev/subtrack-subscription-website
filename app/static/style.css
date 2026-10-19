@@ -3507,10 +3507,153 @@ main {
   border-color: var(--violet);
 }
 
+/* ---------- Bills Warnings ("Please check: …") & Expected vs Paid / Receipt vs Statement ---------- */
+.flash-item.flash-warning {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.flash-item.flash-warning .flash-icon {
+  color: #d97706;
+  font-weight: 800;
+}
+
+.bill-merchant-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bill-check-warn {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.32rem 0.65rem;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.bill-check-warn .warn-icon {
+  color: #d97706;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.bills-distinction-strip {
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--violet);
+}
+
+.bills-distinction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.distinction-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.distinction-item p {
+  margin: 0;
+}
+
+/* ---------- Voice Privacy Note & Phone Screen (390px) Fit ---------- */
+.voice-privacy-note {
+  margin: 0;
+  padding: 0.42rem 0.65rem;
+  border-radius: 10px;
+  background: rgba(255, 200, 61, 0.14);
+  border: 1px solid rgba(255, 200, 61, 0.35);
+  color: #fde68a;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 480px), (max-height: 760px) {
+  .subby.voice-mode-open .subby-panel {
+    width: min(24rem, calc(100vw - 1rem));
+    max-height: calc(100dvh - 4.75rem);
+  }
+
+  .subby-voice-stage {
+    gap: 0.45rem;
+    padding: 0.65rem 0.75rem;
+    max-height: min(26rem, calc(100dvh - 11.5rem));
+  }
+
+  .voice-privacy-note {
+    padding: 0.32rem 0.55rem;
+    font-size: 0.69rem;
+    line-height: 1.28;
+  }
+
+  .voice-stage-center {
+    gap: 0.35rem;
+    padding: 0.1rem 0;
+  }
+
+  .voice-orb-wrap {
+    padding: 0.35rem 0.85rem;
+  }
+
+  .voice-orb-btn {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .voice-orb-ring.ring-1 {
+    width: 3.9rem;
+    height: 3.9rem;
+  }
+
+  .voice-orb-ring.ring-2 {
+    width: 4.8rem;
+    height: 4.8rem;
+  }
+
+  .voice-cards-stack {
+    gap: 0.4rem;
+  }
+
+  .voice-card {
+    padding: 0.5rem 0.65rem;
+  }
+
+  .voice-transcript-text,
+  .voice-reply-text {
+    font-size: 0.78rem;
+    line-height: 1.32;
+  }
+
+  .voice-dock {
+    gap: 0.35rem;
+  }
+
+  .voice-dock-btn {
+    min-height: 2.75rem;
+    padding: 0.38rem 0.4rem;
+    font-size: 0.72rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .voice-orb-ring,
   .voice-wave-bars span {
     animation: none !important;
   }
 }
+
 

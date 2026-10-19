@@ -18,12 +18,36 @@
     </div>
   </div>
 
+  {# Phân biệt rõ: Dự kiến (Expected) vs Đã trả (Paid) và Biên lai (Receipt) vs Sao kê thẻ (Card statement) #}
+  <div class="card compact-card bills-distinction-strip" role="region" aria-label="Phân biệt Khoản dự kiến, Biên lai đã trả và Sao kê thẻ tín dụng">
+    <div class="bills-distinction-grid">
+      <div class="distinction-item">
+        <span class="pill" data-vi="📅 Dự kiến (Expected renewals)" data-en="📅 Expected (Subscriptions)">📅 Dự kiến (Expected renewals)</span>
+        <p class="muted small-text" data-vi="Các khoản gia hạn định kỳ ước tính theo chu kỳ nằm ở trang Tổng quan (Dashboard), không trộn vào hóa đơn thực tế tại đây." data-en="Estimated recurring subscription renewals live on the Dashboard and are never mixed into actual bills here.">
+          Các khoản gia hạn định kỳ ước tính theo chu kỳ nằm ở <a href="{{ url_for('dashboard.show') }}">Tổng quan (Dashboard)</a>, không trộn vào hóa đơn thực tế.
+        </p>
+      </div>
+      <div class="distinction-item">
+        <span class="pill mint" data-vi="🧾 Biên lai đã trả (Receipt · Paid)" data-en="🧾 Receipt (Paid / Spent)">🧾 Biên lai đã trả (Receipt · Paid)</span>
+        <p class="muted small-text" data-vi="Hóa đơn mua hàng/dịch vụ đã thanh toán thực tế. Được cộng vào mục Chi tiêu thực tế (Spent) theo từng loại tiền tệ." data-en="Confirmed receipts for completed purchases. Counted in Spent (confirmed receipts) per currency.">
+          Hóa đơn mua hàng/dịch vụ đã thanh toán thực tế. Được cộng vào <strong>Spent (confirmed receipts)</strong> theo từng đồng tiền.
+        </p>
+      </div>
+      <div class="distinction-item">
+        <span class="pill hot-label" data-vi="💳 Sao kê thẻ (Card statement · Unpaid vs Paid)" data-en="💳 Card Statement (Unpaid vs Paid)">💳 Sao kê thẻ (Card statement · Unpaid vs Paid)</span>
+        <p class="muted small-text" data-vi="Bảng sao kê thẻ tín dụng theo kỳ kèm hạn thanh toán (due date). Hiển thị riêng ở mục Chờ thanh toán cho tới khi bạn đánh dấu Đã trả (Mark paid)." data-en="Credit card statements with a payment due date. Listed under Card bills to pay until you mark them paid.">
+          Kỳ sao kê thẻ tín dụng có hạn thanh toán (<code>due_date</code>). Theo dõi riêng tại <strong>Card bills to pay</strong> cho tới khi bấm <strong>Mark paid</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+
   {# Khối 1: Tải lên tệp hóa đơn riêng tư (POST /bills/upload) + Tổng chi biên lai đã xác nhận #}
   <div class="dashboard-grid">
     <article class="card dash-card">
       <header class="dash-card-head">
         <h2 class="card-title" data-vi="Tải lên tệp hóa đơn (Upload a bill)" data-en="Upload a bill">Tải lên tệp hóa đơn (Upload a bill)</h2>
-        <span class="pill mint" data-vi="Kiểm tra chữ ký tệp (Magic bytes)" data-en="Magic-byte verified">Kiểm tra chữ ký tệp (Magic bytes)</span>
+        <span class="pill mint" data-vi="Kiểm tra tệp trước khi lưu" data-en="Files checked before saving">Kiểm tra tệp trước khi lưu</span>
       </header>
       <form method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data" class="stack-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -225,14 +249,22 @@
                 {% endif %}
               </td>
               <td>
-                <strong>{{ bill.merchant }}</strong>
+                <div class="bill-merchant-row">
+                  <strong>{{ bill.merchant }}</strong>
+                  {% if bill.card_last4 %}<span class="pill">···{{ bill.card_last4 }}</span>{% endif %}
+                  {% if bill.kind == 'card_bill' %}
+                    <span class="pill {{ 'mint' if bill.paid_at else 'hot-label' }}" data-vi="{{ 'Sao kê thẻ · Đã trả' if bill.paid_at else 'Sao kê thẻ · Chưa trả' }}" data-en="{{ 'Statement · Paid' if bill.paid_at else 'Statement · Unpaid' }}">{{ 'Statement · Paid' if bill.paid_at else 'Statement · Unpaid' }}</span>
+                    <span class="muted">(card bill{% if bill.paid_at %}, paid{% endif %})</span>
+                  {% else %}
+                    <span class="pill mint" data-vi="Biên lai · Đã trả" data-en="Receipt · Paid">Receipt · Paid</span>
+                  {% endif %}
+                </div>
                 {% for problem in checks.get(bill.id, []) %}
-                  <small class="block-small muted">Please check: {{ problem }}</small>
+                  <div class="bill-check-warn" role="note">
+                    <span class="warn-icon" aria-hidden="true">⚠</span>
+                    <span>Please check: {{ problem }}</span>
+                  </div>
                 {% endfor %}
-                {% if bill.card_last4 %}<span class="pill">···{{ bill.card_last4 }}</span>{% endif %}
-                {% if bill.kind == 'card_bill' %}
-                  <span class="muted">(card bill{% if bill.paid_at %}, paid{% endif %})</span>
-                {% endif %}
                 {% if bill.branch or bill.invoice_number %}
                   <small class="block-small muted">
                     {% if bill.branch %}{{ bill.branch }}{% endif %}
