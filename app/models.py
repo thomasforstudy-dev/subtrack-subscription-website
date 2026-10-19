@@ -284,6 +284,7 @@ class Bill(db.Model):
     """
 
     __tablename__ = "bills"
+    __table_args__ = (db.Index("IX_bills_user_date", "user_id", "status", "transaction_date"),)
 
     KINDS = ("receipt", "card_bill")
     STATUSES = ("confirmed", "archived")  # "draft" comes with OCR later
@@ -334,6 +335,7 @@ class BillLine(db.Model):
     """One line on a bill: "Coffee, 2 x 3.50"."""
 
     __tablename__ = "bill_lines"
+    __table_args__ = (db.Index("IX_bill_lines_bill", "bill_id", "position"),)
 
     id = db.Column(db.Integer, primary_key=True)
     bill_id = db.Column(
