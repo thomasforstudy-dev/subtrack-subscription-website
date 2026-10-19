@@ -1,0 +1,33 @@
+{# Small line icons for the menus, drawn as inline SVG (no icon library needed).
+   Use: {% from "_icons.html" import icon %} ... {{ icon("home") }} #}
+{% macro icon(name, size=20) -%}
+<svg class="icon" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {%- if name == "home" -%}
+    <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>
+  {%- elif name == "repeat" -%}
+    <path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>
+  {%- elif name == "receipt" -%}
+    <path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>
+  {%- elif name == "link" -%}
+    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>
+  {%- elif name == "calendar" -%}
+    <rect x="3" y="4" width="18" height="17" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>
+  {%- elif name == "plus" -%}
+    <path d="M12 5v14M5 12h14"/>
+  {%- elif name == "settings" -%}
+    <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>
+  {%- elif name == "bell" -%}
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+  {%- elif name == "shield" -%}
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  {%- elif name == "logout" -%}
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>
+  {%- elif name == "chevron" -%}
+    <path d="M6 9l6 6 6-6"/>
+  {%- elif name == "chat" -%}
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  {%- elif name == "code" -%}
+    <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
+  {%- endif -%}
+</svg>
+{%- endmacro %}

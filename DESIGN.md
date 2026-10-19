@@ -109,3 +109,28 @@ Component prompts:
 - "Rush-hour hero on midnight navy: dozens of tilted subscription cards in real brand colours flying in with motion streaks, coral 'renews in 2 days' badges, a ticker of charges along the bottom, huge white headline."
 - "A calm subscriptions list on lilac background: white rounded card, service logo, price, next renewal date, coral tint on rows renewing soon, violet 'Add subscription' button, monthly total in big bold numbers."
 - "A help chat panel called Subby: lilac bot bubbles, violet user bubbles, suggested question chips, a mic button with live waveform, and a hand-off card with Messenger and Zalo buttons."
+
+## 9. App shell v3: header, menu, footer, logo (20 Oct 2026)
+
+Ideas taken from the owner's references (`UI-UX idea` folder: floating pill menu,
+dark active pill, bottom tab bar with a raised + button). Plain CSS + `static/nav.js`.
+Previews: `docs/design/shell-v3-*.png`, `docs/design/logo-v1.png`.
+
+- **Logo / favicon** (`static/favicon.svg`, phone icon `static/icon-192.svg`): violet
+  tile (`#8b6dff` to `#4b2fd6`), a white card with a navy stripe and a sun chip
+  (subscriptions and bills) and a mint chain link that reads as an **S** (saved links).
+- **Header**: logo left; the five main pages in a white pill in the middle, where a
+  navy highlight slides (springy easing) to the link you point at and back to the
+  current page; right: violet **+ Thêm gói**, VI/EN switch, account chip (avatar
+  initial + name) that opens a menu: Settings, Reminders, Admin, Log out.
+  Turns glassy with a soft shadow once the page scrolls. No JS: the current link is
+  painted navy and the menu still opens (`<details>`).
+- **Phone (≤ 960 px)**: the pill menu hides; a white floating **tab bar** at the bottom
+  (Overview, Subscriptions, **+**, Bills, Links) with a raised violet + button ringed in
+  the page colour, and a dot above the current tab. Calendar moves into the account menu.
+- **Footer** (every page except the landing story, which has its own): logo + one line,
+  columns App / Account / Help (Ask Subby, source on GitHub), © line. Stays at the bottom
+  of short pages.
+- **Motion**: the highlight slide, menu pop-in, + icon turning 90 degrees, links underlining
+  from the left, pages fading up. All of it is off with `prefers-reduced-motion`.
+- Only one `<a data-nav-target>` per page (the header link): tests rely on it.
