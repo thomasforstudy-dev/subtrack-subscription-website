@@ -17,7 +17,9 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 
-EXPECTED_TABLES = {"users", "subscriptions", "reminder_logs", "links", "auth_tokens"}
+EXPECTED_TABLES = {
+    "users", "subscriptions", "reminder_logs", "links", "auth_tokens", "renewals", "reminders",
+}
 DEV_SECRET = "dev-only-change-me"
 
 
@@ -85,19 +87,25 @@ def create_app() -> Flask:
 
     from app.admin import bp as admin_bp
     from app.auth import bp as auth_bp
+    from app.dashboard import bp as dashboard_bp
     from app.links import bp as links_bp
     from app.main import bp as main_bp
     from app.oauth import bp as oauth_bp
+    from app.reminders import send_reminders_command
+    from app.settings import bp as settings_bp
     from app.subby import bp as subby_bp
     from app.subscriptions import bp as subscriptions_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(subscriptions_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(settings_bp)
     app.register_blueprint(links_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(oauth_bp)
     app.register_blueprint(subby_bp)
+    app.cli.add_command(send_reminders_command)
 
     @app.context_processor
     def contact_links():

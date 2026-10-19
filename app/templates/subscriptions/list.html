@@ -3,6 +3,22 @@
 {% block content %}
   <h1>Subscriptions</h1>
   <p><a class="button" href="{{ url_for('subscriptions.create') }}">Add subscription</a></p>
+
+  <form class="search" method="get" action="{{ url_for('subscriptions.list_subscriptions') }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search name or notes" />
+    <select name="status">
+      {% for value, label in [('active', 'Active'), ('archived', 'Archived'), ('all', 'All')] %}
+        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="sort">
+      {% for value, label in [('renewal', 'Next renewal'), ('name', 'Name'), ('amount', 'Price (high first)')] %}
+        <option value="{{ value }}" {% if sort == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Show</button>
+  </form>
+
   {% if items %}
     <table>
       <thead>
@@ -16,21 +32,39 @@
       </thead>
       <tbody>
         {% for item in items %}
-          <tr class="{% if item.next_renewal_at <= today %}due{% endif %}">
-            <td>{{ item.name }}</td>
+          <tr class="{% if item.status == 'active' and item.next_renewal_at <= today %}due{% endif %}">
+            <td>
+              {{ item.name }}
+              {% if item.manage_url %}<a href="{{ item.manage_url }}" rel="noopener noreferrer nofollow" target="_blank">manage</a>{% endif %}
+            </td>
             <td>{{ item.amount }} {{ item.currency }}</td>
             <td>{{ item.cycle }}</td>
             <td>{{ item.next_renewal_at }}</td>
             <td>
               <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}">Edit</a>
-              <form class="inline" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="submit">Archive</button>
-              </form>
+              {% if item.status == 'active' %}
+                <form class="inline" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit">Archive</button>
+                </form>
+              {% else %}
+                <form class="inline" method="post" action="{{ url_for('subscriptions.restore', item_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit">Restore</button>
+                </form>
+              {% endif %}
             </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
+    {% if pages.pages > 1 %}
+      <p class="pager">
+        {% if pages.has_prev %}<a href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.prev_num) }}">← Newer</a>{% endif %}
+        Page {{ pages.page }} of {{ pages.pages }}
+        {% if pages.has_next %}<a href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.next_num) }}">More →</a>{% endif %}
+      </p>
+    {% endif %}
+  {% elif q or status != 'active' %}
+    <p class="muted">Nothing matches. <a href="{{ url_for('subscriptions.list_subscriptions') }}">Show all active</a></p>
   {% else %}
     <p class="muted">None yet. Add Netflix, school tools, or anything that renews.</p>
   {% endif %}

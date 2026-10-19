@@ -26,6 +26,14 @@ def username_error(username: str) -> str | None:
     return None
 
 
+def escape_like(value: str) -> str:
+    """So searching for "50%" finds "50%" instead of treating % as a wildcard.
+    SQL Server also treats [ as special in LIKE. Use with escape="\\"."""
+    for ch in ("\\", "%", "_", "["):
+        value = value.replace(ch, "\\" + ch)
+    return value
+
+
 def normalize_email(raw: str) -> str:
     return (raw or "").strip().lower()
 

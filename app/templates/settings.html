@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Settings — SubTrack{% endblock %}
+{% block content %}
+  {# Plain working page from the backend lane. UI lane: restyle freely, keep the form. #}
+  <h1>Settings</h1>
+  <div class="card">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>
+        Time zone
+        <input name="timezone" list="zones" required value="{{ current_user.timezone }}" />
+        <datalist id="zones">
+          {% for zone in zones %}<option value="{{ zone }}"></option>{% endfor %}
+        </datalist>
+      </label>
+      <label>
+        <input type="checkbox" name="reminders_enabled" {% if current_user.reminders_enabled %}checked{% endif %} />
+        Send me reminders
+      </label>
+      <label>
+        Send them at (hour, 0–23, your time)
+        <input type="number" name="reminder_hour" min="0" max="23" required value="{{ current_user.reminder_hour }}" />
+      </label>
+      <fieldset>
+        <legend>Where</legend>
+        {% for channel in channels %}
+          <label>
+            <input type="checkbox" name="channels" value="{{ channel }}" {% if channel in current_user.channel_list %}checked{% endif %} />
+            {{ channel|capitalize }}
+          </label>
+        {% endfor %}
+        <p class="muted">Chrome extension and calendar are coming soon.</p>
+      </fieldset>
+      <p class="muted">"Days before" is set on each subscription.</p>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+{% endblock %}

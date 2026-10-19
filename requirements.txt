@@ -7,3 +7,5 @@ pyodbc==5.3.0
 requests==2.34.2
 pytest==9.1.1
 waitress==3.0.2
+# Time zone data: Windows has none built in, and reminders use the user's zone.
+tzdata==2026.5

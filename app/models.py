@@ -30,6 +30,11 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     last_login_at = db.Column(db.DateTime)
     email_verified_at = db.Column(db.DateTime)  # empty until they click the email link
+    # Reminder settings (the /settings page).
+    timezone = db.Column(db.Unicode(64), default="UTC", nullable=False)
+    reminders_enabled = db.Column(db.Boolean, default=True, nullable=False)
+    reminder_hour = db.Column(db.Integer, default=9, nullable=False)  # local hour, 0-23
+    reminder_channels = db.Column(db.Unicode(60), default="email", nullable=False)  # "email,extension"
 
     subscriptions = db.relationship(
         "Subscription", backref="owner", lazy=True, passive_deletes=True
@@ -59,6 +64,10 @@ class User(UserMixin, db.Model):
     def get_id(self) -> str:
         return f"{self.id}:{self.session_key}"
 
+    @property
+    def channel_list(self) -> list[str]:
+        return [c for c in (self.reminder_channels or "").split(",") if c]
+
 
 class Subscription(db.Model):
     __tablename__ = "subscriptions"
@@ -74,14 +83,91 @@ class Subscription(db.Model):
     currency = db.Column(db.Unicode(8), default="USD", nullable=False)
     cycle = db.Column(db.Unicode(20), default="monthly", nullable=False)
     next_renewal_at = db.Column(db.Date, nullable=False, default=date.today)
+    # The day of the month it really bills on (31), so short months don't
+    # make the date drift (see app/schedule.py).
+    billing_day = db.Column(db.Integer)
+    # Kept for older pages and the SQL views: the biggest number in lead_days.
     remind_days = db.Column(db.Integer, default=7, nullable=False)
+    lead_days = db.Column(db.Unicode(40), default="7", nullable=False)  # "14,7,3"
+    manage_url = db.Column(db.Unicode(2048), default="", nullable=False)  # where to cancel/manage
     status = db.Column(db.Unicode(20), default="active", nullable=False)
     notes = db.Column(db.UnicodeText, default="", nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
+    @property
+    def lead_list(self) -> list[int]:
+        """[14, 7, 3]: how many days before the renewal to remind, biggest first."""
+        days = {int(d) for d in (self.lead_days or "").split(",") if d.strip().isdigit()}
+        return sorted(days, reverse=True)
+
+
+class Renewal(db.Model):
+    """A renewal date that has passed: an *expected* charge, not a proven one.
+
+    The reminder job writes one row each time it moves a subscription to its
+    next date, so the history isn't lost. status stays "expected" until the
+    user (or a confirmed bill, later) says "paid" or "skipped".
+    """
+
+    __tablename__ = "renewals"
+    __table_args__ = (
+        db.UniqueConstraint("subscription_id", "due_date", name="UQ_renewals_once"),
+    )
+
+    STATUSES = ("expected", "paid", "skipped")
+
+    id = db.Column(db.Integer, primary_key=True)
+    subscription_id = db.Column(
+        db.Integer, db.ForeignKey("subscriptions.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id = db.Column(db.Integer, nullable=False)  # copy of the owner, for simple filtering
+    due_date = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    currency = db.Column(db.Unicode(8), nullable=False)
+    status = db.Column(db.Unicode(20), default="expected", nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
+class Reminder(db.Model):
+    """One reminder to send: this renewal, this many days before, this channel.
+
+    The unique key means a reminder can be *planned* only once, even if two
+    copies of the job run at the same time. `status` moves:
+    pending -> sending -> sent, or -> failed (tried again later), or skipped.
+    """
+
+    __tablename__ = "reminders"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "subscription_id", "renewal_date", "channel", "lead_days", name="UQ_reminders_once"
+        ),
+    )
+
+    STATUSES = ("pending", "sending", "sent", "failed", "skipped")
+
+    id = db.Column(db.Integer, primary_key=True)
+    subscription_id = db.Column(
+        db.Integer, db.ForeignKey("subscriptions.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id = db.Column(db.Integer, nullable=False)
+    renewal_date = db.Column(db.Date, nullable=False)
+    lead_days = db.Column(db.Integer, nullable=False)
+    channel = db.Column(db.Unicode(20), default="email", nullable=False)
+    status = db.Column(db.Unicode(20), default="pending", nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
+    next_try_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    claimed_at = db.Column(db.DateTime)
+    claim_token = db.Column(db.Unicode(32))
+    sent_at = db.Column(db.DateTime)
+    last_error = db.Column(db.Unicode(200), default="", nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    subscription = db.relationship("Subscription")
+
 
 class ReminderLog(db.Model):
-    """One row per reminder sent, so the same renewal is never emailed twice."""
+    """Not used any more: replaced by Reminder (several lead times per renewal).
+    Kept so the table and any old rows stay as they are."""
 
     __tablename__ = "reminder_logs"
     __table_args__ = (
