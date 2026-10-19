@@ -54,6 +54,9 @@
 
     <fieldset>
       <legend>Items</legend>
+      {# Tells the server this form has an item table, so removing every row removes the items. #}
+      <input type="hidden" name="item_rows" value="1" />
+      <p class="muted">Up to {{ max_lines }} items. Leave the name empty to remove a row.</p>
       <table>
         <thead><tr><th>Item</th><th>Qty</th><th>Unit price</th></tr></thead>
         <tbody>
