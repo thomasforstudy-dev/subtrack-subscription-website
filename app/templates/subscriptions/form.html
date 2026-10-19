@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 {% block title %}{% if item %}Edit{% else %}Add{% endif %} — SubTrack{% endblock %}
 {% block content %}
+  {# After an error, `form` holds what was typed; otherwise show the saved values. #}
+  {% set f = form or {} %}
   <h1>{% if item %}Edit{% else %}Add{% endif %} subscription</h1>
   <div class="card">
     <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label>Name <input name="name" required value="{{ item.name if item else '' }}" /></label>
-      <label>Amount <input name="amount" type="number" step="0.01" min="0" value="{{ item.amount if item else '0' }}" /></label>
-      <label>Currency <input name="currency" value="{{ item.currency if item else 'USD' }}" /></label>
+      <label>Name <input name="name" required maxlength="120" value="{{ f.get('name', item.name if item else '') }}" /></label>
+      <label>Amount <input name="amount" type="number" step="0.01" min="0" max="99999999.99" value="{{ f.get('amount', item.amount if item else '0') }}" /></label>
+      <label>Currency <input name="currency" maxlength="3" pattern="[A-Za-z]{3}" title="3 letters, like USD or VND" value="{{ f.get('currency', item.currency if item else 'USD') }}" /></label>
       <label>
         Cycle
         <select name="cycle">
-          {% set cycle = item.cycle if item else 'monthly' %}
+          {% set cycle = f.get('cycle', item.cycle if item else 'monthly') %}
           <option value="monthly" {% if cycle == 'monthly' %}selected{% endif %}>Monthly</option>
           <option value="yearly" {% if cycle == 'yearly' %}selected{% endif %}>Yearly</option>
           <option value="weekly" {% if cycle == 'weekly' %}selected{% endif %}>Weekly</option>
@@ -18,10 +20,17 @@
       </label>
       <label>
         Next renewal
-        <input type="date" name="next_renewal_at" required value="{{ item.next_renewal_at.isoformat() if item else '' }}" />
+        <input type="date" name="next_renewal_at" required value="{{ f.get('next_renewal_at', item.next_renewal_at.isoformat() if item else '') }}" />
       </label>
-      <label>Remind days before <input type="number" name="remind_days" min="0" value="{{ item.remind_days if item else 7 }}" /></label>
-      <label>Notes <textarea name="notes">{{ item.notes if item else '' }}</textarea></label>
+      <label>
+        Remind me (days before, up to 3)
+        <input name="lead_days" placeholder="14, 7, 3" value="{{ f.get('lead_days', item.lead_days if item else '7') }}" />
+      </label>
+      <label>
+        Manage / cancel link (optional)
+        <input type="url" name="manage_url" placeholder="https://..." value="{{ f.get('manage_url', item.manage_url if item else '') }}" />
+      </label>
+      <label>Notes <textarea name="notes" maxlength="2000">{{ f.get('notes', item.notes if item else '') }}</textarea></label>
       <button type="submit">Save</button>
     </form>
   </div>

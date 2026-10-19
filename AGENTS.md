@@ -36,6 +36,8 @@ helper, and install a Chrome extension for reminders.
 | `app/mailer.py`, `app/tokens.py` | Sending email (Resend / file / test); one-time email links |
 | `docs/CONTRACT.md` | **Routes and form field names the UI may rely on** |
 | `app/subscriptions.py` | Subscription pages |
+| `app/schedule.py`, `app/reminders.py` | Renewal date rules; the `flask send-reminders` job |
+| `app/dashboard.py`, `app/settings.py` | Dashboard (+ JSON) and reminder settings |
 | `app/links.py`, `app/link_preview.py` | Pinned links + automatic page titles |
 | `app/admin.py` | Admin user list |
 | `app/templates/` | HTML pages |

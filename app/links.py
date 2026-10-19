@@ -10,8 +10,9 @@ from sqlalchemy import or_
 from app import db
 from app.link_preview import fetch_preview
 from app.models import Link
+from app.validation import escape_like
 
-bp = Blueprint("links", __name__, url_prefix="/links")
+bp =Blueprint("links", __name__, url_prefix="/links")
 
 MAX_TAGS = 10
 
@@ -24,7 +25,7 @@ def list_links():
 
     query = Link.query.filter_by(user_id=current_user.id)
     if q:
-        like = f"%{_escape_like(q)}%"
+        like = f"%{escape_like(q)}%"
         query = query.filter(
             or_(
                 Link.title.ilike(like, escape="\\"),
@@ -163,11 +164,3 @@ def normalize_tags(raw: str) -> str:
         if tag and tag not in tags:
             tags.append(tag)
     return ", ".join(tags[:MAX_TAGS])[:200]
-
-
-def _escape_like(value: str) -> str:
-    # So searching for "50%" finds "50%" instead of treating % as a wildcard.
-    # SQL Server also treats [ as special in LIKE.
-    for ch in ("\\", "%", "_", "["):
-        value = value.replace(ch, "\\" + ch)
-    return value

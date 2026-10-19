@@ -4,6 +4,7 @@ Form fields and routes are listed in docs/CONTRACT.md.
 """
 
 import logging
+import os
 import re
 import secrets
 
@@ -15,6 +16,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from app import db, tokens
 from app.mailer import Email, MailError, MailNotReady, external_url, mail_ready, send_email
 from app.models import User, utcnow
+from app.schedule import user_zone
 from app.security import RateLimiter, client_ip, safe_next_url
 from app.validation import (
     email_error,
@@ -67,7 +69,11 @@ def unique_username(email: str) -> str:
 def create_user(email: str, password: str | None = None, username: str | None = None,
                 verified: bool = False) -> User:
     """Make an account. Nobody becomes admin here: use `flask make-admin`."""
-    user = User(email=email, username=username or unique_username(email))
+    user = User(
+        email=email,
+        username=username or unique_username(email),
+        timezone=user_zone(os.getenv("DEFAULT_TIMEZONE")).key,  # they can change it in Settings
+    )
     # Google/GitHub users have no password. A long random one means nobody
     # can log in to their account with a password at all.
     user.set_password(password or secrets.token_urlsafe(32))

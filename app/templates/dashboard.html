@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SubTrack{% endblock %}
+{% block content %}
+  {# Plain working page from the backend lane. UI lane: restyle freely, keep the forms. #}
+  <h1>Dashboard</h1>
+
+  <h2>Projected cost</h2>
+  <p class="muted">What your active subscriptions should cost. Each currency is shown on its own.</p>
+  {% if totals %}
+    <table>
+      <thead><tr><th>Currency</th><th>Subscriptions</th><th>Per month</th><th>Per year</th></tr></thead>
+      <tbody>
+        {% for row in totals %}
+          <tr><td>{{ row.currency }}</td><td>{{ row.count }}</td><td>{{ row.monthly }}</td><td>{{ row.yearly }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">No active subscriptions yet. <a href="{{ url_for('subscriptions.create') }}">Add one</a>.</p>
+  {% endif %}
+
+  <h2>Renewing in the next 30 days</h2>
+  {% if upcoming %}
+    <ul class="upcoming">
+      {% for sub in upcoming %}
+        {% set days = (sub.next_renewal_at - today).days %}
+        <li>
+          <strong>{{ sub.name }}</strong> — {{ sub.amount }} {{ sub.currency }},
+          {% if days <= 0 %}today{% elif days == 1 %}tomorrow{% else %}in {{ days }} days{% endif %}
+          ({{ sub.next_renewal_at }})
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">Nothing renews in the next 30 days.</p>
+  {% endif %}
+
+  <h2>Expected charges (last 60 days)</h2>
+  <p class="muted">Renewal dates that have passed. SubTrack can't see your bank, so these are what <em>should</em> have been charged until you say otherwise.</p>
+  {% if expected %}
+    <table>
+      <thead><tr><th>Date</th><th>Subscription</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for row in expected %}
+          <tr>
+            <td>{{ row.due_date }}</td>
+            <td>{{ names.get(row.subscription_id, '—') }}</td>
+            <td>{{ row.amount }} {{ row.currency }}</td>
+            <td>{{ row.status }}</td>
+            <td>
+              {% for value, label in [('paid', 'Paid'), ('skipped', 'Not charged')] if row.status != value %}
+                <form class="inline" method="post" action="{{ url_for('subscriptions.mark_renewal', renewal_id=row.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input type="hidden" name="status" value="{{ value }}" />
+                  <button type="submit">{{ label }}</button>
+                </form>
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">None yet.</p>
+  {% endif %}
+
+  <h2>Actual spending</h2>
+  <p class="muted">Coming with bills and receipts: only payments you confirm will count here.</p>
+{% endblock %}

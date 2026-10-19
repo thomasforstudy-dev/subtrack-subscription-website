@@ -4,7 +4,7 @@ What the backend promises the UI lane (Antigravity) and the extension/calendar
 lane (Codex). **Field `name=`s and routes here must not change without updating
 this file and keeping the old name working.** Owner of this file: backend lane.
 
-Last change: 2026-10-19 — Claude — accounts (section A).
+Last change: 2026-10-19 — Claude — accounts (section A); subscriptions, dashboard, settings, reminders (section B).
 
 ## Rules for every form
 
@@ -75,6 +75,81 @@ the account out everywhere else.
 | `current_user.email_verified` | bool | `False` → show the "please confirm your email" banner with the resend button |
 | `current_user.is_admin` | bool | Unchanged |
 
+## Subscriptions
+
+### Add / edit — `GET/POST /subscriptions/new`, `GET/POST /subscriptions/<id>/edit` (template `subscriptions/form.html`)
+
+| Field | Required | Rule |
+|---|---|---|
+| `name` | yes | 1–120 characters |
+| `amount` | no (0) | Decimal, dot for decimals, max 2 decimals, 0 – 99,999,999.99 |
+| `currency` | no (USD) | 3 letters (`USD`, `EUR`, `VND`); stored upper case |
+| `cycle` | yes | `weekly`, `monthly`, `yearly` |
+| `next_renewal_at` | yes | `YYYY-MM-DD`, year 2000–2100 |
+| `lead_days` | no (7) | Up to 3 numbers 0–365, comma separated: `14, 7, 3`. Old field `remind_days` (one number) still works. |
+| `manage_url` | no | http/https link to manage or cancel; shown with `rel="noopener noreferrer nofollow"` |
+| `notes` | no | Up to 2000 characters |
+
+On an error the template gets `form` (what was typed) as well as `item`.
+
+### List — `GET /subscriptions/` (template `subscriptions/list.html`)
+
+Query string: `q` (searches name + notes), `status` = `active` (default) / `archived` / `all`,
+`sort` = `renewal` (default) / `name` / `amount`, `page` (20 per page).
+Template gets `items`, `pages` (Flask-SQLAlchemy pagination: `page`, `pages`,
+`has_prev`, `prev_num`, `has_next`, `next_num`), `q`, `status`, `sort`, `today` (user's local date).
+
+| Route | Fields |
+|---|---|
+| `POST /subscriptions/<id>/archive` | `csrf_token` |
+| `POST /subscriptions/<id>/restore` | `csrf_token` |
+| `POST /subscriptions/renewals/<renewal_id>` | `csrf_token`, `status` = `paid` / `skipped` / `expected` |
+
+## Dashboard — `GET /dashboard` (template `dashboard.html`)
+
+Template gets `today`, `totals` (list of `{currency, count, monthly, yearly}` —
+one row per currency, never added together), `upcoming` (active subscriptions
+renewing in the next 30 days), `expected` (passed renewal dates in the last 60
+days, status `expected` / `paid` / `skipped`), `names` (subscription id → name).
+
+"Projected" = what subscriptions *should* cost. "Expected charges" = dates that
+passed; **not** proof of payment. "Actual spending" will come from confirmed bills.
+
+### `GET /dashboard.json` (logged in; for the extension / calendar)
+
+```json
+{
+  "today": "2026-10-19",
+  "projected": [{"currency": "USD", "count": 2, "monthly": "20.00", "yearly": "240.00"}],
+  "upcoming": [{"id": 3, "name": "Netflix", "amount": "9.99", "currency": "USD",
+                "cycle": "monthly", "next_renewal_at": "2026-10-24", "days_left": 5,
+                "manage_url": "https://netflix.com/cancel"}]
+}
+```
+
+Money is a **string** (no float rounding), dates are ISO `YYYY-MM-DD`, missing
+values are `null`. For now it uses the login cookie; the extension will get
+API tokens later (backend lane).
+
+## Settings — `GET/POST /settings` (template `settings.html`)
+
+| Field | Rule |
+|---|---|
+| `timezone` | An IANA name like `Asia/Ho_Chi_Minh` (template gets `zones`, the full list) |
+| `reminders_enabled` | checkbox `on` = reminders on; missing = off |
+| `reminder_hour` | 0–23, the user's local time |
+| `channels` | repeated checkbox; only `email` exists now (template gets `channels`) |
+
+## Reminder job (PC setup lane)
+
+```
+.venv\Scripts\python -m flask --app app send-reminders          (send what is due)
+.venv\Scripts\python -m flask --app app send-reminders --dry-run (plan only)
+```
+
+Safe to run every 15–60 minutes and twice at once. Prints counts. Exits with an
+error if email isn't set up (rows stay waiting). Only confirmed emails get reminders.
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:
@@ -94,3 +169,4 @@ Removing the last admin is refused.
 | `TRUSTED_PROXIES` | Addresses allowed to tell us the visitor's real IP (Cloudflare Tunnel runs on this PC). Default `127.0.0.1,::1`. |
 | `MAIL_BACKEND` | `resend`, `file` (saves emails in `instance/outbox/`), `memory` (tests) or `none`. Default: `resend` if `RESEND_API_KEY` is set, `file` in development, otherwise `none`. |
 | `RESEND_API_KEY`, `MAIL_FROM`, `MAIL_REPLY_TO` | Real sending through Resend. |
+| `DEFAULT_TIMEZONE` | Time zone for new accounts, e.g. `Asia/Ho_Chi_Minh` (default `UTC`). |
