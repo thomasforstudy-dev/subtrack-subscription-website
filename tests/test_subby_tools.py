@@ -1,7 +1,7 @@
 """Subby's account tools: only the allowlist, only the logged-in user's data,
 and private data never goes back to the model. The model is always faked."""
 
-from datetime import date, timedelta
+from datetime import timedelta
 from decimal import Decimal
 from urllib.parse import parse_qs, urlparse
 
@@ -10,10 +10,11 @@ import pytest
 from app import db, subby
 from app.ai_providers import FakeProvider
 from app.models import Link, Renewal, Subscription, User
+from app.schedule import local_now
 
 from .conftest import sign_up
 
-TODAY = date.today()
+TODAY = local_now("UTC").date()  # the app's "today" for a new (UTC) user, not the PC's date
 
 
 @pytest.fixture()

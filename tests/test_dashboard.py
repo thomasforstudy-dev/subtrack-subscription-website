@@ -1,14 +1,19 @@
 """Dashboard totals and the settings page."""
 
-from datetime import date, timedelta
+from datetime import timedelta
 
+from app.schedule import local_now
 from tests.conftest import sign_up
 
 
 def add(client, name, amount, currency, cycle="monthly", days=5):
+    # "Today" where a new user lives (UTC until they pick a time zone), like the
+    # app counts it. date.today() is the PC's date: between midnight and 7 am in
+    # Vietnam it is a day ahead of UTC, which made days_left off by one.
+    today = local_now("UTC").date()
     client.post("/subscriptions/new", data={
         "name": name, "amount": amount, "currency": currency, "cycle": cycle,
-        "next_renewal_at": (date.today() + timedelta(days=days)).isoformat(), "lead_days": "7",
+        "next_renewal_at": (today + timedelta(days=days)).isoformat(), "lead_days": "7",
     })
 
 
