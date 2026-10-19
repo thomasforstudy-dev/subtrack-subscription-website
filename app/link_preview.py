@@ -62,7 +62,8 @@ def fetch_preview(url: str) -> dict:
                     break
             charset = re.search(r"charset=([\w-]+)", content_type)
             return parse_html(_decode(body, charset.group(1) if charset else None), base_url=url)
-        except (urllib3.exceptions.HTTPError, OSError):
+        except (urllib3.exceptions.HTTPError, OSError, ValueError):
+            # ValueError: a broken redirect address like "http://[oops".
             return {}
         finally:
             resp.release_conn()
@@ -130,12 +131,19 @@ def icon_url(page_url: str, href: str = "") -> str:
     It is always on the saved site itself: we never ask a third-party icon
     service, which would tell that service every link our users save.
     """
-    page = urlparse(page_url)
+    try:
+        page = urlparse(page_url)
+    except ValueError:
+        return ""  # a broken saved address: no icon
     if page.scheme not in ("http", "https") or not page.netloc:
         return ""
-    url = urljoin(page_url, href) if href else f"{page.scheme}://{page.netloc}/favicon.ico"
-    if urlparse(url).scheme not in ("http", "https") or len(url) > 2048:
-        return f"{page.scheme}://{page.netloc}/favicon.ico"
+    fallback = f"{page.scheme}://{page.netloc}/favicon.ico"
+    try:
+        url = urljoin(page_url, href) if href else fallback
+        if urlparse(url).scheme not in ("http", "https") or len(url) > 2048:
+            return fallback
+    except ValueError:
+        return fallback
     return url
 
 

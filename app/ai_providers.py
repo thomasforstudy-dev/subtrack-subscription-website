@@ -99,12 +99,44 @@ class GeminiProvider(ChatProvider):
                 continue
             if not res.ok:
                 raise ProviderUnavailable(f"http-{res.status_code}")
-            try:
-                parts = res.json()["candidates"][0]["content"]["parts"]
-            except (KeyError, IndexError, ValueError) as exc:
-                raise ProviderUnavailable("bad-reply") from exc
-            return "".join(part.get("text", "") for part in parts).strip()
+            return gemini_text(read_json(res))
         raise ProviderUnavailable("busy")
+
+
+def read_json(res) -> object:
+    try:
+        return res.json()
+    except ValueError as exc:  # not JSON at all
+        raise ProviderUnavailable("bad-reply") from exc
+
+
+def gemini_text(data: object) -> str:
+    """Pull the answer out of Gemini's reply, checking every level's type.
+
+    {"candidates": [{"content": {"parts": [{"text": "..."}]}}]}
+    Anything else (blocked answer, nulls, wrong types) -> "bad-reply".
+    """
+    candidates = data.get("candidates") if isinstance(data, dict) else None
+    first = candidates[0] if isinstance(candidates, list) and candidates else None
+    content = first.get("content") if isinstance(first, dict) else None
+    parts = content.get("parts") if isinstance(content, dict) else None
+    if not isinstance(parts, list):
+        raise ProviderUnavailable("bad-reply")
+    texts = [part.get("text") for part in parts if isinstance(part, dict)]
+    if not texts or not all(isinstance(text, str) for text in texts):
+        raise ProviderUnavailable("bad-reply")
+    return "".join(texts).strip()
+
+
+def phi_text(data: object) -> str:
+    """{"choices": [{"message": {"content": "..."}}]} -> the text, else "bad-reply"."""
+    choices = data.get("choices") if isinstance(data, dict) else None
+    first = choices[0] if isinstance(choices, list) and choices else None
+    message = first.get("message") if isinstance(first, dict) else None
+    content = message.get("content") if isinstance(message, dict) else None
+    if not isinstance(content, str):
+        raise ProviderUnavailable("bad-reply")
+    return content.strip()
 
 
 # ---------- Phi-3.5-mini (our own laptop, planned) ----------------------------
@@ -144,10 +176,7 @@ class PhiProvider(ChatProvider):
             raise ProviderUnavailable("offline") from exc  # laptop off or asleep
         if not res.ok:
             raise ProviderUnavailable(f"http-{res.status_code}")
-        try:
-            return res.json()["choices"][0]["message"]["content"].strip()
-        except (KeyError, IndexError, ValueError, AttributeError) as exc:
-            raise ProviderUnavailable("bad-reply") from exc
+        return phi_text(read_json(res))
 
 
 # ---------- Fake (tests and demos only) --------------------------------------

@@ -6,12 +6,15 @@ isn't set up or is offline, the browser falls back to its small built-in
 answer list (static/subby.js).
 """
 
+import logging
+
 from flask import Blueprint, jsonify, request
 
 from app.ai_providers import ProviderUnavailable, Turn, chat_provider, fallback_provider
 from app.security import RateLimiter, client_ip
 
 bp = Blueprint("subby", __name__, url_prefix="/subby")
+log = logging.getLogger(__name__)
 
 HANDOFF = "[HANDOFF]"  # the model writes this when a human should answer
 MAX_QUESTION = 300  # characters
@@ -103,12 +106,17 @@ def ask():
     try:
         text = provider.chat(*args)
     except ProviderUnavailable as problem:
-        backup = fallback_provider()
+        try:
+            backup = fallback_provider()
+        except ProviderUnavailable as bad_setting:
+            # SUBBY_FALLBACK names a model that doesn't exist: act as if there is none.
+            log.warning("Ignoring SUBBY_FALLBACK: %s", bad_setting)
+            backup = None
         if backup is None or backup.name == provider.name:
             # No silent switch to another model: the page uses its built-in answers.
             if str(problem) == "not-set-up":
                 return jsonify(answer=None, reason="not-set-up", provider=provider.name), 503
-            reason = "model-offline" if provider.name == "phi" else "model-failed"
+            reason = "model-offline" if str(problem) == "offline" else "model-failed"
             return jsonify(answer=None, reason=reason, provider=provider.name), 502
         try:
             text = backup.chat(*args)

@@ -4,7 +4,7 @@ What the backend promises the UI lane (Antigravity) and the extension/calendar
 lane (Codex). **Field `name=`s and routes here must not change without updating
 this file and keeping the old name working.** Owner of this file: backend lane.
 
-Last change: 2026-10-19 — Claude — accounts (section A); subscriptions, dashboard, settings, reminders (section B); link icons + duplicates (section C).
+Last change: 2026-10-19 — Claude — accounts (section A); subscriptions, dashboard, settings, reminders (section B); link icons + duplicates (section C); runtime review repairs (edit semantics, totals scope, `/settings.json`, broken URLs, pin redirect, model errors).
 
 ## Rules for every form
 
@@ -91,13 +91,36 @@ the account out everywhere else.
 | `notes` | no | Up to 2000 characters |
 
 On an error the template gets `form` (what was typed) as well as `item`.
+**Render every field from `form` first** (`form.get('notes', item.notes)`), so
+nothing the user typed disappears when another field is wrong.
+
+**Editing — omitted vs. cleared (since 19 Oct repair):**
+
+| What the form sends | Result |
+|---|---|
+| Field not in the form at all | Saved value is **kept** (a simpler form can't wipe it) |
+| Field present but empty (`manage_url=`, `notes=`) | Deliberately **cleared** |
+| `lead_days` empty | Back to the default `7` |
+| Only `remind_days` (old forms), same number as the saved biggest lead | `lead_days` **kept** (e.g. `14,7,3`) |
+| Only `remind_days`, a different number | `lead_days` becomes just that number |
+
+The UI edit form should still send `lead_days` and `manage_url` so people can change them.
 
 ### List — `GET /subscriptions/` (template `subscriptions/list.html`)
 
 Query string: `q` (searches name + notes), `status` = `active` (default) / `archived` / `all`,
 `sort` = `renewal` (default) / `name` / `amount`, `page` (20 per page).
 Template gets `items`, `pages` (Flask-SQLAlchemy pagination: `page`, `pages`,
-`has_prev`, `prev_num`, `has_next`, `next_num`), `q`, `status`, `sort`, `today` (user's local date).
+`total`, `has_prev`, `prev_num`, `has_next`, `next_num`), `q`, `status`, `sort`,
+`today` (user's local date) and `totals`.
+
+| Scope | Meaning |
+|---|---|
+| `items` | **Only this page** (20), after search / filter / sort. Never add these up for totals. |
+| `pages.total` | How many subscriptions match the current search / filter (all pages). |
+| `totals` | **Whole account**, all active subscriptions, one row per currency: `{currency, count, monthly, yearly}` (Decimal). The same on every page and every search. Use this for any "you spend…" numbers. Same data as `/dashboard.json` → `projected`. |
+| Search | Done by the server over the whole account (`?q=`). A browser-side filter only sees the 20 rows on screen, so the search box must submit `q` (GET). Keep `q`, `status`, `sort` in pager links. |
+| Export | There is no export of subscriptions yet. Don't show an export button for them. (Bills export comes with the bills feature.) |
 
 | Route | Fields |
 |---|---|
@@ -140,6 +163,19 @@ API tokens later (backend lane).
 | `reminder_hour` | 0–23, the user's local time |
 | `channels` | repeated checkbox; only `email` exists now (template gets `channels`) |
 
+Settings are stored **on the server** in the user's account; the reminder job
+reads them there. A settings panel elsewhere in the UI must load them from
+`GET /settings.json` and save them with a normal `POST /settings` (same fields +
+`csrf_token`). Settings kept only in the browser (localStorage) are display
+preferences and never change when reminders are sent.
+
+`GET /settings.json` (logged in):
+
+```json
+{"timezone": "Asia/Ho_Chi_Minh", "reminders_enabled": true, "reminder_hour": 9,
+ "channels": ["email"], "available_channels": ["email"]}
+```
+
 ## Reminder job (PC setup lane)
 
 ```
@@ -158,7 +194,9 @@ Routes and field names are unchanged (`url`, `title`, `tags`, `notes`, `is_pinne
 |---|---|
 | `link.favicon_url` | The site's **own** icon (from its `<link rel="icon">`, else `https://<site>/favicon.ico`). Show it with `<img src="{{ link.favicon_url }}" alt="" width="16" height="16" loading="lazy" referrerpolicy="no-referrer">` and a letter fallback when it fails. Never use a third-party favicon service (it would learn every saved link). Note: showing it lets the saved site see the viewer's IP, like opening the link. |
 | Duplicates | Saving the same page twice (ignoring http/https, `www.`, trailing `/`, `#...`, `utm_*` and similar) is refused with a flash: "You already saved this link as “…”." |
-| `POST /links/preview` | JSON now may include `"icon"` next to `"title"`, `"site_name"`, `"description"`. Send `X-CSRF-Token`. |
+| `POST /links/preview` | JSON now may include `"icon"` next to `"title"`, `"site_name"`, `"description"`. Send `X-CSRF-Token`. A broken address returns `{}` (200). |
+| Broken addresses | Bad port (`site:abc`, `site:99999`), half-written IPv6 (`https://[oops`), spaces or no host → the form is shown again with a flash; the saved link is unchanged. Never a 500. Same rule for a subscription's `manage_url`. |
+| `POST /links/<id>/pin` | Optional `next` field (e.g. `/links/?q=school`). After pinning, the server goes back to that links page, or to `/links/`. It never follows an outside Referer. |
 
 External links keep `target="_blank" rel="noopener noreferrer"`. Never `|safe` on titles or notes.
 
@@ -172,6 +210,14 @@ Request: `{"question": "...", "fun": true, "history": [{"role": "user"|"bot", "t
 | 429 | `{"answer": "...slow down...", "handoff": false}` | Show it |
 | 502 | `{"answer": null, "reason": "model-offline"/"model-failed"/"empty", "provider"}` | Use the built-in answers |
 | 503 | `{"answer": null, "reason": "not-set-up"}` | Use the built-in answers |
+
+Model metadata: `provider` says which model answered. `fallback: true` means the
+chosen model was offline and the owner allowed a cloud fallback: the page **must**
+show that (showing the provider name alone is not enough). Reasons:
+`model-offline` = the model couldn't be reached or timed out; `model-failed` = it
+answered something unusable (null/wrong shape/not JSON) or another error;
+`empty` = it answered nothing. A wrong `SUBBY_FALLBACK` setting is ignored (no
+fallback), never a 500 and never a silent cloud call.
 
 ## Admin
 
