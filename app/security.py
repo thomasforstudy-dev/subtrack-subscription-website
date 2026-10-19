@@ -19,7 +19,8 @@ CSRF_FIELD = "csrf_token"
 CSRF_HEADER = "X-CSRF-Token"
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # /subby/ask only accepts JSON (which other websites can't send without our
-# permission) and doesn't touch anyone's account, so it needs no token.
+# permission) and never changes anyone's account (its tools only read, or
+# prepare a form the user must submit), so it needs no token.
 CSRF_EXEMPT = {"subby.ask"}
 
 

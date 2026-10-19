@@ -82,7 +82,14 @@ def create():
         db.session.commit()
         flash("Subscription saved.")
         return redirect(url_for("subscriptions.list_subscriptions"))
-    return render_template("subscriptions/form.html", item=None, form={})
+    # Subby's drafts open this page with the fields in the address
+    # (?name=Netflix&amount=9.99). Only known fields are used; nothing is
+    # saved until the user presses Save, and then read_form checks everything.
+    draft = {field: request.args[field] for field in DRAFT_FIELDS if field in request.args}
+    return render_template("subscriptions/form.html", item=None, form=draft)
+
+
+DRAFT_FIELDS = ("name", "amount", "currency", "cycle", "next_renewal_at")
 
 
 @bp.route("/<int:item_id>/edit", methods=["GET", "POST"])

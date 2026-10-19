@@ -219,6 +219,23 @@ answered something unusable (null/wrong shape/not JSON) or another error;
 `empty` = it answered nothing. A wrong `SUBBY_FALLBACK` setting is ignored (no
 fallback), never a 500 and never a silent cloud call.
 
+### Account tools (logged-in users, since 19 Oct)
+
+When a logged-in user asks about their own account, the 200 reply has extra keys.
+The answer text is written by the server (English), not by the model.
+
+| `tool` | `data` | Extra |
+|---|---|---|
+| `list_upcoming_renewals` | `{"days", "items": [{"name", "amount", "currency", "next_renewal_at", "days_left"}]}` | |
+| `search_saved_links` | `{"query", "items": [{"title", "url"}]}` | Show `url` as a link with `rel="noopener noreferrer"`; titles as plain text |
+| `summarize_transactions` | `{"days", "items": [{"currency", "status": "paid"/"expected"/"skipped", "total"}]}` | Renewal charges, not bank data. Never add across currencies |
+| `create_reminder_draft` | `{"draft": {"name", "amount"?, "currency"?, "cycle"?, "next_renewal_at"?}}` | `confirm_url` → `/subscriptions/new?...`. **Show a "Check and save" button** that opens it. Nothing is saved until the user presses Save on that form |
+| `null` | — | The model asked for something not allowed, or the visitor isn't logged in: just show `answer` |
+
+Money is a string, dates are ISO, at most 10 items. Keys missing = a normal answer.
+`GET /subscriptions/new` accepts `name`, `amount`, `currency`, `cycle`,
+`next_renewal_at` in the address to fill the form; other keys are ignored.
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:
