@@ -245,3 +245,102 @@ class Link(db.Model):
             return urlparse(self.url).netloc
         except ValueError:  # a broken address saved before links were checked
             return ""
+
+
+class Document(db.Model):
+    """A file the user uploaded (photo, PDF or Word file of a bill).
+
+    The file itself lives in instance/uploads/ (never in static/), under a
+    random name the server picks. original_name is only shown, never used
+    as a path. The same file twice (same sha256) is kept once per user.
+    """
+
+    __tablename__ = "documents"
+    __table_args__ = (db.UniqueConstraint("user_id", "sha256", name="UQ_documents_once"),)
+
+    KINDS = ("png", "jpeg", "webp", "pdf", "docx")
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    original_name = db.Column(db.Unicode(255), nullable=False)
+    stored_name = db.Column(db.Unicode(64), unique=True, nullable=False)  # "<32 hex>.pdf"
+    kind = db.Column(db.Unicode(10), nullable=False)  # found from the file's first bytes
+    size_bytes = db.Column(db.Integer, nullable=False)
+    sha256 = db.Column(db.Unicode(64), nullable=False)
+    page_count = db.Column(db.Integer)  # None = couldn't count (some PDFs)
+    # "uploaded" for now; the OCR job adds queued/running/needs_review/... later.
+    status = db.Column(db.Unicode(20), default="uploaded", nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
+class Bill(db.Model):
+    """A receipt or a credit card bill, typed in or checked by the user.
+
+    Every field the bill doesn't show stays empty (None), never guessed: a
+    receipt without a time has transaction_time None, not 00:00.
+    The full card number, PIN or OTP is never stored, only the last 4 digits.
+    """
+
+    __tablename__ = "bills"
+
+    KINDS = ("receipt", "card_bill")
+    STATUSES = ("confirmed", "archived")  # "draft" comes with OCR later
+    CATEGORIES = (
+        "software", "streaming", "education", "utilities",
+        "shopping", "food", "travel", "other",
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    document_id = db.Column(db.Integer, db.ForeignKey("documents.id"))  # the uploaded file, if any
+    kind = db.Column(db.Unicode(20), default="receipt", nullable=False)
+    merchant = db.Column(db.Unicode(200), nullable=False)
+    branch = db.Column(db.Unicode(200), default="", nullable=False)
+    address = db.Column(db.Unicode(500), default="", nullable=False)
+    invoice_number = db.Column(db.Unicode(64), default="", nullable=False)
+    invoice_date = db.Column(db.Date)  # the date printed on the bill
+    transaction_date = db.Column(db.Date)  # when the payment happened
+    transaction_time = db.Column(db.Time)  # None when the bill shows no time
+    timezone = db.Column(db.Unicode(64), default="", nullable=False)  # "" = not known
+    currency = db.Column(db.Unicode(8), nullable=False)
+    subtotal = db.Column(db.Numeric(12, 2))
+    tax = db.Column(db.Numeric(12, 2))
+    total = db.Column(db.Numeric(12, 2))
+    category = db.Column(db.Unicode(30), default="other", nullable=False)
+    # Credit card bills only.
+    card_last4 = db.Column(db.Unicode(4), default="", nullable=False)
+    statement_start = db.Column(db.Date)
+    statement_end = db.Column(db.Date)
+    due_date = db.Column(db.Date)  # pay by this day
+    paid_at = db.Column(db.Date)  # None = not paid yet
+    notes = db.Column(db.UnicodeText, default="", nullable=False)
+    source = db.Column(db.Unicode(20), default="manual", nullable=False)  # manual / upload
+    status = db.Column(db.Unicode(20), default="confirmed", nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    document = db.relationship("Document")
+    lines = db.relationship(
+        "BillLine", backref="bill", lazy=True, order_by="BillLine.position",
+        cascade="all, delete-orphan", passive_deletes=True,
+    )
+
+
+class BillLine(db.Model):
+    """One line on a bill: "Coffee, 2 x 3.50"."""
+
+    __tablename__ = "bill_lines"
+
+    id = db.Column(db.Integer, primary_key=True)
+    bill_id = db.Column(
+        db.Integer, db.ForeignKey("bills.id", ondelete="CASCADE"), nullable=False
+    )
+    position = db.Column(db.Integer, nullable=False)  # 1, 2, 3 ... as on the bill
+    description = db.Column(db.Unicode(300), nullable=False)
+    quantity = db.Column(db.Numeric(10, 3))
+    unit_price = db.Column(db.Numeric(12, 2))
+    amount = db.Column(db.Numeric(12, 2))
