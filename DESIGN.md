@@ -138,6 +138,7 @@ Previews: `docs/design/shell-v3-*.png`, `docs/design/logo-v1.png`.
   icon turns. No fade-in on every page. Subby's "need help?" bubble: first page of a visit
   only, never on phones. All motion is off with `prefers-reduced-motion`.
 - **Labels** in sentence case (no ALL-CAPS), no "A · B · C" strings.
-- **Static files** carry `?v=<last change>` (app/__init__.py), because Cloudflare lets
+- **Static files** carry `?v=<last change>` (`app/__init__.py`), because Cloudflare lets
   browsers keep CSS/JS for 4 hours: without it an update showed new pages with old CSS.
+
 - Only one `<a data-nav-target>` per page (the header link): tests rely on it.
