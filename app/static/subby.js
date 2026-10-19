@@ -172,11 +172,12 @@
   const history = [];
 
   function showHandoff(text, metaOption) {
-    say(text, "bot", metaOption);
+    const wrap = say(text, "bot", metaOption);
     if (handoff) {
       log.append(handoff.content.cloneNode(true));
       log.scrollTop = log.scrollHeight;
     }
+    return wrap;
   }
 
   function showActionConfirmation(question) {
@@ -221,23 +222,32 @@
         };
       }
       if (res.status === 503 || data.reason === "not-set-up") {
-        return { status: "not-configured" };
+        return {
+          status: "not-configured",
+          reason: data.reason || "not-set-up",
+          provider: data.provider || null,
+        };
       }
       if (!res.ok || !data.answer) {
-        return { status: "offline", reason: data.reason || "server-error" };
+        return {
+          status: "offline",
+          reason: data.reason || "server-error",
+          provider: data.provider || null,
+        };
       }
       return {
         status: "ok",
         answer: data.answer,
         handoff: Boolean(data.handoff),
-        provider: data.provider || "Gemini AI",
+        provider: data.provider || "gemini",
+        fallback: Boolean(data.fallback),
       };
     } catch (err) {
       clearTimeout(timer);
       if (err && err.name === "AbortError") {
         return { status: "timeout" };
       }
-      return { status: "offline" };
+      return { status: "offline", reason: "network-error" };
     }
   }
 
@@ -247,12 +257,40 @@
     typing.remove();
 
     if (result.status === "ok") {
-      updateProviderStatus("online", "Trực tuyến · Phản hồi từ " + result.provider, result.provider);
-      if (result.handoff) {
-        showHandoff(result.answer, { badge: result.provider });
-      } else {
-        say(result.answer, "bot", { badge: result.provider });
+      const prov = String(result.provider || "gemini");
+      const isFake = prov.toLowerCase() === "fake";
+      const isFallback = Boolean(result.fallback);
+
+      let badgeLabel = "AI · " + prov;
+      let statusLabel = "Trực tuyến · Phản hồi từ " + prov;
+      if (isFake) {
+        badgeLabel = "🧪 Mô hình giả lập kiểm thử (fake model)";
+        statusLabel = "Chế độ kiểm thử · fake model";
       }
+      if (isFallback) {
+        badgeLabel = "☁ Dự phòng đám mây (" + prov + " · answered by a cloud model)";
+        statusLabel = "Dự phòng đám mây · answered by a cloud model (" + prov + ")";
+      }
+
+      updateProviderStatus(isFallback ? "cloud-fallback" : "online", statusLabel, prov);
+      const msgOption = {
+        badge: badgeLabel,
+        provider: prov,
+        fallback: isFallback,
+      };
+      const renderedWrap = result.handoff
+        ? showHandoff(result.answer, msgOption)
+        : say(result.answer, "bot", msgOption);
+
+      if (isFallback && renderedWrap) {
+        const fbNote = document.createElement("small");
+        fbNote.className = "msg-fallback-note muted block-small";
+        fbNote.setAttribute("data-cloud-fallback-note", "true");
+        fbNote.textContent =
+          "☁ Lưu ý: Mô hình nội bộ hiện không khả dụng; câu trả lời này được tạo bởi mô hình đám mây dự phòng (answered by a cloud model).";
+        renderedWrap.append(fbNote);
+      }
+
       if (isMutationIntent(question)) {
         showActionConfirmation(question);
       }
@@ -276,10 +314,17 @@
         "bot",
         { badge: "⏱ Timeout máy chủ", retryQuestion: question }
       );
+    } else if (result.status === "not-configured") {
+      updateProviderStatus(
+        "not-configured",
+        "AI chưa cấu hình (not-set-up) · Đang dùng FAQ có sẵn",
+        "FAQ Fallback"
+      );
     } else {
+      const reasonText = result.reason === "model-offline" ? "Mô hình AI ngoại tuyến (model-offline)" : "AI tạm nghỉ (" + (result.reason || "offline") + ")";
       updateProviderStatus(
         "fallback",
-        "Đang dùng bộ câu trả lời có sẵn (FAQ Fallback — AI tạm nghỉ)",
+        reasonText + " · Đang dùng bộ câu trả lời có sẵn (FAQ Fallback)",
         "FAQ Fallback"
       );
     }

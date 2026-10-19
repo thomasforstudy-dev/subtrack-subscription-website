@@ -23,13 +23,17 @@
           <span class="office-note">Lưu ý: Tệp DOCX/DOC chưa hỗ trợ OCR trực tiếp — vui lòng xuất sang PDF hoặc ảnh trước khi tải lên.</span>
         </p>
       </div>
-      <div class="state-switcher" role="group" aria-label="Xem thử các bước xử lý hóa đơn">
-        <span class="muted small-text" data-vi="Trạng thái bước đọc:" data-en="Step state:">Trạng thái bước đọc:</span>
-        <button type="button" class="chip" data-bill-step="upload" data-vi="1. Đang tải" data-en="1. Uploading">1. Đang tải</button>
-        <button type="button" class="chip" data-bill-step="ocr" data-vi="2. Đang đọc OCR" data-en="2. Reading OCR">2. Đang đọc OCR</button>
-        <button type="button" class="chip on" data-bill-step="review" data-vi="3. Chờ duyệt (Demo)" data-en="3. Ready to review (Demo)">3. Chờ duyệt (Demo)</button>
-        <button type="button" class="chip" data-bill-step="error" data-vi="⚠ Lỗi & Thử lại" data-en="⚠ Error & Retry">⚠ Lỗi & Thử lại</button>
-      </div>
+      <details class="archived-info-box">
+        <summary class="muted small-text" data-vi="🛠 Kiểm thử trạng thái giao diện (Dev/QA Preview)" data-en="🛠 UI State Preview (Dev/QA)">
+          🛠 Kiểm thử trạng thái giao diện (Dev/QA Preview)
+        </summary>
+        <div class="state-switcher compact-top" role="group" aria-label="Xem thử các bước xử lý hóa đơn">
+          <button type="button" class="chip" data-bill-step="upload" data-vi="1. Đang tải" data-en="1. Uploading">1. Đang tải</button>
+          <button type="button" class="chip" data-bill-step="ocr" data-vi="2. Đang đọc OCR" data-en="2. Reading OCR">2. Đang đọc OCR</button>
+          <button type="button" class="chip on" data-bill-step="review" data-vi="3. Chờ duyệt (Demo)" data-en="3. Ready to review (Demo)">3. Chờ duyệt (Demo)</button>
+          <button type="button" class="chip" data-bill-step="error" data-vi="⚠ Lỗi & Thử lại" data-en="⚠ Error & Retry">⚠ Lỗi & Thử lại</button>
+        </div>
+      </details>
     </div>
 
     <div class="upload-dropzone" id="bill-dropzone">
@@ -379,3 +383,4 @@
     </div>
   </div>
 </section>
+
