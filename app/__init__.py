@@ -87,6 +87,7 @@ def create_app() -> Flask:
 
     from app.admin import bp as admin_bp
     from app.auth import bp as auth_bp
+    from app.calendar import bp as calendar_bp
     from app.dashboard import bp as dashboard_bp
     from app.links import bp as links_bp
     from app.main import bp as main_bp
@@ -98,6 +99,7 @@ def create_app() -> Flask:
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(calendar_bp)
     app.register_blueprint(subscriptions_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(settings_bp)
