@@ -43,13 +43,15 @@ If asked in an interview:
 > 
 > "Instead of running a debug server in an open command window, I use Waitress as a multi-threaded production WSGI server behind Cloudflare Tunnel for end-to-end HTTPS without exposing home ports. To ensure 24/7 uptime across PC restarts, I configured Windows Task Scheduler tasks triggered `AtStartup` running under `SYSTEM`. This gives a clean headless daemon that starts before user logon, never hits the 72-hour Task Scheduler timeout, and automatically restarts if interrupted."
 
-## Moving the live site to the home PC, and updating it
+## The live server PC, and updating it
 
-The live site and its database run on **one** PC: the home PC. The laptop is for
-development only. Never run `SubTrack-Tunnel` on both machines at once: Cloudflare
+The live site and its database run on **one** machine. **Right now that is the laptop**:
+the folder `C:\Users\buith\Projects\subtrack`, with the SubTrack-Server and SubTrack-Tunnel
+tasks. Keep that folder on `main`; AIs work in their own branch folders (git worktrees).
+It may move to the home PC later. Never run `SubTrack-Tunnel` on both machines at once: Cloudflare
 would send some visitors to each PC, and each has its own database.
 
-### First time on the home PC (skip what's already done)
+### First time on a new server PC (skip what's already done)
 
 1. Get the code: `git clone https://github.com/thomasforstudy-dev/subtrack-subscription-website.git C:\Users\buith\Projects\subtrack`
    (or `git pull` if the folder exists), then run `run_local.bat` once to build `.venv`.
@@ -58,7 +60,7 @@ would send some visitors to each PC, and each has its own database.
    and **no** `APP_ENV=development` line. Check `SITE_URL=https://alloutdeepclean.com`.
 3. Email (Resend): in resend.com add the domain `alloutdeepclean.com`, put the DNS
    records it shows into Cloudflare, wait for "Verified", create an API key with
-   "Sending access", then add to `.env` on the home PC:
+   "Sending access", then add to `.env` on the server PC:
    ```
    RESEND_API_KEY=re_...your key...
    MAIL_FROM=SubTrack <reminders@alloutdeepclean.com>
@@ -71,11 +73,11 @@ would send some visitors to each PC, and each has its own database.
 
 ### Every update (after `main` changes on GitHub)
 
-Right-click `update_server.bat` → **Run as administrator**. It stops the site, backs up
-`instance\` (SQLite database + uploaded bills) to `%USERPROFILE%\SubTrack-backups\`,
-pulls `main`, installs packages, runs the tests and starts the site again. If the tests
-fail it goes back to the version that was running. Old SQLite files get their new
-columns automatically when the site starts.
+Right-click `update_server.bat` → **Run as administrator**. While the old site keeps
+running, it pulls `main`, installs packages and runs the tests; if they fail it goes back
+and stops there. Then it stops the site for a few seconds, backs up `instance\` (SQLite
+database + uploaded bills) to `%USERPROFILE%\SubTrack-backups\`, checks the database (old
+SQLite files get their new columns here) and starts the site again.
 
 **SQL Server instead of SQLite** (`DB_SERVER` set in `.env`): before updating, back up the
 `SubTrack` database in SSMS, then run the `database\0N_*.sql` scripts you haven't run yet,

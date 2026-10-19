@@ -69,6 +69,10 @@ Two AIs may work at the same time **only if they are in different lanes**.
 
 ## How to work here
 
+**The live site runs from `C:\Users\buith\Projects\subtrack` on the laptop.** Keep that
+folder on `main` with no uncommitted changes; do your work in your own branch folder
+(`git worktree add ..\subtrack-<you> <branch>`). Updates go live with `deploy\update_server.bat`.
+
 1. **Check before you start.** Run `git status`. If there are uncommitted
    changes **in your lane** that you didn't make, stop and ask the owner.
 2. Read `docs/PROGRESS.md` to see what's done and what's next.
