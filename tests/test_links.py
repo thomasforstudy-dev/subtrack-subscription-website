@@ -1,5 +1,5 @@
 from app import db
-from app.links import normalize_tags, normalize_url
+from app.links import normalize_tags, normalize_url, url_fingerprint
 from app.models import Link
 from tests.conftest import sign_up
 
@@ -81,3 +81,61 @@ def test_normalize_url():
 
 def test_normalize_tags():
     assert normalize_tags(" School, PYTHON ,school,, ") == "school, python"
+
+
+def test_fingerprint_ignores_small_differences():
+    same = [
+        "https://www.Example.com/a/?utm_source=x&b=2&a=1#top",
+        "http://example.com/a?a=1&b=2",
+        "https://example.com:443/a/?a=1&b=2&fbclid=123",
+    ]
+    assert len({url_fingerprint(u) for u in same}) == 1
+    assert url_fingerprint("https://example.com/a") != url_fingerprint("https://example.com/b")
+    assert url_fingerprint("https://example.com/a?id=1") != url_fingerprint("https://example.com/a?id=2")
+    assert url_fingerprint("https://example.com:8080/") != url_fingerprint("https://example.com/")
+
+
+def test_same_link_twice_is_refused(user, app, monkeypatch):
+    no_lookup(monkeypatch)
+    user.post("/links/new", data={"url": "https://docs.python.org/3/", "title": "Python docs"})
+    res = user.post("/links/new", data={"url": "http://www.docs.python.org/3?utm_source=mail"})
+    assert "already saved this link as" in res.get_data(as_text=True)
+    with app.app_context():
+        assert Link.query.count() == 1
+
+
+def test_other_users_can_save_the_same_link(app, monkeypatch):
+    no_lookup(monkeypatch)
+    me, other = app.test_client(), app.test_client()
+    sign_up(me, "me@example.com")
+    sign_up(other, "other@example.com")
+    me.post("/links/new", data={"url": "https://example.com", "title": "Mine"})
+    other.post("/links/new", data={"url": "https://example.com", "title": "Theirs"})
+    with app.app_context():
+        assert Link.query.count() == 2
+
+
+def test_editing_a_link_is_not_a_duplicate_of_itself(user, app, monkeypatch):
+    no_lookup(monkeypatch)
+    user.post("/links/new", data={"url": "https://example.com", "title": "Mine"})
+    with app.app_context():
+        link_id = Link.query.one().id
+    res = user.post(f"/links/{link_id}/edit", data={"url": "https://example.com/", "title": "Renamed"})
+    assert res.status_code == 302
+    with app.app_context():
+        assert Link.query.one().title == "Renamed"
+
+
+def test_icon_falls_back_to_the_sites_own_favicon(user, app, monkeypatch):
+    no_lookup(monkeypatch)
+    user.post("/links/new", data={"url": "https://example.com/page", "title": "Typed title"})
+    with app.app_context():
+        assert Link.query.one().favicon_url == "https://example.com/favicon.ico"
+
+
+def test_icon_from_the_page_is_kept(user, app, monkeypatch):
+    monkeypatch.setattr("app.links.fetch_preview",
+                        lambda url: {"title": "Page", "icon": "https://cdn.example.com/i.png"})
+    user.post("/links/new", data={"url": "https://example.com/page"})
+    with app.app_context():
+        assert Link.query.one().favicon_url == "https://cdn.example.com/i.png"
