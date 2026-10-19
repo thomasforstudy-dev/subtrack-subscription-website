@@ -206,6 +206,30 @@ def test_email_not_set_up_leaves_reminders_waiting(ctx, monkeypatch):
     assert row.status == "pending" and row.attempts == 0
 
 
+def test_switching_on_resend_later_still_sends_waiting_reminders(ctx, monkeypatch):
+    """The live site runs with no email set up today. Reminders that waited
+    must go out once Resend is added, not stay stuck with an empty sender."""
+    monkeypatch.setenv("MAIL_BACKEND", "none")
+    monkeypatch.delenv("MAIL_FROM", raising=False)
+    make_sub(make_user())
+    reminders.run(at("2026-11-03 09:00"))
+    row = Reminder.query.one()
+    assert row.status == "pending" and row.payload_json is None  # nothing frozen yet
+
+    posted = []
+
+    class Accepted:
+        ok, status_code = True, 200
+
+    monkeypatch.setenv("MAIL_BACKEND", "resend")
+    monkeypatch.setenv("RESEND_API_KEY", "test-key")
+    monkeypatch.setenv("MAIL_FROM", "SubTrack <hello@example.com>")
+    monkeypatch.setattr(mailer.requests, "post", lambda url, json, headers, timeout: posted.append(json) or Accepted())
+    counts = reminders.run(at("2026-11-03 10:00"))
+    assert counts["sent"] == 1 and not counts["stopped"]
+    assert posted[0]["from"] == "SubTrack <hello@example.com>"
+
+
 def test_two_runs_cannot_claim_the_same_reminder(ctx):
     make_sub(make_user())
     now = at("2026-11-03 09:00")
