@@ -1,110 +1,311 @@
 {% extends "base.html" %}
-{% block title %}Bills — SubTrack{% endblock %}
+{% block title %}Bills / Hóa đơn & Chứng từ — SubTrack{% endblock %}
 {% block content %}
-  {# Plain page from the backend lane; the UI lane styles it (docs/CONTRACT.md → Bills). #}
-  <h1>Bills / Hóa đơn</h1>
-
-  <div class="card">
-    <h2>Upload a bill</h2>
-    <form method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <input type="file" name="file" required
-             accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,image/png,image/jpeg,image/webp,application/pdf" />
-      <p class="muted">PNG, JPG, WEBP, PDF or Word (.docx). Up to 10 MB and 5 pages. Files stay private.</p>
-      <button class="button" type="submit">Upload</button>
-    </form>
-    <p><a class="button secondary" href="{{ url_for('bills.create') }}">Type a bill in without a file</a></p>
+  <div class="section-head">
+    <div>
+      <div class="section-badges">
+        <span class="pill mint" data-vi="Lưu trữ riêng tư & Xuất chuẩn JSON/CSV/MD" data-en="Private storage & Standard JSON/CSV/MD export">Lưu trữ riêng tư & Xuất chuẩn JSON/CSV/MD</span>
+        <span class="pill" data-vi="Nhập & đối chiếu thực tế — Không tự đoán trường thiếu" data-en="Evidence-only — Unknown fields stay blank">Nhập & đối chiếu thực tế — Không tự đoán trường thiếu</span>
+      </div>
+      <h1 data-vi="Hóa đơn & Sao kê thẻ (Bills)" data-en="Bills / Hóa đơn">Hóa đơn & Sao kê thẻ (Bills)</h1>
+      <p class="muted" data-vi="Tải lên ảnh chụp (PNG/JPG/WEBP), PDF (≤ 5 trang) hoặc Word (.docx ≤ 10 MB) để lưu trữ riêng tư và đối chiếu nhập liệu bên cạnh tệp gốc, hoặc nhập trực tiếp biên lai / kỳ sao kê thẻ tín dụng." data-en="Upload receipt photos (PNG/JPG/WEBP), PDFs (≤ 5 pages), or Word (.docx ≤ 10 MB) for private storage and side-by-side entry, or type in receipts and credit card bills directly.">
+        Tải lên ảnh chụp (<strong>PNG, JPG, WEBP</strong>), <strong>PDF</strong> (tối đa 5 trang) hoặc <strong>Word (.docx)</strong> (tối đa 10 MB) để lưu trữ riêng tư và đối chiếu nhập liệu bên cạnh tệp gốc, hoặc nhập trực tiếp biên lai / kỳ sao kê thẻ tín dụng.
+      </p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('dashboard.show') }}" data-vi="← Về Tổng quan" data-en="← Back to Dashboard">← Về Tổng quan</a>
+      <a class="button" href="{{ url_for('bills.create') }}" data-vi="+ Nhập hóa đơn thủ công" data-en="Type a bill in without a file">+ Nhập hóa đơn thủ công</a>
+    </div>
   </div>
 
+  {# Khối 1: Tải lên tệp hóa đơn riêng tư (POST /bills/upload) + Tổng chi biên lai đã xác nhận #}
+  <div class="dashboard-grid">
+    <article class="card dash-card">
+      <header class="dash-card-head">
+        <h2 class="card-title" data-vi="Tải lên tệp hóa đơn (Upload a bill)" data-en="Upload a bill">Tải lên tệp hóa đơn (Upload a bill)</h2>
+        <span class="pill mint" data-vi="Kiểm tra chữ ký tệp (Magic bytes)" data-en="Magic-byte verified">Kiểm tra chữ ký tệp (Magic bytes)</span>
+      </header>
+      <form method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="field-group">
+          <label for="bills-upload-input" data-vi="Chọn tệp chứng từ (PNG, JPG, WEBP, PDF ≤ 5 trang, DOCX ≤ 10 MB)" data-en="Choose bill document (PNG, JPG, WEBP, PDF ≤ 5 pages, DOCX ≤ 10 MB)">
+            Chọn tệp chứng từ (PNG, JPG, WEBP, PDF ≤ 5 trang, DOCX ≤ 10 MB)
+          </label>
+          <span id="bills-upload-help" class="field-hint muted small-text" data-vi="PNG, JPG, WEBP, PDF or Word (.docx). Up to 10 MB and 5 pages. Files stay private. Từ chối tệp .doc cũ, tệp khóa mật khẩu hoặc vượt quá dung lượng." data-en="PNG, JPG, WEBP, PDF or Word (.docx). Up to 10 MB and 5 pages. Files stay private.">
+            PNG, JPG, WEBP, PDF or Word (.docx). Up to 10 MB and 5 pages. Files stay private.
+          </span>
+          <input
+            id="bills-upload-input"
+            type="file"
+            name="file"
+            required
+            aria-describedby="bills-upload-help"
+            accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,image/png,image/jpeg,image/webp,application/pdf"
+          />
+        </div>
+        <div class="form-actions compact-top">
+          <button class="button" type="submit" data-vi="📤 Tải tệp & Mở khung nhập đối chiếu" data-en="Upload">📤 Tải tệp & Mở khung nhập đối chiếu</button>
+          <a class="button secondary" href="{{ url_for('bills.create') }}" data-vi="Nhập hóa đơn không kèm tệp" data-en="Type a bill in without a file">Type a bill in without a file</a>
+        </div>
+      </form>
+      <p class="dash-footnote muted small-text compact-top" data-vi="Lưu ý: Tệp được lưu riêng tư ngoài thư mục tĩnh với tên ngẫu nhiên. Sau khi tải lên, bạn sẽ kiểm tra và nhập các trường thực tế hiển thị trên chứng từ (tự động đọc OCR sẽ bổ sung ở bước tiếp theo)." data-en="Note: Files are stored privately under random names outside static/. After uploading, you verify and type in the fields shown on the bill (automated OCR extraction arrives in the next slice).">
+        Lưu ý: Tệp được lưu riêng tư ngoài thư mục tĩnh với tên ngẫu nhiên. Sau khi tải lên, bạn kiểm tra và nhập các trường thực tế hiển thị trên chứng từ (tự động đọc OCR sẽ bổ sung ở bước tiếp theo).
+      </p>
+    </article>
+
+    <article class="card dash-card">
+      <header class="dash-card-head">
+        <h2 class="card-title" data-vi="Chi tiêu thực tế (Spent — confirmed receipts)" data-en="Spent (confirmed receipts)">Spent (confirmed receipts)</h2>
+        <span class="pill mint" data-vi="Tách biệt từng tiền tệ (Decimal)" data-en="Per currency (Decimal)">Tách biệt từng tiền tệ (Decimal)</span>
+      </header>
+      {% if totals %}
+        <ul class="mini-list">
+          {% for row in totals %}
+            <li>
+              <div>
+                <span class="currency-code">{{ row.currency }}</span>
+                <small class="muted">({{ row.count }} bills)</small>
+              </div>
+              <strong class="currency-value">{{ row.total }} {{ row.currency }}</strong>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="dash-footnote muted small-text" data-vi="Chỉ tính các biên lai (receipt) đã xác nhận trong tài khoản của bạn. Không bao giờ cộng gộp khác loại tiền tệ." data-en="Computed from confirmed receipts in your account only. Currencies are never mixed.">
+          Chỉ tính các biên lai (<code>receipt</code>) đã xác nhận trong tài khoản của bạn. Không bao giờ cộng gộp khác loại tiền tệ.
+        </p>
+      {% else %}
+        <div class="dash-empty">
+          <strong data-vi="Chưa có biên lai đã xác nhận nào" data-en="No confirmed receipts yet">Chưa có biên lai đã xác nhận nào</strong>
+          <p class="muted small-text" data-vi="Khi bạn lưu biên lai mua hàng hoặc thanh toán dịch vụ, tổng chi thực tế theo từng đồng tiền sẽ hiển thị tại đây." data-en="Once you save receipts, your confirmed spending per currency appears here.">
+            Khi bạn lưu biên lai mua hàng hoặc thanh toán dịch vụ, tổng chi thực tế theo từng đồng tiền sẽ hiển thị tại đây.
+          </p>
+        </div>
+      {% endif %}
+    </article>
+  </div>
+
+  {# Khối 2: Tệp đã tải lên đang chờ nhập thông tin (Waiting to be typed in) #}
   {% if waiting %}
-    <div class="card">
-      <h2>Waiting to be typed in</h2>
-      <ul>
+    <div class="card compact-card">
+      <div class="section-head compact">
+        <div>
+          <h2 class="card-title" data-vi="Tệp đã tải lên chờ nhập chi tiết (Waiting to be typed in)" data-en="Waiting to be typed in">Waiting to be typed in</h2>
+          <p class="muted small-text" data-vi="Các tệp chứng từ bạn đã tải lên nhưng chưa gắn với hóa đơn đã lưu." data-en="Uploaded files that have not been linked to a saved bill yet.">
+            Các tệp chứng từ bạn đã tải lên nhưng chưa gắn với hóa đơn đã lưu.
+          </p>
+        </div>
+        <span class="pill sun-label">{{ waiting|length }}</span>
+      </div>
+      <ul class="mini-list">
         {% for doc in waiting %}
-          <li>{{ doc.original_name }} <span class="muted">({{ doc.kind }}{% if doc.page_count %}, {{ doc.page_count }} page{{ 's' if doc.page_count != 1 }}{% endif %})</span>
-            — <a href="{{ url_for('bills.create', document_id=doc.id) }}">type it in</a></li>
+          <li>
+            <div>
+              <strong>{{ doc.original_name }}</strong>
+              <span class="muted">({{ doc.kind }}{% if doc.page_count %}, {{ doc.page_count }} page{{ 's' if doc.page_count != 1 }}{% endif %})</span>
+            </div>
+            <div class="head-actions">
+              <a class="button secondary btn-sm" href="{{ url_for('bills.download', document_id=doc.id) }}" data-vi="⬇ Tải tệp gốc" data-en="Download file">⬇ Tải tệp gốc</a>
+              <a class="button btn-sm" href="{{ url_for('bills.create', document_id=doc.id) }}" data-vi="✏️ Nhập hóa đơn từ tệp này" data-en="type it in">type it in</a>
+            </div>
+          </li>
         {% endfor %}
       </ul>
     </div>
   {% endif %}
 
+  {# Khối 3: Hóa đơn thẻ tín dụng cần thanh toán (Card bills to pay) #}
   {% if unpaid %}
-    <div class="card">
-      <h2>Card bills to pay</h2>
-      <ul>
+    <div class="card compact-card">
+      <div class="section-head compact">
+        <div>
+          <h2 class="card-title" data-vi="Sao kê thẻ tín dụng chờ thanh toán (Card bills to pay)" data-en="Card bills to pay">Card bills to pay</h2>
+          <p class="muted small-text" data-vi="Các kỳ sao kê thẻ tín dụng chưa đánh dấu đã trả, sắp xếp theo hạn thanh toán (due date)." data-en="Unpaid credit card statements ordered by payment due date.">
+            Các kỳ sao kê thẻ tín dụng chưa đánh dấu đã trả, sắp xếp theo hạn thanh toán (<code>due_date</code>).
+          </p>
+        </div>
+        <span class="pill hot-label">{{ unpaid|length }}</span>
+      </div>
+      <ul class="mini-list">
         {% for bill in unpaid %}
-          <li>{{ bill.merchant }}{% if bill.card_last4 %} ···{{ bill.card_last4 }}{% endif %}
-            — {{ bill.total if bill.total is not none else '?' }} {{ bill.currency }}, due {{ bill.due_date }}
-            {% if bill.due_date < today %}<strong>(late)</strong>{% endif %}
-            <form method="post" action="{{ url_for('bills.mark_paid', bill_id=bill.id) }}" style="display:inline">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <input type="hidden" name="paid" value="1" />
-              <button class="button btn-sm" type="submit">Mark paid</button>
-            </form></li>
+          <li>
+            <div>
+              <strong>{{ bill.merchant }}{% if bill.card_last4 %} ···{{ bill.card_last4 }}{% endif %}</strong>
+              — {{ bill.total if bill.total is not none else '?' }} {{ bill.currency }},
+              due {{ bill.due_date }}
+              {% if bill.due_date < today %}<strong class="hot">(late)</strong>{% endif %}
+            </div>
+            <div class="head-actions">
+              <a class="button secondary btn-sm" href="{{ url_for('bills.edit', bill_id=bill.id) }}" data-vi="Sửa" data-en="Edit">Edit</a>
+              <form method="post" action="{{ url_for('bills.mark_paid', bill_id=bill.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="paid" value="1" />
+                <button class="button btn-sm" type="submit" data-vi="✓ Đánh dấu đã trả (Mark paid)" data-en="Mark paid">Mark paid</button>
+              </form>
+            </div>
+          </li>
         {% endfor %}
       </ul>
     </div>
   {% endif %}
 
-  {% if totals %}
-    <div class="card">
-      <h2>Spent (confirmed receipts)</h2>
-      <ul>{% for row in totals %}<li>{{ row.total }} {{ row.currency }} <span class="muted">({{ row.count }} bills)</span></li>{% endfor %}</ul>
+  {# Khối 4: Thanh tìm kiếm và lọc hóa đơn trên máy chủ (GET /bills/) #}
+  <form method="get" action="{{ url_for('bills.list_bills') }}" class="search filter-bar card compact-card" aria-label="Tìm kiếm và lọc hóa đơn">
+    <div class="filter-search-wrap">
+      <label for="bills-q-input" class="sr-only">Search shop, invoice number, notes</label>
+      <input
+        id="bills-q-input"
+        type="search"
+        name="q"
+        value="{{ q }}"
+        placeholder="Search shop, invoice number, notes"
+        aria-label="Search shop, invoice number, notes"
+      />
     </div>
-  {% endif %}
+    <div class="filter-selects">
+      <label for="bills-kind-select" class="sr-only">Kind</label>
+      <select id="bills-kind-select" name="kind" aria-label="Kind">
+        <option value="" data-vi="Tất cả loại chứng từ (All kinds)" data-en="All kinds">All kinds</option>
+        {% for k in kinds %}
+          <option value="{{ k }}" {% if k == kind %}selected{% endif %}>{{ k.replace('_', ' ') }}</option>
+        {% endfor %}
+      </select>
 
-  <form method="get" class="card">
-    <input type="search" name="q" value="{{ q }}" placeholder="Search shop, invoice number, notes" />
-    <select name="kind">
-      <option value="">All kinds</option>
-      {% for k in kinds %}<option value="{{ k }}" {% if k == kind %}selected{% endif %}>{{ k.replace('_', ' ') }}</option>{% endfor %}
-    </select>
-    <select name="category">
-      <option value="">All categories</option>
-      {% for c in categories %}<option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>{% endfor %}
-    </select>
-    <select name="status">
-      <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>Saved</option>
-      <option value="archived" {% if status == 'archived' %}selected{% endif %}>Archived</option>
-    </select>
-    <button class="button secondary" type="submit">Filter</button>
+      <label for="bills-cat-select" class="sr-only">Category</label>
+      <select id="bills-cat-select" name="category" aria-label="Category">
+        <option value="" data-vi="Tất cả danh mục (All categories)" data-en="All categories">All categories</option>
+        {% for c in categories %}
+          <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="bills-status-select" class="sr-only">Status</label>
+      <select id="bills-status-select" name="status" aria-label="Status">
+        <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %} data-vi="Đã lưu (Saved)" data-en="Saved">Saved</option>
+        <option value="archived" {% if status == 'archived' %}selected{% endif %} data-vi="Đã lưu trữ (Archived)" data-en="Archived">Archived</option>
+      </select>
+
+      <button class="button secondary" type="submit" data-vi="Lọc (Filter)" data-en="Filter">Filter</button>
+      {% if q or kind or category or status != 'confirmed' %}
+        <a class="button secondary btn-sm" href="{{ url_for('bills.list_bills') }}" data-vi="Đặt lại" data-en="Reset">Reset</a>
+      {% endif %}
+    </div>
   </form>
 
+  {# Khối 5: Bảng danh sách hóa đơn #}
   {% if items %}
-    <table class="card">
-      <thead><tr><th>Date</th><th>Shop / card</th><th>Total</th><th>Category</th><th></th></tr></thead>
-      <tbody>
-        {% for bill in items %}
+    <div class="scope-notice muted small-text">
+      <span>
+        <strong data-vi="Phạm vi hiển thị:" data-en="Showing scope:">Phạm vi hiển thị:</strong>
+        {{ items|length }} / {{ pages.total }} chứng từ (Page {{ pages.page }} of {{ pages.pages }})
+        {% if q %} · Từ khóa: <code>{{ q }}</code>{% endif %}
+        {% if kind %} · Loại: <code>{{ kind }}</code>{% endif %}
+        {% if category %} · Danh mục: <code>{{ category }}</code>{% endif %}
+      </span>
+    </div>
+
+    <div class="table-scroll">
+      <table class="card">
+        <thead>
           <tr>
-            <td>{{ bill.transaction_date or bill.invoice_date or bill.due_date or '—' }}</td>
-            <td>{{ bill.merchant }}{% if bill.kind == 'card_bill' %} <span class="muted">(card bill{% if bill.paid_at %}, paid{% endif %})</span>{% endif %}</td>
-            <td>{{ bill.total if bill.total is not none else '—' }} {{ bill.currency }}</td>
-            <td>{{ bill.category }}</td>
-            <td>
-              <a href="{{ url_for('bills.edit', bill_id=bill.id) }}">Edit</a>
-              {% if bill.document_id %}· <a href="{{ url_for('bills.download', document_id=bill.document_id) }}">File</a>{% endif %}
-              <form method="post" action="{{ url_for('bills.restore' if status == 'archived' else 'bills.archive', bill_id=bill.id) }}" style="display:inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button class="button btn-sm secondary" type="submit">{{ 'Restore' if status == 'archived' else 'Archive' }}</button>
-              </form>
-            </td>
+            <th data-vi="Ngày" data-en="Date">Date</th>
+            <th data-vi="Đơn vị bán / Thẻ" data-en="Shop / card">Shop / card</th>
+            <th data-vi="Tổng tiền" data-en="Total">Total</th>
+            <th data-vi="Danh mục" data-en="Category">Category</th>
+            <th data-vi="Nguồn" data-en="Source">Source</th>
+            <th data-vi="Thao tác" data-en="Actions">Actions</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for bill in items %}
+            <tr>
+              <td class="num-cell">
+                <strong>{{ bill.transaction_date or bill.invoice_date or bill.due_date or '—' }}</strong>
+                {% if bill.transaction_time %}
+                  <small class="block-small muted">{{ bill.transaction_time.strftime('%H:%M') }}{% if bill.timezone %} ({{ bill.timezone }}){% endif %}</small>
+                {% endif %}
+              </td>
+              <td>
+                <strong>{{ bill.merchant }}</strong>
+                {% if bill.card_last4 %}<span class="pill">···{{ bill.card_last4 }}</span>{% endif %}
+                {% if bill.kind == 'card_bill' %}
+                  <span class="muted">(card bill{% if bill.paid_at %}, paid{% endif %})</span>
+                {% endif %}
+                {% if bill.branch or bill.invoice_number %}
+                  <small class="block-small muted">
+                    {% if bill.branch %}{{ bill.branch }}{% endif %}
+                    {% if bill.branch and bill.invoice_number %} · {% endif %}
+                    {% if bill.invoice_number %}#{{ bill.invoice_number }}{% endif %}
+                  </small>
+                {% endif %}
+              </td>
+              <td class="num-cell">
+                <strong>{{ bill.total if bill.total is not none else '—' }} {{ bill.currency }}</strong>
+              </td>
+              <td><span class="pill">{{ bill.category }}</span></td>
+              <td>
+                {% if bill.source == 'upload' %}
+                  <span class="pill mint" data-vi="Từ tệp tải lên" data-en="From file">upload</span>
+                {% else %}
+                  <span class="pill" data-vi="Nhập tay" data-en="Typed manually">manual</span>
+                {% endif %}
+              </td>
+              <td class="actions-cell">
+                <a href="{{ url_for('bills.edit', bill_id=bill.id) }}" data-vi="Sửa (Edit)" data-en="Edit">Edit</a>
+                {% if bill.document_id %}
+                  · <a href="{{ url_for('bills.download', document_id=bill.document_id) }}" data-vi="Tệp gốc (File)" data-en="File">File</a>
+                {% endif %}
+                {% if bill.kind == 'card_bill' and bill.paid_at %}
+                  <form method="post" action="{{ url_for('bills.mark_paid', bill_id=bill.id) }}" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="paid" value="0" />
+                    <button class="button btn-sm secondary" type="submit" data-vi="Hoàn tác đã trả" data-en="Mark unpaid">Mark unpaid</button>
+                  </form>
+                {% endif %}
+                <form method="post" action="{{ url_for('bills.restore' if status == 'archived' else 'bills.archive', bill_id=bill.id) }}" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button class="button btn-sm secondary" type="submit">{{ 'Restore' if status == 'archived' else 'Archive' }}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
     {% if pages.pages > 1 %}
-      <p>
-        {% if pages.has_prev %}<a href="{{ url_for('bills.list_bills', page=pages.prev_num, q=q, kind=kind, category=category, status=status) }}">← Newer</a>{% endif %}
-        Page {{ pages.page }} of {{ pages.pages }}
-        {% if pages.has_next %}<a href="{{ url_for('bills.list_bills', page=pages.next_num, q=q, kind=kind, category=category, status=status) }}">Older →</a>{% endif %}
-      </p>
+      <nav class="pager card compact-card" aria-label="Phân trang hóa đơn">
+        {% if pages.has_prev %}
+          <a class="button secondary btn-sm" href="{{ url_for('bills.list_bills', page=pages.prev_num, q=q, kind=kind, category=category, status=status) }}">← Newer</a>
+        {% endif %}
+        <span class="pager-info">Page {{ pages.page }} of {{ pages.pages }}</span>
+        {% if pages.has_next %}
+          <a class="button secondary btn-sm" href="{{ url_for('bills.list_bills', page=pages.next_num, q=q, kind=kind, category=category, status=status) }}">Older →</a>
+        {% endif %}
+      </nav>
     {% endif %}
   {% else %}
-    <p>No bills here yet.</p>
+    <div class="card empty-state-box">
+      <p><strong>No bills here yet.</strong></p>
+      <p class="muted small-text" data-vi="Chưa có hóa đơn hoặc sao kê thẻ nào khớp điều kiện. Hãy tải tệp lên ở khung phía trên hoặc bấm '+ Nhập hóa đơn thủ công'." data-en="Upload a receipt image/PDF/DOCX above or click 'Type a bill in without a file' to add your first bill.">
+        Chưa có hóa đơn hoặc sao kê thẻ nào khớp điều kiện. Hãy tải tệp lên ở khung phía trên hoặc bấm <strong>+ Nhập hóa đơn thủ công</strong>.
+      </p>
+    </div>
   {% endif %}
 
-  <p>Download your saved bills:
-    <a href="{{ url_for('bills.export', fmt='json') }}">JSON</a> ·
-    <a href="{{ url_for('bills.export', fmt='csv') }}">CSV</a> ·
-    <a href="{{ url_for('bills.export', fmt='md') }}">Markdown</a></p>
+  {# Khối 6: Xuất toàn bộ hóa đơn đã xác nhận (JSON / CSV formula-safe / Markdown) #}
+  <div class="card compact-card export-scope-bar">
+    <div>
+      <strong class="small-text" data-vi="Xuất toàn bộ hóa đơn đã xác nhận trong tài khoản (Download your saved bills)" data-en="Download your saved bills (All confirmed bills in your account)">
+        Download your saved bills
+      </strong>
+      <p class="muted small-text" data-vi="Bao gồm mọi hóa đơn ở trạng thái Đã lưu (confirmed) của riêng bạn. Các trường trống được xuất là null (không bao giờ tự bịa giờ 00:00). Tệp CSV đã được khử công thức độc hại (Excel formula-safe)." data-en="Exports all confirmed bills in your account. Unknown fields stay null (never fake 00:00 times). CSV is sanitized against spreadsheet formula injection.">
+        Bao gồm mọi hóa đơn ở trạng thái Đã lưu (<code>confirmed</code>) của riêng bạn. Các trường trống được xuất là <code>null</code> (không tự bịa giờ <code>00:00</code>). Tệp CSV đã được bảo vệ chống công thức độc hại (formula-safe).
+      </p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary btn-sm" href="{{ url_for('bills.export', fmt='json') }}">JSON</a>
+      <a class="button secondary btn-sm" href="{{ url_for('bills.export', fmt='csv') }}">CSV</a>
+      <a class="button secondary btn-sm" href="{{ url_for('bills.export', fmt='md') }}">Markdown</a>
+    </div>
+  </div>
 {% endblock %}
