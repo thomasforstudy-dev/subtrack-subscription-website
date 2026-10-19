@@ -12,6 +12,7 @@ from sqlalchemy import or_
 from app import db
 from app.link_preview import fetch_preview, icon_url
 from app.models import Link
+from app.security import safe_next_url
 from app.validation import escape_like
 
 # cli_group=None: the command is "flask fill-link-fingerprints".
@@ -102,7 +103,25 @@ def toggle_pin(link_id: int):
     link = _own_link_or_404(link_id)
     link.is_pinned = not link.is_pinned
     db.session.commit()
-    return redirect(request.referrer or url_for("links.list_links"))
+    return redirect(back_to_links())
+
+
+def back_to_links() -> str:
+    """Go back to the list the user was on (keeping ?q= / ?tag=), but never to
+    another website: the Referer header can be faked, so only its path is
+    used, and only when it is our own links page."""
+    wanted = safe_next_url(request.form.get("next"))
+    if wanted is None and request.referrer:
+        try:
+            ref = urlparse(request.referrer)
+        except ValueError:
+            ref = None
+        if ref is not None and ref.netloc == request.host:
+            wanted = safe_next_url(ref.path + (f"?{ref.query}" if ref.query else ""))
+    list_path = url_for("links.list_links")
+    if wanted and wanted.split("?")[0] == list_path:
+        return wanted
+    return list_path
 
 
 @bp.route("/<int:link_id>/delete", methods=["POST"])
@@ -158,10 +177,16 @@ def url_fingerprint(url: str) -> str:
     """The same page written differently gets the same fingerprint:
     http/https, "www.", a trailing "/", "#section" and tracking tags are ignored.
     "https://www.Example.com/a/?utm_source=x#top" == "http://example.com/a"."""
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError:
+        # A broken address saved before links were checked: still give it a
+        # stable fingerprint instead of crashing the page or the start-up.
+        return hashlib.sha256(url.strip().lower().encode()).hexdigest()
     host = (parts.hostname or "").lower().removeprefix("www.")
-    if parts.port and parts.port not in (80, 443):
-        host += f":{parts.port}"
+    if port and port not in (80, 443):
+        host += f":{port}"
     query = sorted(
         (key, value)
         for key, value in parse_qsl(parts.query, keep_blank_values=True)
@@ -197,13 +222,20 @@ def normalize_url(raw: str) -> tuple[str, str | None]:
         return "", "That doesn't look like a web link (it should start with http:// or https://)."
     if "://" not in url:
         url = "https://" + url
-    parsed = urlparse(url)
-    # Only allow real web links. This blocks things like "javascript:" links,
-    # which could run code when clicked.
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        return "", "That doesn't look like a web link (it should start with http:// or https://)."
     if len(url) > 2048:
         return "", "That link is too long (max 2048 characters)."
+    if any(ch.isspace() or ord(ch) < 32 for ch in url):
+        return "", "A web link can't contain spaces. Please check it."
+    try:
+        parsed = urlparse(url)
+        parsed.port  # raises ValueError for "site.com:abc" or a port above 65535
+    except ValueError:
+        # Also "https://[broken" (a half-written IPv6 address).
+        return "", "That link has a mistake in it. Please check the address and port number."
+    # Only allow real web links. This blocks things like "javascript:" links,
+    # which could run code when clicked.
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return "", "That doesn't look like a web link (it should start with http:// or https://)."
     return url, None
 
 

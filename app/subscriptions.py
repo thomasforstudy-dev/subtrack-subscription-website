@@ -9,6 +9,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import or_
 
 from app import db
+from app.dashboard import active_subscriptions, projected_totals
 from app.links import normalize_url
 from app.models import Renewal, Subscription
 from app.schedule import local_now
@@ -56,8 +57,10 @@ def list_subscriptions():
     )
     return render_template(
         "subscriptions/list.html",
-        items=pages.items,
-        pages=pages,
+        items=pages.items,  # only this page, after search/filter
+        pages=pages,  # pages.total = how many match the search/filter
+        # Whole-account totals per currency: the same on every page and filter.
+        totals=projected_totals(active_subscriptions(current_user)),
         status=status,
         sort=sort,
         q=q,
@@ -87,7 +90,7 @@ def create():
 def edit(item_id: int):
     item = own_or_404(item_id)
     if request.method == "POST":
-        values, error = read_form(request.form)
+        values, error = read_form(request.form, item)
         if error:
             flash(error)
             return render_template("subscriptions/form.html", item=item, form=request.form)
@@ -134,8 +137,37 @@ def own_or_404(item_id: int) -> Subscription:
     return Subscription.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
 
 
-def read_form(form) -> tuple[dict, str | None]:
+def raw_values(form, item: Subscription | None) -> dict:
+    """The text to check for each field.
+
+    Editing: a field that isn't in the form at all keeps its saved value
+    (a simpler form must not wipe "14,7,3" or the manage link). A field that
+    IS in the form but empty means the user cleared it on purpose.
+    """
+    if item is not None:
+        start = {
+            "name": item.name, "amount": str(item.amount), "currency": item.currency,
+            "cycle": item.cycle, "next_renewal_at": item.next_renewal_at.isoformat(),
+            "lead_days": item.lead_days, "manage_url": item.manage_url, "notes": item.notes,
+        }
+    else:
+        start = {
+            "name": "", "amount": "0", "currency": "USD", "cycle": "monthly",
+            "next_renewal_at": "", "lead_days": "7", "manage_url": "", "notes": "",
+        }
+    raw = {field: form[field] if field in form else saved for field, saved in start.items()}
+    # Older forms send one "remind_days" number instead of "lead_days".
+    if "lead_days" not in form and "remind_days" in form:
+        legacy = form["remind_days"].strip()
+        unchanged = item is not None and legacy == str(item.remind_days)
+        if not unchanged:  # a new number replaces the list; the same number keeps 14,7,3
+            raw["lead_days"] = legacy
+    return raw
+
+
+def read_form(form, item: Subscription | None = None) -> tuple[dict, str | None]:
     """Check every field. Returns (clean values, None) or ({}, a friendly error)."""
+    form = raw_values(form, item)
     name = (form.get("name") or "").strip()
     if not 1 <= len(name) <= 120:
         return {}, "Please give it a name (up to 120 characters)."
@@ -159,8 +191,7 @@ def read_form(form) -> tuple[dict, str | None]:
     if not date(2000, 1, 1) <= renewal <= date(2100, 12, 31):
         return {}, "That renewal date looks wrong. Please check the year."
 
-    # "lead_days" is the new field ("14, 7, 3"); old forms send one "remind_days".
-    leads = parse_leads(form.get("lead_days") or form.get("remind_days") or "7")
+    leads = parse_leads(form.get("lead_days") or "7")  # empty box = the default, 7 days
     if leads is None:
         return {}, f"Remind me: up to {MAX_LEADS} numbers of days from 0 to 365, like 14, 7, 3."
 

@@ -24,19 +24,22 @@ HISTORY_DAYS = 60
 CENT = Decimal("0.01")
 
 
-def summary(user) -> dict:
-    today = local_now(user.timezone).date()
-    active = (
+def active_subscriptions(user) -> list[Subscription]:
+    return (
         Subscription.query.filter_by(user_id=user.id, status="active")
         .order_by(Subscription.next_renewal_at, Subscription.id)
         .all()
     )
 
+
+def projected_totals(active: list[Subscription]) -> list[dict]:
+    """One row per currency over ALL active subscriptions of the account
+    (never just the page of the list that is showing)."""
     projected = defaultdict(lambda: {"count": 0, "monthly": Decimal(0)})
     for sub in active:
         projected[sub.currency]["count"] += 1
         projected[sub.currency]["monthly"] += monthly_equivalent(sub.amount, sub.cycle)
-    totals = [
+    return [
         {
             "currency": currency,
             "count": row["count"],
@@ -46,6 +49,11 @@ def summary(user) -> dict:
         for currency, row in sorted(projected.items())
     ]
 
+
+def summary(user) -> dict:
+    today = local_now(user.timezone).date()
+    active = active_subscriptions(user)
+    totals = projected_totals(active)
     upcoming = [s for s in active if s.next_renewal_at <= today + timedelta(days=UPCOMING_DAYS)]
     expected = (
         Renewal.query.filter_by(user_id=user.id)

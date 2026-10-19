@@ -239,4 +239,7 @@ class Link(db.Model):
 
     @property
     def hostname(self) -> str:
-        return urlparse(self.url).netloc
+        try:
+            return urlparse(self.url).netloc
+        except ValueError:  # a broken address saved before links were checked
+            return ""

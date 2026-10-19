@@ -2,7 +2,7 @@
 
 from zoneinfo import available_timezones
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
@@ -39,3 +39,18 @@ def show():
         flash("Settings saved.")
         return redirect(url_for("settings.show"))
     return render_template("settings.html", zones=ZONES, channels=CHANNELS)
+
+
+@bp.route("/settings.json")
+@login_required
+def as_json():
+    """The saved settings, for pages that show them in a panel. They live on
+    the server (reminders use them), not in the browser. Change them with
+    POST /settings."""
+    return jsonify(
+        timezone=current_user.timezone,
+        reminders_enabled=current_user.reminders_enabled,
+        reminder_hour=current_user.reminder_hour,
+        channels=current_user.channel_list,
+        available_channels=list(CHANNELS),
+    )
