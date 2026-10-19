@@ -77,7 +77,8 @@
         {% for bill in items %}
           <tr>
             <td>{{ bill.transaction_date or bill.invoice_date or bill.due_date or '—' }}</td>
-            <td>{{ bill.merchant }}{% if bill.kind == 'card_bill' %} <span class="muted">(card bill{% if bill.paid_at %}, paid{% endif %})</span>{% endif %}</td>
+            <td>{{ bill.merchant }}{% if bill.kind == 'card_bill' %} <span class="muted">(card bill{% if bill.paid_at %}, paid{% endif %})</span>{% endif %}
+              {% for problem in checks.get(bill.id, []) %}<br /><span class="muted">Please check: {{ problem }}</span>{% endfor %}</td>
             <td>{{ bill.total if bill.total is not none else '—' }} {{ bill.currency }}</td>
             <td>{{ bill.category }}</td>
             <td>
