@@ -1,0 +1,2 @@
+# Keep the complete upstream library local; do not embed another Git repository.
+/agentic-awesome-skills/
