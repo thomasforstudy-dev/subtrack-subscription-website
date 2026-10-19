@@ -3,9 +3,10 @@
     <div class="flash-wrap" role="alert" aria-live="polite">
       <ul class="flash">
         {% for category, message in messages %}
-          <li class="flash-item flash-{{ category or 'info' }}">
+          {% set is_warn = category in ['warning', 'warn'] or message.startswith('Please check:') %}
+          <li class="flash-item flash-{{ 'warning' if is_warn else (category or 'info') }}" {% if is_warn %}data-flash-warning="true"{% endif %}>
             <span class="flash-icon" aria-hidden="true">
-              {% if category in ['error', 'danger'] %}⚠{% elif category == 'success' %}✓{% else %}ℹ{% endif %}
+              {% if category in ['error', 'danger'] or is_warn %}⚠{% elif category == 'success' %}✓{% else %}ℹ{% endif %}
             </span>
             <span>{{ message }}</span>
           </li>
