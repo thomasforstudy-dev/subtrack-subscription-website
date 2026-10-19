@@ -1,4 +1,5 @@
 import os
+import secrets
 from pathlib import Path
 
 import click
@@ -16,7 +17,8 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 
-EXPECTED_TABLES = {"users", "subscriptions", "reminder_logs", "links"}
+EXPECTED_TABLES = {"users", "subscriptions", "reminder_logs", "links", "auth_tokens"}
+DEV_SECRET = "dev-only-change-me"
 
 
 def safe_link(url: str) -> str:
@@ -25,11 +27,36 @@ def safe_link(url: str) -> str:
     return url if url.startswith("https://") else ""
 
 
+def secret_key(production: bool) -> str:
+    """The key that signs login cookies. Anyone who knows it can fake a login,
+    so the live site refuses to start with a missing, short or sample key."""
+    key = os.getenv("SECRET_KEY", "").strip()
+    if production and (len(key) < 32 or key == DEV_SECRET):
+        raise RuntimeError(
+            "SECRET_KEY in .env is missing or too short. Make one with: "
+            "python -c \"import secrets; print(secrets.token_hex(32))\" "
+            "(or set APP_ENV=development for testing on this PC)."
+        )
+    return key or DEV_SECRET
+
+
 def create_app() -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-only-change-me")
+    # Anything except APP_ENV=development counts as the live site.
+    production = os.getenv("APP_ENV", "production").strip().lower() != "development"
+    app.config["SECRET_KEY"] = secret_key(production)
+    app.config.update(
+        # Login cookies: JavaScript can't read them, other sites' forms don't
+        # get them, and on the live site they only travel over HTTPS.
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=production,
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SAMESITE="Lax",
+        REMEMBER_COOKIE_SECURE=production,
+    )
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url(app.instance_path)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     # Test each pooled connection before use, so the app recovers by itself
@@ -43,7 +70,18 @@ def create_app() -> Flask:
 
     @login_manager.user_loader
     def load_user(user_id: str):
-        return db.session.get(User, int(user_id))
+        # The cookie holds "id:fingerprint" (see User.get_id). An old
+        # fingerprint means the password changed, so that login has ended.
+        raw_id, _, key = user_id.partition(":")
+        user = db.session.get(User, int(raw_id)) if raw_id.isdigit() else None
+        if user is not None and secrets.compare_digest(user.session_key, key):
+            return user
+        return None
+
+    from app.security import check_csrf, csrf_token
+
+    app.before_request(check_csrf)
+    app.jinja_env.globals["csrf_token"] = csrf_token
 
     from app.admin import bp as admin_bp
     from app.auth import bp as auth_bp
@@ -72,10 +110,13 @@ def create_app() -> Flask:
         }
 
     with app.app_context():
-        # SQL Server tables come from database/01_schema.sql.
-        # The SQLite test file creates its own tables.
+        # SQL Server tables come from the numbered scripts in database/.
+        # SQLite makes its own tables, then adds columns that older files lack.
         if db.engine.dialect.name == "sqlite":
+            from app.migrate import upgrade_sqlite
+
             db.create_all()
+            upgrade_sqlite(db.engine)
 
     @app.cli.command("check-db")
     def check_db():
@@ -100,7 +141,7 @@ def create_app() -> Flask:
         if missing:
             click.secho(
                 f"Connected, but tables are missing: {', '.join(sorted(missing))}. "
-                "Run database/01_schema.sql in SSMS.",
+                "Run the scripts in database/ (01_schema.sql, 02_accounts.sql, ...) in SSMS.",
                 fg="yellow",
             )
             raise SystemExit(1)

@@ -23,10 +23,11 @@ def test_every_page_has_subby(client, user):
 
 
 def test_auth_pages_render(client):
-    for url in ["/login", "/register"]:
+    for url in ["/login", "/register", "/forgot-password"]:
         res = client.get(url)
         assert res.status_code == 200
-        assert 'name="email"' in res.get_data(as_text=True)
+        assert 'name="csrf_token"' in res.get_data(as_text=True)
+    assert 'name="identifier"' in client.get("/login").get_data(as_text=True)
 
 
 def test_contact_buttons_use_https_links_only(client, monkeypatch):

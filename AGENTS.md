@@ -31,7 +31,10 @@ helper, and install a Chrome extension for reminders.
 | `app/__init__.py` | Creates the app, registers pages, `flask check-db` command |
 | `app/config.py` | Reads `.env`, picks SQL Server or SQLite |
 | `app/models.py` | Database tables as Python classes |
-| `app/auth.py` | Sign up / log in / log out |
+| `app/auth.py` | Sign up / log in / log out, confirm email, reset password |
+| `app/security.py`, `app/validation.py` | CSRF, real visitor IP, rate limits, safe redirects; username/password rules |
+| `app/mailer.py`, `app/tokens.py` | Sending email (Resend / file / test); one-time email links |
+| `docs/CONTRACT.md` | **Routes and form field names the UI may rely on** |
 | `app/subscriptions.py` | Subscription pages |
 | `app/links.py`, `app/link_preview.py` | Pinned links + automatic page titles |
 | `app/admin.py` | Admin user list |

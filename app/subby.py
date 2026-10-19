@@ -6,10 +6,11 @@ built-in answer list (static/subby.js).
 """
 
 import os
-import time
 
 import requests
 from flask import Blueprint, jsonify, request
+
+from app.security import RateLimiter, client_ip
 
 bp = Blueprint("subby", __name__, url_prefix="/subby")
 
@@ -21,22 +22,25 @@ MAX_HISTORY = 6  # earlier messages sent along, so follow-up questions make sens
 LIMIT_PER_HOUR = 30  # questions per visitor, to protect the free Gemini quota
 
 FACTS = """
-SubTrack is a website that tracks your subscriptions and reminds you by email
-before they renew, so you can renew or cancel in time.
-- Sign up with email + password, or with Google or GitHub. Signing up is free.
+SubTrack is a website that tracks your subscriptions so you can renew or
+cancel in time. Reminder emails before each renewal are being built and are
+not being sent yet.
+- Sign up with a username, email + password, or with Google or GitHub. Signing
+  up is free. You can reset a forgotten password by email.
 - Add a subscription: name, price, currency, cycle (weekly, monthly or yearly),
   next renewal date, how many days before to remind you, and notes.
   You can edit or archive it later.
-- Reminder emails arrive before the renewal date. Each subscription has its own
-  "remind days before" number, for example 14, 7 or 3.
-- Credit card payments: add the card's payment due date like a subscription to
-  get the same early reminder.
+- Each subscription already has its own "remind days before" number (for
+  example 14, 7 or 3); reminder emails will use it once they are switched on.
+- Credit card payments: add the card's payment due date like a subscription,
+  so it gets the same early reminder once reminders are switched on.
 - Pinned links: save any http/https link, the page title fills in by itself,
   add tags and notes, search them, and pin important ones to the top.
   Good for cancel pages, billing pages and support chats.
 - SubTrack cannot cancel subscriptions for you, cannot see your bank, cannot
   give refunds, and never asks for card numbers or passwords.
-- Coming soon: Google Calendar buttons, a Chrome extension, voice chat.
+- Coming soon: reminder emails, a dashboard, Google Calendar buttons, a Chrome
+  extension, voice chat.
 """
 
 
@@ -60,25 +64,8 @@ Facts:
 {FACTS}"""
 
 
-# Visitor -> times they asked recently. Kept in memory: it resets when the
-# server restarts, which is fine for a simple limit.
-_asked: dict[str, list[float]] = {}
-
-
-def visitor_id() -> str:
-    # Behind Cloudflare every request comes from 127.0.0.1, so use the
-    # visitor's real address that Cloudflare passes along.
-    return request.headers.get("CF-Connecting-IP") or request.remote_addr or "?"
-
-
-def over_limit(visitor: str) -> bool:
-    now = time.time()
-    recent = [t for t in _asked.get(visitor, []) if now - t < 3600]
-    over = len(recent) >= LIMIT_PER_HOUR
-    if not over:
-        recent.append(now)
-    _asked[visitor] = recent
-    return over
+# Kept in memory: it resets when the server restarts, which is fine for a simple limit.
+questions = RateLimiter(LIMIT_PER_HOUR, 3600)
 
 
 def clean_history(raw) -> list[dict]:
@@ -138,7 +125,7 @@ def ask():
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
         return jsonify(answer=None, reason="not-set-up"), 503
-    if over_limit(visitor_id()):
+    if not questions.hit(client_ip()):
         return jsonify(answer="Whoa, that's a lot of questions! Give me a little break and try again later.", handoff=False), 429
 
     try:

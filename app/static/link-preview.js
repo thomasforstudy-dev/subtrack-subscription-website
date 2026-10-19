@@ -19,7 +19,11 @@ document.querySelectorAll("form[data-link-preview]").forEach((form) => {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          // The server refuses POSTs without this (CSRF protection).
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || "",
+        },
         body: new URLSearchParams({ url }),
       });
       if (!res.ok) return;

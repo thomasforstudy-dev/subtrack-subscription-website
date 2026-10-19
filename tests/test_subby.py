@@ -24,8 +24,8 @@ class FakeGemini:
 
 
 @pytest.fixture(autouse=True)
-def fresh_limits(monkeypatch):
-    subby._asked.clear()
+def gemini_key(monkeypatch):
+    # (conftest.py clears the question limit before every test.)
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     monkeypatch.delenv("GEMINI_MODEL", raising=False)
 
@@ -100,4 +100,34 @@ def test_busy_model_falls_back_to_next(client, monkeypatch):
     monkeypatch.setattr(subby.requests, "post", fake_post)
     assert ask(client).get_json()["answer"] == "From the backup."
     assert tried == ["busy-model", "backup-model"]
+
+
+def ask_from(client, remote, header_ip):
+    return client.post(
+        "/subby/ask",
+        json={"question": "hi"},
+        headers={"CF-Connecting-IP": header_ip},
+        environ_base={"REMOTE_ADDR": remote},
+    )
+
+
+def test_limit_counts_real_visitors_behind_cloudflare(client, monkeypatch):
+    monkeypatch.setattr(subby.requests, "post", FakeGemini("ok"))
+    # Through the tunnel (from 127.0.0.1), each CF-Connecting-IP is its own visitor.
+    for _ in range(subby.LIMIT_PER_HOUR):
+        ask_from(client, "127.0.0.1", "198.51.100.1")
+    assert ask_from(client, "127.0.0.1", "198.51.100.1").status_code == 429
+    assert ask_from(client, "127.0.0.1", "198.51.100.2").status_code == 200
+
+
+def test_fake_cloudflare_header_is_ignored(client, monkeypatch):
+    monkeypatch.setattr(subby.requests, "post", FakeGemini("ok"))
+    # Not from a trusted proxy: a made-up header can't dodge the limit.
+    for n in range(subby.LIMIT_PER_HOUR):
+        ask_from(client, "203.0.113.9", f"198.51.100.{n}")
+    assert ask_from(client, "203.0.113.9", "198.51.100.200").status_code == 429
+
+
+def test_facts_dont_promise_reminders_that_arent_sent_yet():
+    assert "not being sent yet" in subby.FACTS
 

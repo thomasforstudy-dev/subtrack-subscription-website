@@ -3,7 +3,7 @@
 {% block content %}
   <h1>Pinned links</h1>
 
-  <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}">
+  <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <input name="url" placeholder="Paste a link…" required aria-label="Link" />
     <input name="title" placeholder="Title (auto-filled)" aria-label="Title" />
     <input name="tags" placeholder="Tags, e.g. school, tools" aria-label="Tags" />
@@ -29,7 +29,7 @@
     <ul class="links">
       {% for link in items %}
         <li class="{% if link.is_pinned %}pinned{% endif %}">
-          <form class="inline pin" method="post" action="{{ url_for('links.toggle_pin', link_id=link.id) }}">
+          <form class="inline pin" method="post" action="{{ url_for('links.toggle_pin', link_id=link.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <button type="submit" title="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}" aria-label="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}">{{ '★' if link.is_pinned else '☆' }}</button>
           </form>
           <div class="link-body">
@@ -44,7 +44,7 @@
           </div>
           <div class="link-actions">
             <a href="{{ url_for('links.edit', link_id=link.id) }}">Edit</a>
-            <form class="inline" method="post" action="{{ url_for('links.delete', link_id=link.id) }}">
+            <form class="inline" method="post" action="{{ url_for('links.delete', link_id=link.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
               <button type="submit">Delete</button>
             </form>
           </div>

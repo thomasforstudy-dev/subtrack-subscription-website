@@ -3,7 +3,7 @@
 {% block content %}
   <h1>{% if item %}Edit{% else %}Add{% endif %} link</h1>
   <div class="card">
-    <form method="post" action="{{ url_for('links.edit', link_id=item.id) if item else url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}">
+    <form method="post" action="{{ url_for('links.edit', link_id=item.id) if item else url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="form" value="full" />
       <label>Link <input name="url" required value="{{ form.get('url', item.url if item else '') }}" /></label>
       <label>Title <input name="title" placeholder="Leave empty to fill in automatically" value="{{ form.get('title', item.title if item else '') }}" /></label>
