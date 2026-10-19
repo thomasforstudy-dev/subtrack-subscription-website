@@ -1,47 +1,109 @@
-{# Subby, the help bot. Questions go to /subby/ask (Gemini, see app/subby.py). #}
+{# Subby, trợ lý hướng dẫn. Câu hỏi gửi tới /subby/ask (xem app/subby.py).
+   Thiết kế provider-agnostic (hỗ trợ Gemini hiện tại và Phi-3.5-mini về sau). #}
 {% set face %}<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="13" r="1.6" fill="currentColor" stroke="none"/><path d="M19 12.5l3 1.5-3 1.5"/><path d="M10 20c3.5 3 8.5 3 12 0"/></svg>{% endset %}
-<div class="subby" data-subby data-ask-url="{{ url_for('subby.ask') }}">
-  <p class="subby-teaser" data-teaser>Confused? Ask me. I promise I'm funnier than your bank.</p>
+<div class="subby" data-subby data-ask-url="{{ url_for('subby.ask') }}" data-new-sub-url="{{ url_for('subscriptions.create') }}">
+  <p class="subby-teaser" data-teaser data-vi="Cần hỗ trợ? Hỏi Subby nhé — vui tính hơn thông báo trừ tiền ngân hàng!" data-en="Confused? Ask me. I promise I'm funnier than your bank.">
+    Cần hỗ trợ? Hỏi Subby nhé — vui tính hơn thông báo trừ tiền ngân hàng!
+  </p>
 
-  <section class="subby-panel" id="subby-panel" role="dialog" aria-label="Chat with Subby" hidden>
+  <section class="subby-panel" id="subby-panel" role="dialog" aria-modal="false" aria-label="Trò chuyện với trợ lý Subby" hidden>
     <header class="subby-head">
-      <span class="subby-avatar">{{ face }}</span>
-      <div>
-        <p class="subby-name">Subby</p>
-        <p class="subby-status">Online · answers by Gemini AI</p>
+      <span class="subby-avatar" data-subby-avatar>{{ face }}</span>
+      <div class="subby-head-info">
+        <div class="subby-title-row">
+          <p class="subby-name">Subby</p>
+          <span class="subby-provider-pill" data-provider-badge title="Giao diện độc lập mô hình (Provider-agnostic: dùng API máy chủ hiện tại, không báo online giả khi mô hình chưa kết nối)">AI / FAQ</span>
+        </div>
+        <p class="subby-status" data-subby-status data-vi="Sẵn sàng · Trả lời qua máy chủ AI hoặc FAQ có sẵn" data-en="Ready · Server AI or built-in FAQ">
+          Sẵn sàng · Trả lời qua máy chủ AI hoặc FAQ có sẵn
+        </p>
       </div>
-      <button class="subby-close" type="button" data-close aria-label="Close chat">×</button>
+      <button class="subby-close" type="button" data-close aria-label="Đóng cửa sổ chat">×</button>
     </header>
 
     <div class="subby-toggles">
-      <label><input type="checkbox" data-fun checked /> Fun mode 😜</label>
-      <label title="Coming soon"><input type="checkbox" disabled /> Read aloud (soon)</label>
+      <label>
+        <input type="checkbox" data-fun checked />
+        <span data-vi="Chế độ vui nhộn 😜" data-en="Fun mode 😜">Chế độ vui nhộn 😜</span>
+      </label>
+      <div class="tts-controls">
+        <label title="Chỉ đọc khi bạn bật — không tự phát tiếng bất ngờ">
+          <input type="checkbox" data-tts-auto />
+          <span data-vi="Tự đọc câu trả lời" data-en="Auto read aloud">Tự đọc câu trả lời</span>
+        </label>
+        <button type="button" class="tts-stop-btn" data-tts-stop hidden aria-label="Dừng đọc âm thanh" data-vi="⏹ Dừng đọc" data-en="⏹ Stop">⏹ Dừng đọc</button>
+      </div>
     </div>
 
     <div class="subby-log" data-log aria-live="polite"></div>
 
-    <div class="subby-chips">
-      <button type="button" data-ask>How do reminders work?</button>
-      <button type="button" data-ask>How do I add Netflix?</button>
-      <button type="button" data-ask>What are pinned links?</button>
-      <button type="button" data-ask>Can you cancel for me?</button>
+    {# Thanh trạng thái thu âm giọng nói (chỉ hiện khi người dùng bấm Mic) #}
+    <div class="subby-voice-bar" data-voice-bar hidden role="status" aria-live="polite">
+      <div class="voice-wave" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="voice-info">
+        <strong data-voice-state data-vi="Đang nghe qua micro…" data-en="Listening via microphone…">Đang nghe qua micro…</strong>
+        <small class="muted" data-voice-preview data-vi="Nói câu hỏi của bạn, sau đó kiểm tra văn bản trước khi gửi." data-en="Speak your question, then review the transcript before sending.">
+          Nói câu hỏi của bạn, sau đó kiểm tra văn bản trước khi gửi.
+        </small>
+      </div>
+      <div class="voice-actions">
+        <button type="button" class="chip on" data-voice-stop data-vi="Dừng & Xem chữ" data-en="Stop & Review">Dừng & Xem chữ</button>
+        <button type="button" class="chip" data-voice-cancel data-vi="Hủy" data-en="Cancel">Hủy</button>
+      </div>
+    </div>
+
+    <div class="subby-chips" aria-label="Câu hỏi gợi ý">
+      <button type="button" data-ask data-vi="Lời nhắc hoạt động thế nào?" data-en="How do reminders work?">Lời nhắc hoạt động thế nào?</button>
+      <button type="button" data-ask data-vi="Cách thêm gói Netflix?" data-en="How do I add Netflix?">Cách thêm gói Netflix?</button>
+      <button type="button" data-ask data-vi="Link đã ghim dùng làm gì?" data-en="What are pinned links?">Link đã ghim dùng làm gì?</button>
+      <button type="button" data-ask data-vi="App có tự hủy gói giúp tôi không?" data-en="Can you cancel for me?">App có tự hủy gói giúp tôi không?</button>
     </div>
 
     <form class="subby-input" data-form>
-      <input name="q" maxlength="300" autocomplete="off" placeholder="Ask Subby anything…" aria-label="Your question" />
-      <button type="button" data-mic aria-label="Talk to Subby (coming soon)" title="Voice is coming soon">
+      <input
+        name="q"
+        maxlength="300"
+        autocomplete="off"
+        placeholder="Nhập câu hỏi (hoặc bấm mic để nói)…"
+        aria-label="Câu hỏi của bạn"
+      />
+      <button
+        type="button"
+        class="mic-btn"
+        data-mic
+        aria-label="Nói câu hỏi bằng giọng nói (chỉ bật mic khi bạn bấm)"
+        aria-pressed="false"
+        title="Bấm để nói câu hỏi (chỉ xin quyền micro khi bạn chọn)"
+      >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
       </button>
-      <button class="send" type="submit" aria-label="Send">
+      <button class="send" type="submit" aria-label="Gửi câu hỏi">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2-7z"/></svg>
       </button>
     </form>
 
-    {# Copied into the chat when Subby can't answer. #}
+    {# Thẻ xác nhận thao tác khi người dùng yêu cầu thêm/sửa gói hoặc lời nhắc #}
+    <template data-action-card>
+      <div class="subby-action-card" role="region" aria-label="Xác nhận thao tác dữ liệu">
+        <span class="pill sun-label" data-vi="Cần bạn xác nhận thao tác" data-en="Action confirmation required">Cần bạn xác nhận thao tác</span>
+        <strong data-action-title>Đề xuất tạo / cập nhật lời nhắc gói đăng ký</strong>
+        <p class="muted small-text" data-action-detail></p>
+        <p class="small-text action-warn" data-vi="⚠ Lưu ý: Phản hồi văn bản của trợ lý AI chưa tự động ghi vào cơ sở dữ liệu. Hãy bấm nút bên dưới để mở biểu mẫu và lưu xác nhận từ máy chủ." data-en="⚠ Note: AI chat replies do not mutate database records directly. Click below to open the form and save on the server.">
+          ⚠ Lưu ý: Phản hồi văn bản của trợ lý AI chưa tự động ghi vào cơ sở dữ liệu. Hãy bấm nút bên dưới để mở biểu mẫu và lưu xác nhận từ máy chủ.
+        </p>
+        <div class="handoff-buttons">
+          <a class="button btn-sm" data-action-confirm-link href="{{ url_for('subscriptions.create') }}" data-vi="Mở biểu mẫu xác nhận" data-en="Open form to confirm">Mở biểu mẫu xác nhận</a>
+          <button type="button" class="button secondary btn-sm" data-action-dismiss data-vi="Đóng" data-en="Dismiss">Đóng</button>
+        </div>
+      </div>
+    </template>
+
+    {# Thẻ chuyển tiếp liên hệ chủ sở hữu — chỉ hiện kênh đã cấu hình hợp lệ trong .env #}
     <template data-handoff>
       <div class="handoff">
-        <strong>Talk to the owner 👋</strong>
-        {# Only show the apps the owner has set up in .env. #}
+        <strong data-vi="Liên hệ trực tiếp với chủ sở hữu 👋" data-en="Talk to the owner 👋">Liên hệ trực tiếp với chủ sở hữu 👋</strong>
         {% if contact.messenger or contact.zalo %}
           <div class="handoff-buttons">
             {% if contact.messenger %}
@@ -51,13 +113,17 @@
               <a class="button zalo" href="{{ contact.zalo }}" target="_blank" rel="noopener noreferrer">Zalo</a>
             {% endif %}
           </div>
-          <p class="muted">Usually replies within a few hours.</p>
+          <p class="muted" data-vi="Chỉ mở ứng dụng khi bạn bấm chọn (không tự động gửi lịch sử trò chuyện)." data-en="Opens only when clicked (chat history is never sent automatically).">
+            Chỉ mở ứng dụng khi bạn bấm chọn (không tự động gửi lịch sử trò chuyện).
+          </p>
         {% else %}
-          <p class="muted">Contact links aren't set up yet. Please check back soon!</p>
+          <p class="muted" data-vi="Kênh liên hệ trực tiếp hiện chưa được cấu hình. Vui lòng thử lại sau!" data-en="Contact links aren't set up yet. Please check back soon!">
+            Kênh liên hệ trực tiếp hiện chưa được cấu hình. Vui lòng thử lại sau!
+          </p>
         {% endif %}
       </div>
     </template>
   </section>
 
-  <button class="subby-fab" type="button" data-open aria-controls="subby-panel" aria-expanded="false" aria-label="Ask Subby for help">{{ face }}</button>
+  <button class="subby-fab" type="button" data-open aria-controls="subby-panel" aria-expanded="false" aria-label="Hỏi trợ lý Subby">{{ face }}</button>
 </div>

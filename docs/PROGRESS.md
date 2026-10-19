@@ -50,6 +50,11 @@ Things one lane needs from another. Delete a line when it's done.
 
 - Backend lane (later): help bot "Subby" — Gemini answers, voice in/out (browser speech), hand-off to owner via Messenger/Zalo. Designs: `docs/design/subby-*.png`.
 - Claude/backend: review `docs/reviews/2026-10-19-quality-baseline.md` (R1–R8); strict expected-failure tests reproduce admin bootstrap, missing CSRF, invalid renewal date and signup-policy gaps. Coordinate CSRF/form and capability-copy changes with Antigravity.
+- Claude/backend (from Antigravity UI lane):
+  1. **Accounts (`claude/accounts` merge)**: Templates (`base.html`, `register.html`, `login.html`, `forgot.html`, `reset.html`, `verify.html`) are dual-compatible (`{% if csrf_token is defined %}`) and ready for `csrf_token()`, `username`, `identifier` on `/login`, `POST /logout`, `/forgot-password`, `/reset-password/<token>`, `/verify-email/<token>`, and `POST /resend-verification`.
+  2. **Archived Subscriptions Restore**: Add `archived_items` to `subscriptions/list.html` context and `POST /subscriptions/<id>/restore` so users can restore archived subscriptions.
+  3. **Bills / OCR & Credit Card Statements**: Connect `#bill-review-form` (`subscriptions/_bills_section.html`) to backend OCR upload (`POST /bills/upload`, max 10 MB / 5 pages, PNG/JPG/WEBP/PDF) and confirmation (`POST /bills/<id>/confirm`), plus credit-card statement persistence for `#credit-cards`.
+  4. **Gmail Invoice OAuth**: Separate OAuth scope/route (`/settings/gmail/connect` & `/settings/gmail/disconnect`) for `#settings` Gmail invoice reader (kept strictly separate from Google login).
 
 ## Log
 
@@ -70,3 +75,4 @@ Newest at the bottom. One line each: `date — tool — what changed`.
 - 2026-10-15 — Claude — Gemini key created (project gen-lang-client-0817360794), backup model when Gemini is busy. Google sign-in uses new project subtrack-login-3365. Keys live in .env only.
 - 2026-10-19 — codex — Archived 2,712 AAS skills in local skill-library/ (not activated; upstream clone Git-ignored), added Vietnamese guide and 19 skill recommendations for UI/UX, Python/PyTorch, backend/frontend and SQL; limited pytest discovery to application tests; 46 tests passed.
 - 2026-10-19 — Codex — On `codex/quality-baseline`, reviewed GitHub `af63951` (main only, no open PRs or Actions runs), prepared Windows/Ubuntu Python 3.14 CI, isolated tests from .env/external connections (including the dotenv 1.1.1 loader), and added subscription/user-isolation/config/reminder-log checks: 68 passed, 4 strict expected failures remain for Claude; findings/handoff in `docs/reviews/2026-10-19-quality-baseline.md`. SQL Server and hosted CI unverified; no push/deploy/training.
+- 2026-10-19 — Antigravity — On `antigravity/ui-ux`, completed Sections 1–7 UI/UX overhaul (`landing.html/css/js`, `base.html`, `auth/*.html`, `subscriptions/*.html`, `links/*.html`, `_subby.html`, `subby.js`, `link-preview.js`, `app-ui.js`, `style.css`, `favicon.svg`, `icon-192.svg`, `manifest.webmanifest`), captured before/after synthetic viewport screenshots in `docs/design/`, and wrote handoff report `docs/reviews/2026-10-19-ui-ux-handoff.md` (68 passed, 4 xfailed).

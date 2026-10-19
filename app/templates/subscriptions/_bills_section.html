@@ -1,0 +1,381 @@
+{# Section 5: Bills / Document Review & Transactions (UI prepared with explicit Demo badge until backend route lands) #}
+<section id="bills" class="workspace-section" aria-labelledby="bills-heading">
+  <div class="section-head">
+    <div>
+      <div class="section-badges">
+        <span class="pill sun-label" data-vi="Chế độ Demo giao diện — Chờ kết nối API Hóa đơn" data-en="UI Demo Mode — Awaiting Bills Backend API">Chế độ Demo giao diện — Chờ kết nối API Hóa đơn</span>
+        <span class="pill" data-vi="AI đề xuất — người dùng kiểm tra" data-en="AI suggested — human verified">AI đề xuất — người dùng kiểm tra</span>
+      </div>
+      <h2 id="bills-heading" data-vi="Hóa đơn & Kiểm tra chứng từ giao dịch" data-en="Bills & Document Review">Hóa đơn & Kiểm tra chứng từ giao dịch</h2>
+      <p class="muted" data-vi="Tải lên ảnh chụp hoặc PDF hóa đơn để trích xuất các trường giao dịch, đối chiếu từng dòng với tài liệu gốc trước khi xác nhận." data-en="Upload receipt images or PDFs to extract transaction fields and verify each line item against the original document.">
+        Tải lên ảnh chụp hoặc PDF hóa đơn để trích xuất các trường giao dịch, đối chiếu từng dòng với tài liệu gốc trước khi xác nhận.
+      </p>
+    </div>
+  </div>
+
+  {# 1. Khối Upload & Progress từng bước #}
+  <div class="card upload-card">
+    <div class="upload-top">
+      <div>
+        <h3 class="card-title" data-vi="1. Tải lên ảnh hoặc PDF hóa đơn" data-en="1. Upload receipt image or PDF">1. Tải lên ảnh hoặc PDF hóa đơn</h3>
+        <p class="muted small-text" data-vi="Định dạng hỗ trợ: PNG, JPG, WEBP, PDF (tối đa 10 MB, 5 trang mỗi lần tải). Lưu ý: Không hỗ trợ trực tiếp tệp DOCX/DOC hoặc bảng tính Office." data-en="Supported: PNG, JPG, WEBP, PDF (max 10 MB, up to 5 pages). Note: DOCX/DOC Office files are not supported for OCR.">
+          Định dạng hỗ trợ: <strong>PNG, JPG, WEBP, PDF</strong> (tối đa 10 MB, 5 trang mỗi lần tải).
+          <span class="office-note">Lưu ý: Tệp DOCX/DOC chưa hỗ trợ OCR trực tiếp — vui lòng xuất sang PDF hoặc ảnh trước khi tải lên.</span>
+        </p>
+      </div>
+      <div class="state-switcher" role="group" aria-label="Xem thử các bước xử lý hóa đơn">
+        <span class="muted small-text" data-vi="Trạng thái bước đọc:" data-en="Step state:">Trạng thái bước đọc:</span>
+        <button type="button" class="chip" data-bill-step="upload" data-vi="1. Đang tải" data-en="1. Uploading">1. Đang tải</button>
+        <button type="button" class="chip" data-bill-step="ocr" data-vi="2. Đang đọc OCR" data-en="2. Reading OCR">2. Đang đọc OCR</button>
+        <button type="button" class="chip on" data-bill-step="review" data-vi="3. Chờ duyệt (Demo)" data-en="3. Ready to review (Demo)">3. Chờ duyệt (Demo)</button>
+        <button type="button" class="chip" data-bill-step="error" data-vi="⚠ Lỗi & Thử lại" data-en="⚠ Error & Retry">⚠ Lỗi & Thử lại</button>
+      </div>
+    </div>
+
+    <div class="upload-dropzone" id="bill-dropzone">
+      <input
+        type="file"
+        id="bill-file-input"
+        accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf"
+        aria-describedby="bill-file-help"
+      />
+      <label for="bill-file-input" class="dropzone-label">
+        <span class="dropzone-icon" aria-hidden="true">📄</span>
+        <strong id="bill-file-name" data-vi="Chọn tệp Ảnh (PNG/JPG/WEBP) hoặc PDF hóa đơn (Tối đa 10 MB · 5 trang)" data-en="Choose PNG/JPG/WEBP image or PDF receipt (Max 10 MB · 5 pages)">
+          Chọn tệp Ảnh (PNG/JPG/WEBP) hoặc PDF hóa đơn (Tối đa 10 MB · 5 trang)
+        </strong>
+        <span id="bill-file-help" class="muted small-text" data-vi="Khi backend /bills sẵn sàng, tệp sẽ được kiểm tra dung lượng và số trang trên máy chủ." data-en="Once the /bills backend endpoint is connected, file size and page count are validated on the server.">
+          Khi backend <code>/bills</code> sẵn sàng, tệp sẽ được kiểm tra dung lượng và số trang trên máy chủ.
+        </span>
+      </label>
+    </div>
+
+    {# Thanh tiến trình 4 bước #}
+    <ol class="bill-steps" id="bill-stepper" data-current-step="review" aria-label="Tiến trình xử lý chứng từ">
+      <li class="step done" data-step-item="upload">
+        <span class="step-num">1</span>
+        <div>
+          <strong data-vi="Tải tệp lên" data-en="Upload file">Tải tệp lên</strong>
+          <small class="muted" data-vi="Kiểm tra loại file & dung lượng" data-en="Validate format & size">Kiểm tra loại file & dung lượng</small>
+        </div>
+      </li>
+      <li class="step done" data-step-item="ocr">
+        <span class="step-num">2</span>
+        <div>
+          <strong data-vi="Đọc chứng từ (OCR)" data-en="Read document (OCR)">Đọc chứng từ (OCR)</strong>
+          <small class="muted" data-vi="Tách văn bản & bảng từng trang" data-en="Extract text & tables per page">Tách văn bản & bảng từng trang</small>
+        </div>
+      </li>
+      <li class="step done" data-step-item="suggest">
+        <span class="step-num">3</span>
+        <div>
+          <strong data-vi="AI đề xuất trường" data-en="AI field suggestion">AI đề xuất trường</strong>
+          <small class="muted" data-vi="Gợi ý đơn vị, ngày, thuế, tổng tiền" data-en="Suggest merchant, date, tax, total">Gợi ý đơn vị, ngày, thuế, tổng tiền</small>
+        </div>
+      </li>
+      <li class="step current" data-step-item="review">
+        <span class="step-num">4</span>
+        <div>
+          <strong data-vi="Chờ bạn duyệt" data-en="Awaiting your review">Chờ bạn duyệt</strong>
+          <small class="muted" data-vi="Kiểm tra & sửa trước khi lưu" data-en="Verify & edit before saving">Kiểm tra & sửa trước khi lưu</small>
+        </div>
+      </li>
+    </ol>
+
+    {# Khối báo lỗi & Thử lại có lý do rõ ràng #}
+    <div id="bill-step-error" class="status-banner danger" role="alert" hidden>
+      <div>
+        <strong data-vi="Không thể đọc hoàn chỉnh tệp vừa tải lên" data-en="Could not read the uploaded file completely">Không thể đọc hoàn chỉnh tệp vừa tải lên</strong>
+        <p id="bill-error-reason" class="muted" data-vi="Lý do: Tệp vượt quá giới hạn (10 MB / 5 trang) hoặc định dạng không phải PNG/JPG/WEBP/PDF, hoặc ảnh bị mờ không nhận diện được chữ." data-en="Reason: File exceeds limits (10 MB / 5 pages), unsupported format, or image is too blurry for OCR.">
+          Lý do: Tệp vượt quá giới hạn (10 MB / 5 trang) hoặc định dạng không phải PNG/JPG/WEBP/PDF, hoặc ảnh bị mờ không nhận diện được chữ.
+        </p>
+      </div>
+      <button type="button" class="button secondary btn-sm" data-bill-retry data-vi="Thử lại với tệp khác" data-en="Retry with another file">Thử lại với tệp khác</button>
+    </div>
+  </div>
+
+  {# 2. Màn Review: Desktop 2 cột (Nguồn trái / Trường & Markdown phải) · Mobile dùng Tab #}
+  <div class="card review-workspace" id="bill-review-workspace">
+    <div class="review-header">
+      <div>
+        <span class="pill sun-label" data-vi="AI đề xuất — cần kiểm tra (Dữ liệu mẫu Demo)" data-en="AI suggested — needs review (Demo data)">AI đề xuất — cần kiểm tra (Dữ liệu mẫu Demo)</span>
+        <h3 class="card-title" data-vi="2. Đối chiếu nguồn chứng từ & trường giao dịch" data-en="2. Verify source document & transaction fields">2. Đối chiếu nguồn chứng từ & trường giao dịch</h3>
+      </div>
+      {# Tab chuyển đổi trên Mobile (<= 900px) #}
+      <div class="mobile-review-tabs" role="tablist" aria-label="Chuyển cột xem hóa đơn trên điện thoại">
+        <button type="button" role="tab" aria-selected="true" class="chip on" data-review-tab="fields" data-vi="✏️ Trường giao dịch" data-en="✏️ Fields">✏️ Trường giao dịch</button>
+        <button type="button" role="tab" aria-selected="false" class="chip" data-review-tab="source" data-vi="📄 Tài liệu nguồn (2 trang)" data-en="📄 Source (2 pages)">📄 Tài liệu nguồn (2 trang)</button>
+        <button type="button" role="tab" aria-selected="false" class="chip" data-review-tab="markdown" data-vi="📝 Markdown" data-en="📝 Markdown">📝 Markdown</button>
+      </div>
+    </div>
+
+    {# Cảnh báo OCR thiếu trang / bị cắt góc — tuyệt đối không giấu #}
+    <div class="ocr-warning-banner" role="status">
+      <span class="ocr-warn-icon" aria-hidden="true">⚠</span>
+      <div>
+        <strong data-vi="Cảnh báo chất lượng OCR: Trang 2 bị cắt nhẹ ở mép dưới" data-en="OCR Warning: Bottom edge of Page 2 is partially cropped">Cảnh báo chất lượng OCR: Trang 2 bị cắt nhẹ ở mép dưới</strong>
+        <p class="muted small-text" data-vi="Trường 'Giờ giao dịch' và 'Địa chỉ chi nhánh' không hiển thị rõ trên ảnh gốc nên được để trống (Chưa xác định). Vui lòng kiểm tra trực tiếp trước khi xác nhận." data-en="'Transaction time' and 'Branch address' were unclear in the scan and left blank (Undetermined). Please verify before confirming.">
+          Trường <strong>Giờ giao dịch</strong> và <strong>Địa chỉ chi nhánh</strong> không hiển thị rõ trên ảnh gốc nên được để trống (<em>Chưa xác định</em>). Vui lòng kiểm tra trực tiếp trước khi xác nhận.
+        </p>
+      </div>
+    </div>
+
+    <div class="review-grid">
+      {# Cột trái: Nguồn tài liệu / từng trang #}
+      <div class="review-col source-col" data-review-pane="source">
+        <div class="source-toolbar">
+          <strong data-vi="Nguồn tài liệu (invoice-demo-2026.pdf)" data-en="Document source (invoice-demo-2026.pdf)">Nguồn tài liệu (invoice-demo-2026.pdf)</strong>
+          <div class="page-switcher" role="group" aria-label="Chuyển trang tài liệu">
+            <button type="button" class="chip on" data-doc-page="1" data-vi="Trang 1 / 2" data-en="Page 1 / 2">Trang 1 / 2</button>
+            <button type="button" class="chip" data-doc-page="2" data-vi="Trang 2 / 2 (Cắt mép)" data-en="Page 2 / 2 (Cropped)">Trang 2 / 2 (Cắt mép)</button>
+          </div>
+        </div>
+
+        <div class="source-viewport" id="doc-source-viewport">
+          {# Trang 1 #}
+          <div class="doc-page" data-page-content="1">
+            <p class="doc-page-tag">TRANG 1 / 2 · HÓA ĐƠN ĐIỆN TỬ (DEMO)</p>
+            <div class="source-block" data-source-anchor="merchant" tabindex="0">
+              <span class="source-line-label">Dòng 1–3 (Đơn vị phát hành)</span>
+              <p><strong>ADOBE SYSTEMS SOFTWARE IRELAND LTD</strong></p>
+              <p>Chi nhánh: Khu vực Đông Nam Á (SEA Digital Hub)</p>
+            </div>
+            <div class="source-block" data-source-anchor="date" tabindex="0">
+              <span class="source-line-label">Dòng 5 (Ngày chứng từ)</span>
+              <p>Invoice Date: <strong>2026-10-15</strong> · Time: <em>[Không rõ trên bản quét]</em></p>
+            </div>
+            <div class="source-block" data-source-anchor="items" tabindex="0">
+              <span class="source-line-label">Dòng 8–12 (Chi tiết mặt hàng)</span>
+              <p>1. Creative Cloud All Apps (100GB) — Qty: 1 × $54.54 = <strong>$54.54</strong></p>
+            </div>
+          </div>
+
+          {# Trang 2 #}
+          <div class="doc-page" data-page-content="2" hidden>
+            <p class="doc-page-tag">TRANG 2 / 2 · TỔNG KẾT THANH TOÁN (CẢNH BÁO CẮT MÉP DƯỚI)</p>
+            <div class="source-block" data-source-anchor="subtotal" tabindex="0">
+              <span class="source-line-label">Dòng 14–15 (Tạm tính & Thuế)</span>
+              <p>Subtotal (Chưa thuế): <strong>USD 54.54</strong></p>
+              <p>VAT / Tax (10%): <strong>USD 5.45</strong></p>
+            </div>
+            <div class="source-block" data-source-anchor="total" tabindex="0">
+              <span class="source-line-label">Dòng 18 (Tổng thanh toán)</span>
+              <p>GRAND TOTAL (TỔNG CỘNG): <strong>USD 59.99</strong></p>
+            </div>
+            <div class="source-block cropped-warning" data-source-anchor="address">
+              <span class="source-line-label">⚠ Vùng mép giấy bị cắt (Dòng 21+)</span>
+              <p>Địa chỉ chi tiết & Giờ giao dịch: <em>[Bị cắt góc ảnh — Chưa xác định]</em></p>
+            </div>
+          </div>
+        </div>
+        <p class="muted small-text" data-vi="💡 Mẹo: Bấm vào bất kỳ ô trường giao dịch nào ở cột phải để làm nổi bật đoạn nguồn tương ứng tại đây." data-en="💡 Tip: Click any transaction field on the right to highlight its source line and page here.">
+          💡 Mẹo: Bấm vào bất kỳ ô trường giao dịch nào ở cột phải để làm nổi bật đoạn nguồn tương ứng tại đây.
+        </p>
+      </div>
+
+      {# Cột phải: Các trường giao dịch & Markdown #}
+      <div class="review-col fields-col" data-review-pane="fields">
+        <div class="pane-switch-desktop" role="tablist" aria-label="Chế độ xem dữ liệu trích xuất">
+          <button type="button" class="chip on" data-right-mode="form" data-vi="Trường giao dịch (Có thể sửa)" data-en="Transaction fields (Editable)">Trường giao dịch (Có thể sửa)</button>
+          <button type="button" class="chip" data-right-mode="md" data-vi="Nội dung Markdown" data-en="Extracted Markdown">Nội dung Markdown</button>
+        </div>
+
+        <form id="bill-review-form" class="bill-fields-form" data-right-content="form">
+          <div class="form-row-2">
+            <div class="field-group">
+              <label for="bill-merchant" data-vi="Đơn vị bán (Merchant)" data-en="Merchant">Đơn vị bán (Merchant)</label>
+              <input id="bill-merchant" name="merchant" value="Adobe Systems Software" data-focus-source="merchant" data-focus-page="1" />
+            </div>
+            <div class="field-group">
+              <label for="bill-branch" data-vi="Chi nhánh" data-en="Branch">Chi nhánh</label>
+              <input id="bill-branch" name="branch" value="SEA Digital Hub" data-focus-source="merchant" data-focus-page="1" />
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="bill-address" data-vi="Địa chỉ (Để trống nếu chưa xác định)" data-en="Address (Blank if undetermined)">
+              Địa chỉ <span class="missing-badge" data-vi="Chưa xác định trên ảnh" data-en="Undetermined in scan">Chưa xác định trên ảnh</span>
+            </label>
+            <input id="bill-address" name="address" value="" placeholder="Chưa xác định — bị cắt ở mép dưới Trang 2" data-focus-source="address" data-focus-page="2" />
+          </div>
+
+          <div class="form-row-3">
+            <div class="field-group">
+              <label for="bill-date" data-vi="Ngày giao dịch" data-en="Date">Ngày giao dịch</label>
+              <input id="bill-date" type="date" name="transaction_date" value="2026-10-15" data-focus-source="date" data-focus-page="1" />
+            </div>
+            <div class="field-group">
+              <label for="bill-time" data-vi="Giờ (nếu có)" data-en="Time (if available)">
+                Giờ <span class="missing-badge" data-vi="Trống" data-en="Blank">Trống</span>
+              </label>
+              <input id="bill-time" type="text" name="transaction_time" value="" placeholder="Chưa xác định" data-focus-source="date" data-focus-page="1" />
+            </div>
+            <div class="field-group">
+              <label for="bill-category" data-vi="Ngành hàng" data-en="Category">Ngành hàng</label>
+              <select id="bill-category" name="category" data-focus-source="items" data-focus-page="1">
+                <option value="software" selected data-vi="Phần mềm & Đám mây" data-en="Software & Cloud">Phần mềm & Đám mây</option>
+                <option value="streaming" data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</option>
+                <option value="education" data-vi="Học tập & Nghiên cứu" data-en="Education">Học tập & Nghiên cứu</option>
+                <option value="utilities" data-vi="Hóa đơn tiện ích / Thẻ" data-en="Utilities & Card">Hóa đơn tiện ích / Thẻ</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-4">
+            <div class="field-group">
+              <label for="bill-currency" data-vi="Tiền tệ" data-en="Currency">Tiền tệ</label>
+              <input id="bill-currency" name="currency" value="USD" data-focus-source="total" data-focus-page="2" />
+            </div>
+            <div class="field-group">
+              <label for="bill-subtotal" data-vi="Tạm tính" data-en="Subtotal">Tạm tính</label>
+              <input id="bill-subtotal" name="subtotal" type="number" step="0.01" value="54.54" data-focus-source="subtotal" data-focus-page="2" />
+            </div>
+            <div class="field-group">
+              <label for="bill-tax" data-vi="Thuế (Tax)" data-en="Tax">Thuế (Tax)</label>
+              <input id="bill-tax" name="tax" type="number" step="0.01" value="5.45" data-focus-source="subtotal" data-focus-page="2" />
+            </div>
+            <div class="field-group">
+              <label for="bill-total" data-vi="Tổng cộng" data-en="Total">Tổng cộng</label>
+              <input id="bill-total" name="total" type="number" step="0.01" value="59.99" data-focus-source="total" data-focus-page="2" />
+            </div>
+          </div>
+
+          {# Bảng Line Items #}
+          <div class="line-items-box" data-focus-source="items" data-focus-page="1">
+            <strong class="small-label" data-vi="Danh sách mặt hàng (Line items)" data-en="Line items">Danh sách mặt hàng (Line items)</strong>
+            <div class="table-scroll">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th data-vi="Mặt hàng" data-en="Item">Mặt hàng</th>
+                    <th data-vi="SL" data-en="Qty">SL</th>
+                    <th data-vi="Đơn giá" data-en="Unit price">Đơn giá</th>
+                    <th data-vi="Thành tiền" data-en="Amount">Thành tiền</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input name="item_name_1" value="Creative Cloud All Apps (100GB)" aria-label="Tên mặt hàng 1" /></td>
+                    <td><input name="item_qty_1" type="number" value="1" aria-label="Số lượng 1" /></td>
+                    <td><input name="item_price_1" type="number" step="0.01" value="54.54" aria-label="Đơn giá 1" /></td>
+                    <td><strong>$54.54</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="review-actions">
+            <button type="button" class="button secondary" data-bill-action="draft" data-vi="Lưu nháp (Demo cục bộ)" data-en="Save draft (Local Demo)">Lưu nháp (Demo cục bộ)</button>
+            <button type="button" class="button" data-bill-action="confirm" data-vi="Xác nhận sau khi kiểm tra (Demo)" data-en="Confirm verified fields (Demo)">Xác nhận sau khi kiểm tra (Demo)</button>
+          </div>
+          <p id="bill-action-feedback" class="field-hint" role="status" aria-live="polite" hidden></p>
+        </form>
+
+        {# Khung xem Markdown trích xuất #}
+        <div class="markdown-preview" data-right-content="md" hidden>
+          <pre><code># HÓA ĐƠN GIAO DỊCH (AI ĐỀ XUẤT — CẦN KIỂM TRA)
+- **Đơn vị bán**: Adobe Systems Software (SEA Digital Hub)
+- **Địa chỉ**: *(Chưa xác định — mép dưới Trang 2 bị cắt)*
+- **Ngày giao dịch**: 2026-10-15 · **Giờ**: *(Chưa xác định)*
+- **Ngành hàng**: Phần mềm & Đám mây
+
+| Mặt hàng | SL | Đơn giá | Thành tiền |
+|---|---:|---:|---:|
+| Creative Cloud All Apps (100GB) | 1 | 54.54 USD | 54.54 USD |
+
+- **Tạm tính**: 54.54 USD
+- **Thuế (Tax)**: 5.45 USD
+- **Tổng cộng**: **59.99 USD**</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# 3. Danh sách giao dịch & Bộ lọc #}
+  <div class="card transactions-card">
+    <div class="section-head compact">
+      <div>
+        <h3 class="card-title" data-vi="3. Danh sách giao dịch & chứng từ" data-en="3. Transactions & bills list">3. Danh sách giao dịch & chứng từ</h3>
+        <p class="muted small-text" data-vi="Mặc định hiển thị trống trên tài khoản thật. Bật 'Xem dữ liệu mẫu Demo' để kiểm tra bộ lọc ngày, đơn vị bán, ngành hàng và trạng thái duyệt." data-en="Empty by default on real accounts. Toggle 'Show Demo Data' to test date, merchant, category, and status filters.">
+          Mặc định hiển thị trống trên tài khoản thật. Bật <strong>Xem dữ liệu mẫu Demo</strong> để kiểm tra bộ lọc ngày, đơn vị bán, ngành hàng và trạng thái duyệt.
+        </p>
+      </div>
+      <div class="tx-toolbar-actions">
+        <button type="button" class="chip" data-toggle-tx-demo aria-pressed="false" data-vi="🧪 Bật dữ liệu mẫu (Demo)" data-en="🧪 Show Demo Data">🧪 Bật dữ liệu mẫu (Demo)</button>
+      </div>
+    </div>
+
+    <div class="filter-bar" aria-label="Bộ lọc giao dịch">
+      <input type="search" id="tx-filter-merchant" placeholder="Tìm đơn vị bán (Merchant)…" aria-label="Tìm đơn vị bán" />
+      <input type="date" id="tx-filter-date" aria-label="Lọc theo ngày giao dịch" />
+      <select id="tx-filter-category" aria-label="Lọc theo ngành hàng">
+        <option value="all" data-vi="Tất cả ngành hàng" data-en="All categories">Tất cả ngành hàng</option>
+        <option value="software" data-vi="Phần mềm & Đám mây" data-en="Software & Cloud">Phần mềm & Đám mây</option>
+        <option value="streaming" data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</option>
+        <option value="utilities" data-vi="Thẻ & Tiện ích" data-en="Card & Utilities">Thẻ & Tiện ích</option>
+      </select>
+      <select id="tx-filter-status" aria-label="Lọc theo trạng thái duyệt">
+        <option value="all" data-vi="Tất cả trạng thái" data-en="All statuses">Tất cả trạng thái</option>
+        <option value="pending" data-vi="AI đề xuất — Chờ duyệt" data-en="AI suggested — Pending review">AI đề xuất — Chờ duyệt</option>
+        <option value="verified" data-vi="Đã kiểm tra (Demo)" data-en="Verified (Demo)">Đã kiểm tra (Demo)</option>
+      </select>
+    </div>
+
+    <div id="tx-real-empty" class="empty-state-box">
+      <p><strong data-vi="Chưa có hóa đơn / giao dịch nào được lưu trên máy chủ" data-en="No bills or transactions stored on the server yet">Chưa có hóa đơn / giao dịch nào được lưu trên máy chủ</strong></p>
+      <p class="muted small-text" data-vi="Tính năng lưu trữ hóa đơn và xuất Markdown/JSON/CSV từ cơ sở dữ liệu đang chờ backend mở route /bills. Bạn có thể bấm '🧪 Bật dữ liệu mẫu (Demo)' ở góc phải để kiểm tra giao diện lọc." data-en="Server storage and export endpoints for /bills are pending backend implementation. Click 'Show Demo Data' above to preview filtering.">
+        Tính năng lưu trữ hóa đơn và xuất Markdown/JSON/CSV từ cơ sở dữ liệu đang chờ backend mở route <code>/bills</code>. Bạn có thể bấm <strong>🧪 Bật dữ liệu mẫu (Demo)</strong> ở góc phải để kiểm tra giao diện lọc.
+      </p>
+    </div>
+
+    <div id="tx-demo-table-wrap" hidden>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th data-vi="Ngày" data-en="Date">Ngày</th>
+              <th data-vi="Đơn vị bán" data-en="Merchant">Đơn vị bán</th>
+              <th data-vi="Ngành hàng" data-en="Category">Ngành hàng</th>
+              <th data-vi="Tổng tiền" data-en="Total">Tổng tiền</th>
+              <th data-vi="Trạng thái" data-en="Status">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="tx-demo-tbody">
+            <tr data-tx-merchant="adobe systems software" data-tx-date="2026-10-15" data-tx-cat="software" data-tx-status="pending">
+              <td>2026-10-15</td>
+              <td><strong>Adobe Systems Software</strong> <span class="pill sun-label">Demo</span></td>
+              <td data-vi="Phần mềm & Đám mây" data-en="Software & Cloud">Phần mềm & Đám mây</td>
+              <td><strong>59.99 USD</strong></td>
+              <td><span class="pill sun-label" data-vi="AI đề xuất — cần kiểm tra" data-en="AI suggested — needs review">AI đề xuất — cần kiểm tra</span></td>
+            </tr>
+            <tr data-tx-merchant="netflix" data-tx-date="2026-10-10" data-tx-cat="streaming" data-tx-status="verified">
+              <td>2026-10-10</td>
+              <td><strong>Netflix</strong> <span class="pill sun-label">Demo</span></td>
+              <td data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</td>
+              <td><strong>260.000 VND</strong></td>
+              <td><span class="pill mint" data-vi="Đã kiểm tra (Mẫu Demo)" data-en="Reviewed (Demo)">Đã kiểm tra (Mẫu Demo)</span></td>
+            </tr>
+            <tr data-tx-merchant="spotify" data-tx-date="2026-10-05" data-tx-cat="streaming" data-tx-status="pending">
+              <td>2026-10-05</td>
+              <td><strong>Spotify AB</strong> <span class="pill sun-label">Demo</span></td>
+              <td data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</td>
+              <td><strong>59.000 VND</strong></td>
+              <td><span class="pill sun-label" data-vi="Thiếu giờ giao dịch — cần kiểm tra" data-en="Missing time — needs review">Thiếu giờ giao dịch — cần kiểm tra</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="export-bar">
+        <span class="muted small-text" data-vi="Xuất dữ liệu giao dịch (Chỉ bật chính thức khi backend hỗ trợ route xuất):" data-en="Export transactions (Enabled once backend supports export routes):">
+          Xuất dữ liệu giao dịch (Chỉ bật chính thức khi backend hỗ trợ route xuất):
+        </span>
+        <div class="chips small">
+          <button type="button" class="chip" disabled title="Chờ backend hỗ trợ route /bills/export">Export Markdown (Chờ backend)</button>
+          <button type="button" class="chip" disabled title="Chờ backend hỗ trợ route /bills/export">Export JSON (Chờ backend)</button>
+          <button type="button" class="chip" disabled title="Chờ backend hỗ trợ route /bills/export">Export CSV (Chờ backend)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

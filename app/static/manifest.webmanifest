@@ -1,0 +1,24 @@
+{
+  "name": "SubTrack — Quản lý gói đăng ký & nhắc hạn",
+  "short_name": "SubTrack",
+  "description": "Theo dõi gói đăng ký, hạn thẻ tín dụng, lưu link và kiểm tra hóa đơn trước khi gia hạn.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f1ff",
+  "theme_color": "#6d4aff",
+  "icons": [
+    {
+      "src": "/static/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-192.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

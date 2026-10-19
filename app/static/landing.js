@@ -1,44 +1,48 @@
 // Scroll story for the landing page. Plain JavaScript, no libraries.
-// The moving parts are in landing.css; this file only decides *when*.
+// Respects prefers-reduced-motion and remains readable if JS fails.
 (function () {
   const body = document.body;
   const chapters = document.querySelectorAll(".chapter");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // 1. Play a chapter's animation once, when its top passes 70% of the screen.
-  const appear = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("in-view");
-        entry.target.querySelectorAll("[data-count]").forEach(countUp);
-        appear.unobserve(entry.target);
-      });
-    },
-    { rootMargin: "0px 0px -30% 0px" }
-  );
-  chapters.forEach((chapter) => appear.observe(chapter));
+  // Ensure Chapter 1 is immediately marked in-view on load
+  const ch1 = document.getElementById("ch1");
+  if (ch1) ch1.classList.add("in-view");
 
-  // 2. Whichever chapter crosses the middle of the screen is "current":
-  //    light up its dot on the rail and switch the top bar dark/light.
-  const railDots = document.querySelectorAll("[data-rail]");
-  const current = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        body.dataset.theme = entry.target.dataset.theme;
-        railDots.forEach((dot) => {
-          dot.classList.toggle("on", dot.dataset.rail === entry.target.id);
+  if ("IntersectionObserver" in window && !reduceMotion) {
+    const appear = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("in-view");
+          entry.target.querySelectorAll("[data-count]").forEach(countUp);
+          appear.unobserve(entry.target);
         });
-      });
-    },
-    { rootMargin: "-50% 0px -50% 0px" }
-  );
-  chapters.forEach((chapter) => current.observe(chapter));
+      },
+      { rootMargin: "0px 0px -20% 0px" }
+    );
+    chapters.forEach((chapter) => appear.observe(chapter));
+
+    const railDots = document.querySelectorAll("[data-rail]");
+    const current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          body.dataset.theme = entry.target.dataset.theme;
+          railDots.forEach((dot) => {
+            dot.classList.toggle("on", dot.dataset.rail === entry.target.id);
+          });
+        });
+      },
+      { rootMargin: "-45% 0px -45% 0px" }
+    );
+    chapters.forEach((chapter) => current.observe(chapter));
+  } else {
+    chapters.forEach((chapter) => chapter.classList.add("in-view"));
+  }
   body.dataset.theme = "dark";
 
-  // 3. While scrolling: fill the phone progress bar, and let the rush cards
-  //    drift up at different speeds (feels like they're rushing past).
+  // Fill progress bar & drift cards gently while scrolling
   const rush = document.querySelector("[data-rush]");
   let ticking = false;
 
@@ -47,7 +51,7 @@
     const progress = page.scrollTop / (page.scrollHeight - page.clientHeight || 1);
     page.style.setProperty("--progress", progress.toFixed(4));
     if (rush && !reduceMotion) {
-      rush.style.setProperty("--drift", Math.min(window.scrollY, 1200).toFixed(0));
+      rush.style.setProperty("--drift", Math.min(window.scrollY, 900).toFixed(0));
     }
     ticking = false;
   }
@@ -64,7 +68,6 @@
   );
   onScroll();
 
-  // 4. Numbers count up (or down, with data-from) to their real value.
   function countUp(el) {
     const to = parseFloat(el.dataset.count);
     const from = parseFloat(el.dataset.from || "0");
@@ -77,23 +80,52 @@
       return;
     }
     const start = performance.now();
-    const duration = 1400;
+    const duration = 1100;
     function step(now) {
       const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3); // fast at first, then slows down
+      const eased = 1 - Math.pow(1 - t, 3);
       el.textContent = show(from + (to - from) * eased);
       if (t < 1) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
   }
 
-  // 5. Chapter 4: pick when the reminder email arrives.
+  // Chapter 4 interactive reminder day picker
   const daysText = document.querySelector("[data-days-text]");
   document.querySelectorAll(".when[data-days]").forEach((button) => {
     button.addEventListener("click", () => {
       document.querySelectorAll(".when[data-days]").forEach((b) => b.classList.remove("on"));
       button.classList.add("on");
-      daysText.textContent = button.dataset.days + " days";
+      const lang = document.documentElement.lang === "en" ? "en" : "vi";
+      if (daysText) {
+        daysText.textContent =
+          lang === "en"
+            ? button.dataset.daysLabelEn || button.dataset.days + " days"
+            : button.dataset.daysLabelVi || button.dataset.days + " ngày";
+      }
+    });
+  });
+
+  // Footer legal dialogs (About, Privacy, Terms)
+  document.querySelectorAll("[data-open-dialog]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const dialog = document.getElementById(btn.dataset.openDialog);
+      if (dialog && typeof dialog.showModal === "function") {
+        dialog.showModal();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-close-dialog]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const dialog = btn.closest("dialog");
+      if (dialog) dialog.close();
+    });
+  });
+
+  document.querySelectorAll("dialog.legal-dialog").forEach((dialog) => {
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
     });
   });
 })();
