@@ -52,27 +52,27 @@
   - Phát hiện đường dẫn trùng lặp ngay trên trình duyệt khi người dùng dán URL đã có trong danh sách, kèm nút **Mở sửa bản cũ**.
   - Hộp thoại `<dialog>` xác nhận trước khi xóa vĩnh viễn đường dẫn.
 
-### Phần 5: Hóa đơn, Chứng từ OCR & Giao dịch (`_bills_section.html`)
-- **Tệp cập nhật:** `app/templates/subscriptions/_bills_section.html`, `app/static/app-ui.js`, `app/static/style.css`
-- **Những gì đã hoàn thiện:**
-  - Đánh dấu trung thực `DEMO — Dữ liệu minh họa (Chưa kết nối OCR thật)` trên toàn bộ khu vực hóa đơn, và thu gọn các nút chuyển bước nội bộ vào ngăn `<details>` (`Chế độ xem thử cho nhà phát triển (Dev/QA Preview)`).
-  - Khu vực tải tệp hỗ trợ `PNG, JPG, WEBP, PDF` (tối đa 10 MB, 5 trang) và thông báo rõ không hỗ trợ trực tiếp tệp Office (`DOCX/DOC`).
-  - Màn hình đối chiếu 2 cột trên máy tính và tự động thu gọn thành **3 Tab** trên điện thoại (`✏️ Trường giao dịch`, `📄 Tài liệu nguồn`, `📝 Markdown`).
+### Phần 5: Hóa đơn, Sao kê thẻ, Tải tệp riêng tư & Kiểm tra chứng từ (`bills/list.html`, `bills/form.html`, `_bills_section.html`)
+- **Tệp cập nhật:** `app/templates/bills/list.html`, `app/templates/bills/form.html`, `app/templates/subscriptions/_bills_section.html`, `app/templates/dashboard.html`, `app/templates/base.html`
+- **Những gì đã hoàn thiện & kết nối Backend thật (`/bills/` — D slice 1):**
+  - Kết nối thanh điều hướng chính (`base.html`), thẻ Tổng quan (`dashboard.html`) và khu vực Hóa đơn (`subscriptions/_bills_section.html`) trực tiếp tới các route thật: `GET /bills/`, `GET/POST /bills/new`, `GET/POST /bills/<id>/edit`, `POST /bills/upload`, `GET /bills/files/<id>`, `POST /bills/<id>/paid`, `POST /bills/<id>/archive`, `POST /bills/<id>/restore`, và `GET /bills/export.json|.csv|.md`.
+  - **Trang danh sách `/bills/` (`app/templates/bills/list.html`)**: hiển thị khối tải tệp riêng tư (`PNG, JPG, WEBP, PDF ≤ 5 trang, DOCX ≤ 10 MB`), danh sách tệp chờ nhập (`Waiting to be typed in`), danh sách sao kê thẻ chờ thanh toán (`Card bills to pay` kèm nút `Mark paid`), tổng chi thực tế theo từng loại tiền tệ (`Spent — confirmed receipts` kiểu `Decimal`), bộ lọc máy chủ (`q`, `kind`, `category`, `status`), phân trang và thanh xuất toàn bộ hóa đơn đã xác nhận (`JSON`, `CSV formula-safe`, `Markdown`).
+  - **Trang nhập & đối chiếu `/bills/new` & `/bills/<id>/edit` (`app/templates/bills/form.html`)**: bố cục 2 cột đối chiếu trực tiếp bên cạnh ảnh hóa đơn đã tải lên (`?view=1` với `referrerpolicy="no-referrer"`, trong khi PDF/DOCX luôn ở chế độ chỉ tải xuống an toàn), giữ nguyên mọi giá trị đã gõ khi có lỗi xác thực (`form.get(...)`), không bao giờ hiển thị lại số thẻ đầy đủ (`card_last4` chỉ nhận 4 số cuối với `autocomplete="off"`), và giữ nguyên các trường không có trên hóa đơn ở trạng thái trống (`null`, không bao giờ tự điền giờ `00:00`).
+  - **Phân tách rõ phần Demo còn lại**: Khung mô phỏng đọc OCR tự động (`GOT-OCR`) trong `subscriptions/_bills_section.html` vẫn giữ nhãn `"Trích xuất OCR tự động: Chế độ xem trước (Demo)"` cho tới khi lát cắt OCR hoàn tất.
 
-### Phần 6: Trợ lý AI Subby — Chat, Giọng nói, Provider & Cloud Fallback
+### Phần 6: Trợ lý AI Subby — Chat, Account Tools, Giọng nói (Web Speech API), Provider & Cloud Fallback
 - **Tệp cập nhật:** `app/templates/_subby.html`, `app/static/subby.js`, `app/static/style.css`
 - **Những gì đã hoàn thiện:**
-  - Bảo toàn đầy đủ trường `provider` và `fallback` từ phản hồi `POST /subby/ask`.
-  - Khi `fallback: true`, hiển thị huy hiệu `☁️ Answered by a cloud model (Fallback)` và thông báo rõ ràng (`[data-cloud-fallback-note]`) rằng câu trả lời được tạo bởi mô hình đám mây dự phòng do mô hình chính đang ngoại tuyến hoặc bận.
-  - Phân biệt rõ trạng thái `fake` (môi trường kiểm thử), `not-set-up`, `model-offline`, `rate-limit`, và câu trả lời FAQ dựng sẵn.
-  - Hiển thị rõ 4 trạng thái giọng nói (`idle`, `listening`, `thinking`, `speaking`) và thẻ **Xác nhận thao tác** trước mọi hành động ghi dữ liệu.
+  - Bảo toàn đầy đủ trường `provider` và `fallback` từ phản hồi `POST /subby/ask`. Khi `fallback: true`, hiển thị huy hiệu `☁️ Answered by a cloud model` (`[data-cloud-fallback-note]`).
+  - **Account Tools (`list_upcoming_renewals`, `search_saved_links`, `summarize_transactions`, `create_reminder_draft`)**: dựng danh sách kết quả bằng DOM an toàn (`createElement` + `textContent`, không dùng `innerHTML`), gắn `rel="noopener noreferrer"` cho liên kết ngoài, hiển thị nút xác nhận **`Kiểm tra và lưu / Check and save`** mở `/subscriptions/new?...` cho bản nháp nhắc lịch, và không đẩy dữ liệu tài khoản riêng tư vào `history` gửi lên mô hình.
+  - **Chế độ Giọng nói (Browser Speech Voice Mode)**: xây dựng màn hình Voice Stage (`[data-voice-stage]`) theo đúng thiết kế Stitch (`docs/design/subby-voice-phone.png`), quản lý 4 trạng thái (`idle`, `listening`, `thinking`, `speaking`), **chỉ yêu cầu quyền micro sau khi người dùng chủ động bấm nút** (`[data-mic]` hoặc `[data-voice-orb]`), hỗ trợ đọc câu trả lời tiếng Việt / tiếng Anh (`speechSynthesis`), và giữ ô nhập bàn phím (`input[name="q"]`) luôn hoạt động song song.
 
-### Phần 7: Cài đặt lưu trên Máy chủ (`settings.html`), Gmail OAuth Prep, PWA Install & Xuất dữ liệu an toàn
-- **Tệp cập nhật:** `app/templates/settings.html`, `app/templates/subscriptions/_settings_section.html`, `app/static/favicon.svg`, `app/static/icon-192.svg`, `app/static/manifest.webmanifest`, `app/static/app-ui.js`
+### Phần 7: Cài đặt lưu trên Máy chủ (`settings.html`), Lịch gia hạn (`calendar/*.html`), Gmail OAuth Prep & PWA
+- **Tệp cập nhật:** `app/templates/settings.html`, `app/templates/calendar/index.html`, `app/templates/calendar/review.html`, `app/static/favicon.svg`, `app/static/icon-192.svg`, `app/static/manifest.webmanifest`, `app/static/app-ui.js`
 - **Những gì đã hoàn thiện:**
-  - Tạo trang `/settings` (`app/templates/settings.html`) gửi biểu mẫu `POST /settings` có `csrf_token`, lưu bền vững trên máy chủ các trường `timezone` (`datalist#zones`), `reminders_enabled`, `reminder_hour` (`0–23`), và `channels` (`email`, `browser`, `calendar`).
-  - Tách biệt rõ cài đặt lưu trên máy chủ với tùy chọn ngôn ngữ hiển thị cục bộ trên trình duyệt (`localStorage`).
-  - Xuất dữ liệu `.JSON` / `.CSV` ghi rõ phạm vi **các dòng đang hiển thị trên trang hiện tại** và làm sạch toàn bộ ô CSV chống lỗi **CSV Formula Injection** (`=`, `+`, `-`, `@`, `\t`, `\r`).
+  - Trang `/settings` (`app/templates/settings.html`) lưu bền vững trên máy chủ các trường `timezone`, `reminders_enabled`, `reminder_hour` (`0–23`), và `channels` (`email`), tách biệt hoàn toàn với tùy chọn ngôn ngữ hiển thị cục bộ (`localStorage`).
+  - Trang Lịch gia hạn (`/calendar/` và `/calendar/subscriptions/<id>`) chuẩn `DESIGN.md` v2: kết nối các liên kết kiểm tra Google Calendar thủ công (`Nothing is added until you review`) và tải tệp `.ics` cả ngày (`VALUE=DATE`), không lộ số tiền, ghi chú hay URL quản lý.
+  - Tệp `manifest.webmanifest` chỉ cung cấp biểu tượng cài đặt nhanh trên màn hình chính; ứng dụng không dùng Service Worker lưu đệm ngoại tuyến dùng chung cho hóa đơn hay dữ liệu tài khoản riêng tư (`Cache-Control: no-store, private`).
 
 ---
 
@@ -87,24 +87,11 @@
 
 ---
 
-## 3. Kết quả Chạy Kiểm thử Tự động (`pytest` & `probe-routes.py`)
+## 3. Phân định Rõ: Giao diện Đã Tích hợp · Kiểm thử Runtime · Demo / Phụ thuộc Bên ngoài
 
-1. **Trên nhánh `antigravity/ui-ux` (baseline):**
-```text
-.\.venv\Scripts\python.exe -m pytest -q
-68 passed, 4 xfailed in 6.78s
-```
+| Hạng mục | Trạng thái hiện tại | Chi tiết xác minh |
+|---|---|---|
+| **1. Giao diện Đã Tích hợp (Implemented & Integrated UI)** | **Hoạt động 100% với Backend thật** | Tài khoản (`/register`, `/login`, `POST /logout`, xác nhận email, đặt lại mật khẩu), Tổng quan (`/dashboard`, `/dashboard.json`), Gói đăng ký (`/subscriptions/`, `lead_days`, `manage_url`, bảo toàn `form` khi lỗi, tìm kiếm/lọc/sắp xếp/phân trang máy chủ, lưu trữ/khôi phục), Link đã lưu (`/links/`, `favicon_url` với `referrerpolicy="no-referrer"`), Cài đặt máy chủ (`/settings`, `/settings.json`), Lịch gia hạn & xuất `.ics` (`/calendar/*`), Trợ lý Subby (`/subby/ask`, 4 Account Tools, Cloud Fallback notice, Browser Speech Voice Mode), và Hóa đơn thủ công + Tải tệp riêng tư + Xuất chuẩn (`/bills/`, `/bills/new`, `/bills/<id>/edit`, `/bills/upload`, `/bills/files/<id>`, `/bills/export.json|.csv|.md`). |
+| **2. Kiểm thử Runtime Đã Chạy (Integrated Runtime Checks)** | **`346 passed` (0 failed, 0 xfailed)** | Chạy toàn bộ bộ kiểm thử hợp nhất trên Python 3.14.8 / SQLite (`test_auth.py`, `test_subscriptions.py`, `test_reminders.py`, `test_links.py`, `test_subby.py`, `test_subby_tools.py`, `test_review_repairs.py`, `test_ui_contracts.py`, `test_calendar.py`, `test_bills.py`, v.v.). |
+| **3. Phần Mô phỏng / Phụ thuộc Bên ngoài (Demos & External Dependencies)** | **Đánh dấu trung thực trên UI** | - **OCR tự động (`GOT-OCR`) & gắn nguồn từng dòng**: Khung đối chiếu tự động trong `subscriptions/_bills_section.html` giữ nhãn `Demo` cho tới khi lát cắt OCR của nhánh Backend hoàn tất (việc tải tệp thật và nhập đối chiếu thủ công bên cạnh tệp gốc tại `/bills/new?document_id=…` đã hoạt động thật).<br>- **Đồng bộ hóa đơn Gmail OAuth**: Đánh dấu rõ `Chuẩn bị UI (UI Preparation)` tại `/settings`.<br>- **Chrome Extension**: Đánh dấu rõ `Chưa phát hành (Unreleased)`.<br>- **PWA (`manifest.webmanifest`)**: Chỉ cung cấp biểu tượng màn hình chính, không lưu đệm dữ liệu riêng tư hay hóa đơn vào bộ nhớ dùng chung. |
 
-2. **Trên bản kết hợp (Combined Overlay: Backend `c33f88d` của Claude + `app/templates/` & `app/static/` của Antigravity):**
-```text
-.\.venv\Scripts\python.exe -m pytest -q
-184 passed in 25.81s
-```
-- `probe-routes.py`: Tất cả các trang (`/dashboard`, `/subscriptions/`, `/settings`, `/links/`, `/subscriptions/new`) trả về `200`, `edit_controls` có đủ `lead_days` và `manage_url`, và `edit_result` bảo toàn nguyên vẹn `lead_days: "14,7,3"` cùng `manage_url: "https://example.test/manage"`.
-
----
-
-## 4. Yêu cầu Bàn giao Còn lại cho Nhánh Backend (Claude / Codex)
-
-1. **API Hóa đơn OCR & Kỳ sao kê thẻ (Tương lai):** Kết nối `#bill-review-form` với endpoint tải tệp (`POST /bills/upload`) và lưu giao dịch đã duyệt (`POST /bills/<id>/confirm`), cùng bảng dữ liệu cho `#credit-cards`.
-2. **OAuth Gmail đọc hóa đơn (Tương lai):** Thêm route kết nối/ngắt kết nối OAuth riêng (`/settings/gmail/connect`, `/settings/gmail/disconnect`) tách biệt với đăng nhập Google.
