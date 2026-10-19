@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, flash, redirect, request, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
@@ -61,6 +61,9 @@ def create_app() -> Flask:
     )
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url(app.instance_path)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # Bill uploads are at most 10 MB; much bigger requests are refused before
+    # they are read (the page then says so, see too_big below).
+    app.config["MAX_CONTENT_LENGTH"] = 11 * 1024 * 1024
     # Test each pooled connection before use, so the app recovers by itself
     # if SQL Server restarts.
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
@@ -87,6 +90,7 @@ def create_app() -> Flask:
 
     from app.admin import bp as admin_bp
     from app.auth import bp as auth_bp
+    from app.bills import bp as bills_bp
     from app.calendar import bp as calendar_bp
     from app.dashboard import bp as dashboard_bp
     from app.links import bp as links_bp
@@ -107,7 +111,15 @@ def create_app() -> Flask:
     app.register_blueprint(admin_bp)
     app.register_blueprint(oauth_bp)
     app.register_blueprint(subby_bp)
+    app.register_blueprint(bills_bp)
     app.cli.add_command(send_reminders_command)
+
+    @app.errorhandler(413)
+    def too_big(error):
+        if request.path == "/bills/upload":
+            flash("That file is bigger than 10 MB. Please upload a smaller one.")
+            return redirect(url_for("bills.list_bills"))
+        return error
 
     @app.context_processor
     def contact_links():

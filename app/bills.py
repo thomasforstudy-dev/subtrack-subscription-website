@@ -1,0 +1,525 @@
+"""Bills: receipts and credit card bills, typed in or from an uploaded file.
+
+The flow today (no AI yet): upload a photo/PDF/Word file -> it's checked and
+stored privately -> the user types the bill in next to it -> saved.
+Later the OCR job will fill a draft first, and the user still checks it.
+
+Every query filters by the logged-in user. Nothing here deletes data:
+bills are archived, files are kept.
+"""
+
+import csv
+import io
+import json
+import re
+from datetime import date, time
+from decimal import Decimal, InvalidOperation
+from zoneinfo import available_timezones
+
+from flask import Blueprint, Response, flash, redirect, render_template, request, send_file, url_for
+from flask_login import current_user, login_required
+from sqlalchemy import func, or_
+from sqlalchemy.exc import IntegrityError
+
+from app import db
+from app.documents import IMAGES, MIME_TYPES, UploadError, clean_name, file_path, inspect, read_upload, save_file
+from app.models import Bill, BillLine, Document
+from app.schedule import local_now
+from app.subscriptions import parse_amount
+from app.validation import escape_like
+
+bp = Blueprint("bills", __name__, url_prefix="/bills")
+
+PER_PAGE = 20
+MAX_LINES = 30
+BLANK_LINES = 3  # empty rows the form shows for new items
+ZONES = available_timezones()
+TEXT_LIMITS = {"merchant": 200, "branch": 200, "address": 500, "invoice_number": 64, "notes": 2000}
+DATE_FIELDS = ("invoice_date", "transaction_date", "statement_start", "statement_end", "due_date")
+MONEY_FIELDS = ("subtotal", "tax", "total")
+FORM_FIELDS = ("kind", "category", "currency", "timezone", "transaction_time", "card_last4",
+               *TEXT_LIMITS, *DATE_FIELDS, *MONEY_FIELDS)
+
+
+def user_today() -> date:
+    return local_now(current_user.timezone).date()
+
+
+def own_bill_or_404(bill_id: int) -> Bill:
+    return Bill.query.filter_by(id=bill_id, user_id=current_user.id).first_or_404()
+
+
+def own_document_or_404(document_id: int) -> Document:
+    return Document.query.filter_by(id=document_id, user_id=current_user.id).first_or_404()
+
+
+# ---------- list ----------------------------------------------------------------
+
+@bp.route("/")
+@login_required
+def list_bills():
+    status = request.args.get("status", "confirmed")
+    status = status if status in Bill.STATUSES else "confirmed"
+    kind = request.args.get("kind", "")
+    category = request.args.get("category", "")
+    q = (request.args.get("q") or "").strip()[:100]
+
+    query = Bill.query.filter_by(user_id=current_user.id, status=status)
+    if kind in Bill.KINDS:
+        query = query.filter_by(kind=kind)
+    if category in Bill.CATEGORIES:
+        query = query.filter_by(category=category)
+    if q:
+        like = f"%{escape_like(q)}%"
+        query = query.filter(or_(
+            Bill.merchant.ilike(like, escape="\\"), Bill.invoice_number.ilike(like, escape="\\"),
+            Bill.notes.ilike(like, escape="\\"),
+        ))
+    newest = func.coalesce(Bill.transaction_date, Bill.invoice_date, Bill.due_date)
+    pages = query.order_by(newest.desc(), Bill.id.desc()).paginate(
+        page=request.args.get("page", 1, type=int), per_page=PER_PAGE, error_out=False,
+    )
+    return render_template(
+        "bills/list.html",
+        items=pages.items,
+        pages=pages,
+        totals=receipt_totals(),
+        unpaid=unpaid_card_bills(),
+        waiting=waiting_documents(),
+        status=status, kind=kind, category=category, q=q,
+        kinds=Bill.KINDS, categories=Bill.CATEGORIES,
+        today=user_today(),
+    )
+
+
+def receipt_totals() -> list[dict]:
+    """Spent per currency, from confirmed receipts. Never added across currencies."""
+    rows = (
+        db.session.query(Bill.currency, func.count(Bill.id), func.sum(Bill.total))
+        .filter(Bill.user_id == current_user.id, Bill.status == "confirmed",
+                Bill.kind == "receipt", Bill.total.isnot(None))
+        .group_by(Bill.currency).order_by(Bill.currency).all()
+    )
+    return [{"currency": c, "count": n, "total": Decimal(t).quantize(Decimal("0.01"))} for c, n, t in rows]
+
+
+def unpaid_card_bills() -> list[Bill]:
+    return (
+        Bill.query.filter_by(user_id=current_user.id, status="confirmed", kind="card_bill", paid_at=None)
+        .order_by(Bill.due_date, Bill.id).all()
+    )
+
+
+def waiting_documents() -> list[Document]:
+    """Uploaded files that no bill uses yet: "type this one in"."""
+    used = db.session.query(Bill.document_id).filter(
+        Bill.user_id == current_user.id, Bill.document_id.isnot(None)
+    )
+    return (
+        Document.query.filter_by(user_id=current_user.id)
+        .filter(Document.id.notin_(used)).order_by(Document.created_at.desc()).all()
+    )
+
+
+# ---------- add / edit -----------------------------------------------------------
+
+@bp.route("/new", methods=["GET", "POST"])
+@login_required
+def create():
+    document = attached_document(request.values.get("document_id"))
+    if request.method == "POST":
+        values, lines, error = read_form(request.form)
+        if error:
+            flash(error)
+            return render_form(None, document, request.form)
+        bill = Bill(user_id=current_user.id, source="upload" if document else "manual",
+                    document_id=document.id if document else None)
+        apply(bill, values, lines)
+        db.session.add(bill)
+        db.session.commit()
+        flash("Bill saved.")
+        return redirect(url_for("bills.list_bills"))
+    return render_form(None, document, {})
+
+
+@bp.route("/<int:bill_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit(bill_id: int):
+    bill = own_bill_or_404(bill_id)
+    if request.method == "POST":
+        values, lines, error = read_form(request.form, bill)
+        if error:
+            flash(error)
+            return render_form(bill, bill.document, request.form)
+        apply(bill, values, lines)
+        db.session.commit()
+        flash("Bill updated.")
+        return redirect(url_for("bills.list_bills"))
+    return render_form(bill, bill.document, {})
+
+
+def attached_document(raw_id) -> Document | None:
+    """The uploaded file this bill is typed from, only if it's the user's own."""
+    if not raw_id:
+        return None
+    if not str(raw_id).isdigit():
+        return None
+    return own_document_or_404(int(raw_id))
+
+
+def render_form(bill, document, form):
+    form = dict(form)
+    # Never show a typed full card number back on the page.
+    if "card_last4" in form and not re.fullmatch(r"\d{4}", str(form["card_last4"]).strip()):
+        form["card_last4"] = ""
+    saved_lines = [
+        {"description": line.description, "quantity": quantity_text(line.quantity), "unit_price": line.unit_price}
+        for line in (bill.lines if bill else [])
+    ]
+    rows = len(saved_lines) + BLANK_LINES
+    return render_template(
+        "bills/form.html", item=bill, form=form, document=document,
+        lines=saved_lines, rows=min(max(rows, BLANK_LINES), MAX_LINES),
+        kinds=Bill.KINDS, categories=Bill.CATEGORIES,
+    )
+
+
+@bp.route("/<int:bill_id>/paid", methods=["POST"])
+@login_required
+def mark_paid(bill_id: int):
+    bill = own_bill_or_404(bill_id)
+    bill.paid_at = user_today() if request.form.get("paid", "1") == "1" else None
+    db.session.commit()
+    flash("Marked as paid." if bill.paid_at else "Marked as not paid.")
+    return redirect(url_for("bills.list_bills"))
+
+
+@bp.route("/<int:bill_id>/archive", methods=["POST"])
+@login_required
+def archive(bill_id: int):
+    own_bill_or_404(bill_id).status = "archived"
+    db.session.commit()
+    flash("Archived.")
+    return redirect(url_for("bills.list_bills"))
+
+
+@bp.route("/<int:bill_id>/restore", methods=["POST"])
+@login_required
+def restore(bill_id: int):
+    own_bill_or_404(bill_id).status = "confirmed"
+    db.session.commit()
+    flash("Restored.")
+    return redirect(url_for("bills.list_bills", status="archived"))
+
+
+# ---------- checking the form ---------------------------------------------------
+
+def raw_values(form, bill: Bill | None) -> dict:
+    """Like subscriptions: a field that isn't in the form keeps its saved value;
+    a field that is there but empty is cleared on purpose."""
+    saved = {field: "" for field in FORM_FIELDS}
+    saved.update(kind="receipt", category="other")
+    if bill is not None:
+        for field in FORM_FIELDS:
+            value = getattr(bill, field)
+            if isinstance(value, time):
+                value = value.strftime("%H:%M")
+            saved[field] = "" if value is None else str(value)
+    return {field: form[field] if field in form else saved[field] for field in FORM_FIELDS}
+
+
+def read_form(form, bill: Bill | None = None) -> tuple[dict, list | None, str | None]:
+    """Check every field. Returns (values, lines, None) or ({}, None, a friendly error).
+    lines is None when the form sent no item rows at all (editing keeps the saved ones)."""
+    raw = raw_values(form, bill)
+    values = {}
+
+    values["kind"] = raw["kind"] or "receipt"
+    if values["kind"] not in Bill.KINDS:
+        return {}, None, "Pick receipt or card bill."
+    values["category"] = raw["category"] or "other"
+    if values["category"] not in Bill.CATEGORIES:
+        return {}, None, "Pick a category from the list."
+
+    for field, limit in TEXT_LIMITS.items():
+        values[field] = (raw[field] or "").strip()
+        if len(values[field]) > limit:
+            return {}, None, f"{label(field)} can be up to {limit} characters."
+    if not values["merchant"]:
+        what = "card or bank" if values["kind"] == "card_bill" else "shop"
+        return {}, None, f"Please type the {what} name."
+
+    values["currency"] = (raw["currency"] or "").strip().upper()
+    if not re.fullmatch(r"[A-Z]{3}", values["currency"]):
+        return {}, None, "Use a 3-letter currency code, like USD, EUR or VND."
+
+    for field in DATE_FIELDS:
+        text = (raw[field] or "").strip()
+        values[field] = None
+        if text:
+            try:
+                values[field] = date.fromisoformat(text)
+            except ValueError:
+                return {}, None, f"{label(field)}: please pick a date."
+            if not date(2000, 1, 1) <= values[field] <= date(2100, 12, 31):
+                return {}, None, f"{label(field)} looks wrong. Please check the year."
+
+    text = (raw["transaction_time"] or "").strip()
+    values["transaction_time"] = None  # empty = the bill shows no time (never 00:00)
+    if text:
+        try:
+            values["transaction_time"] = time.fromisoformat(text).replace(second=0, microsecond=0, tzinfo=None)
+        except ValueError:
+            return {}, None, "Time: please use hours and minutes, like 14:30."
+
+    values["timezone"] = (raw["timezone"] or "").strip()
+    if values["timezone"] and values["timezone"] not in ZONES:
+        return {}, None, "Pick a time zone from the list, like Asia/Ho_Chi_Minh."
+
+    for field in MONEY_FIELDS:
+        text = (raw[field] or "").strip()
+        values[field] = None  # empty = not on the bill
+        if text:
+            values[field] = parse_amount(text)
+            if values[field] is None:
+                return {}, None, f"{label(field)}: type a number like 9.99 (dot for decimals, at most 2)."
+
+    digits = re.sub(r"[\s-]", "", raw["card_last4"] or "")
+    if digits and not re.fullmatch(r"\d{4}", digits):
+        return {}, None, "Card: type only the last 4 digits. Never the full card number."
+    values["card_last4"] = digits
+
+    if values["kind"] == "card_bill" and values["due_date"] is None:
+        return {}, None, "Please pick the payment due date of the card bill."
+    start, end = values["statement_start"], values["statement_end"]
+    if start and end and end < start:
+        return {}, None, "The statement can't end before it starts."
+
+    lines, error = read_lines(form)
+    if error:
+        return {}, None, error
+    return values, lines, None
+
+
+def read_lines(form) -> tuple[list | None, str | None]:
+    """item_name_1 / item_qty_1 / item_price_1, item_name_2 ... Rows without a name are skipped."""
+    if not any(key.startswith("item_name_") for key in form):
+        return None, None
+    lines = []
+    for n in range(1, MAX_LINES + 1):
+        name = (form.get(f"item_name_{n}") or "").strip()
+        if not name:
+            continue
+        if len(name) > 300:
+            return None, f"Item {n}: the name can be up to 300 characters."
+        qty_text = (form.get(f"item_qty_{n}") or "").strip()
+        price_text = (form.get(f"item_price_{n}") or "").strip()
+        quantity = parse_quantity(qty_text) if qty_text else None
+        if qty_text and quantity is None:
+            return None, f"Item {n}: the quantity must be a number above 0, like 2 or 1.5."
+        price = parse_amount(price_text) if price_text else None
+        if price_text and price is None:
+            return None, f"Item {n}: type the price as a number like 9.99."
+        amount = None
+        if price is not None:
+            amount = (price * (quantity or 1)).quantize(Decimal("0.01"))
+        lines.append({"description": name, "quantity": quantity, "unit_price": price, "amount": amount})
+    return lines, None
+
+
+def parse_quantity(text: str) -> Decimal | None:
+    try:
+        value = Decimal(text)
+    except InvalidOperation:
+        return None
+    if not value.is_finite() or value <= 0 or value > 9999999 or value.as_tuple().exponent < -3:
+        return None
+    return value
+
+
+def label(field: str) -> str:
+    return field.replace("_", " ").capitalize()
+
+
+def apply(bill: Bill, values: dict, lines: list | None) -> None:
+    for field, value in values.items():
+        setattr(bill, field, value)
+    if bill.status is None:
+        bill.status = "confirmed"
+    if lines is not None:  # None = the form had no item rows: keep the saved ones
+        bill.lines = [BillLine(position=i, **line) for i, line in enumerate(lines, start=1)]
+
+
+# ---------- upload and download ------------------------------------------------
+
+@bp.route("/upload", methods=["POST"])
+@login_required
+def upload():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        flash("Please choose a file first.")
+        return redirect(url_for("bills.list_bills"))
+    try:
+        data = read_upload(file.stream)
+        facts = inspect(data)
+    except UploadError as problem:
+        flash(str(problem))
+        return redirect(url_for("bills.list_bills"))
+
+    # The same file again: use the one already saved (no second copy).
+    existing = Document.query.filter_by(user_id=current_user.id, sha256=facts["sha256"]).first()
+    if existing:
+        flash("You already uploaded this file.")
+        return redirect_for_document(existing)
+
+    stored = save_file(data, facts["kind"])
+    document = Document(user_id=current_user.id, original_name=clean_name(file.filename),
+                        stored_name=stored, **facts)
+    db.session.add(document)
+    try:
+        db.session.commit()
+    except IntegrityError:  # the same file sent twice at the same moment
+        db.session.rollback()
+        file_path(stored).unlink(missing_ok=True)  # our own copy that was never recorded
+        existing = Document.query.filter_by(user_id=current_user.id, sha256=facts["sha256"]).first_or_404()
+        return redirect_for_document(existing)
+    flash("File saved. Now type in the bill details next to it.")
+    return redirect(url_for("bills.create", document_id=document.id))
+
+
+def redirect_for_document(document: Document):
+    bill = Bill.query.filter_by(user_id=current_user.id, document_id=document.id).first()
+    if bill:
+        return redirect(url_for("bills.edit", bill_id=bill.id))
+    return redirect(url_for("bills.create", document_id=document.id))
+
+
+@bp.route("/files/<int:document_id>")
+@login_required
+def download(document_id: int):
+    """Only the owner can open a file. Photos can be shown on the page
+    (?view=1); PDFs and Word files are always downloaded, never opened inline."""
+    document = own_document_or_404(document_id)
+    try:
+        path = file_path(document.stored_name)
+    except UploadError:
+        return "File not found.", 404
+    if not path.is_file():
+        return "File not found.", 404
+    inline = request.args.get("view") == "1" and document.kind in IMAGES
+    response = send_file(path, mimetype=MIME_TYPES[document.kind], as_attachment=not inline,
+                         download_name=document.original_name, max_age=0)
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; img-src 'self'; sandbox"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+# ---------- export (JSON / CSV / Markdown) -------------------------------------
+
+def money(value) -> str | None:
+    return None if value is None else str(value)
+
+
+def quantity_text(value) -> str | None:
+    """2.000 -> "2", 1.500 -> "1.5" (the database keeps 3 decimals)."""
+    return None if value is None else format(value.normalize(), "f")
+
+
+def bill_json(bill: Bill) -> dict:
+    """The standard bill format (docs/CONTRACT.md). Money is a string, dates are
+    ISO, and anything not on the bill is null, never guessed."""
+    when = None
+    if bill.transaction_date:
+        when = bill.transaction_date.isoformat()
+        if bill.transaction_time:  # no time on the bill -> just the date, no fake 00:00
+            when += "T" + bill.transaction_time.strftime("%H:%M")
+    return {
+        "id": bill.id,
+        "document_id": bill.document_id,
+        "kind": bill.kind,
+        "invoice_number": bill.invoice_number or None,
+        "invoice_date": bill.invoice_date.isoformat() if bill.invoice_date else None,
+        "transaction_datetime": when,
+        "timezone": bill.timezone or None,
+        "merchant_name": bill.merchant,
+        "merchant_branch": bill.branch or None,
+        "merchant_address": bill.address or None,
+        "currency": bill.currency,
+        "subtotal": money(bill.subtotal),
+        "tax": money(bill.tax),
+        "total": money(bill.total),
+        "line_items": [
+            {"description": line.description, "quantity": quantity_text(line.quantity),
+             "unit_price": money(line.unit_price), "amount": money(line.amount)}
+            for line in bill.lines
+        ],
+        "category": bill.category,
+        "card_last4": bill.card_last4 or None,
+        "statement_start": bill.statement_start.isoformat() if bill.statement_start else None,
+        "statement_end": bill.statement_end.isoformat() if bill.statement_end else None,
+        "due_date": bill.due_date.isoformat() if bill.due_date else None,
+        "paid_at": bill.paid_at.isoformat() if bill.paid_at else None,
+        "notes": bill.notes or None,
+        "source": bill.source,  # "manual" = typed by the user, "upload" = typed from a file
+        "review_status": "confirmed",  # only bills the user saved are exported
+    }
+
+
+def export_rows() -> list[dict]:
+    bills = Bill.query.filter_by(user_id=current_user.id, status="confirmed").order_by(Bill.id).all()
+    return [bill_json(bill) for bill in bills]
+
+
+def safe_cell(value) -> str:
+    """Spreadsheet apps run cells starting with = + - @ as formulas: make them plain text."""
+    text = "" if value is None else str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
+
+
+@bp.route("/export.<fmt>")
+@login_required
+def export(fmt: str):
+    rows = export_rows()
+    if fmt == "json":
+        body, kind = json.dumps(rows, ensure_ascii=False, indent=2), "application/json"
+    elif fmt == "csv":
+        out = io.StringIO()
+        columns = list(rows[0] if rows else bill_json(Bill()))  # headers even with no bills
+        writer = csv.writer(out)
+        writer.writerow(columns)
+        for row in rows:
+            cells = [json.dumps(row[c], ensure_ascii=False) if c == "line_items" else row[c] for c in columns]
+            writer.writerow([safe_cell(cell) for cell in cells])
+        body, kind = "﻿" + out.getvalue(), "text/csv"  # ﻿: Excel then reads Vietnamese correctly
+    elif fmt == "md":
+        body, kind = markdown(rows), "text/markdown"
+    else:
+        return "Unknown format.", 404
+    response = Response(body, content_type=f"{kind}; charset=utf-8")
+    response.headers["Content-Disposition"] = f'attachment; filename="subtrack-bills.{fmt}"'
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+def md_text(value) -> str:
+    """Markdown table cells: no line breaks, and | can't start a new column."""
+    return "" if value is None else str(value).replace("\n", " ").replace("|", "\\|")
+
+
+def markdown(rows: list[dict]) -> str:
+    parts = ["# SubTrack bills", ""]
+    for row in rows:
+        parts.append(f"## {md_text(row['merchant_name'])} — {md_text(row['transaction_datetime'] or row['invoice_date'] or row['due_date'] or 'no date')}")
+        parts.append("")
+        for key in ("kind", "invoice_number", "currency", "subtotal", "tax", "total", "category", "due_date", "paid_at"):
+            if row[key] is not None:
+                parts.append(f"- {key}: {md_text(row[key])}")
+        if row["line_items"]:
+            parts += ["", "| Item | Qty | Unit price | Amount |", "|---|---|---|---|"]
+            for line in row["line_items"]:
+                parts.append("| " + " | ".join(md_text(line[k]) for k in ("description", "quantity", "unit_price", "amount")) + " |")
+        parts.append("")
+    return "\n".join(parts)
