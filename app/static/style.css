@@ -3177,3 +3177,340 @@ main {
 .compact-table .currency-value {
   font-size: 0.96rem;
 }
+
+/* --- Subby Voice Mode Stage (Stitch subby-voice-phone.png) & Account Tools --- */
+.subby-voice-toggle {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.subby-voice-toggle:hover,
+.subby-voice-toggle.on {
+  background: var(--sun);
+  color: var(--ink);
+  border-color: var(--sun);
+}
+
+.subby-voice-stage {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  background: radial-gradient(circle at 50% 24%, #261b66 0%, #0e0b2b 75%);
+  color: #fff;
+  border-bottom: 1px solid #2a2557;
+  max-height: 23rem;
+  overflow-y: auto;
+}
+
+.voice-stage-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.25rem 0;
+}
+
+.voice-orb-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 0.65rem 1.25rem;
+}
+
+.voice-orb-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(109, 74, 255, 0.45);
+  pointer-events: none;
+}
+
+.voice-orb-ring.ring-1 {
+  width: 4.8rem;
+  height: 4.8rem;
+}
+
+.voice-orb-ring.ring-2 {
+  width: 6.1rem;
+  height: 6.1rem;
+  border-color: rgba(22, 199, 154, 0.28);
+}
+
+.subby-voice-stage[data-stage-state="listening"] .voice-orb-ring.ring-1,
+.subby-voice-stage[data-stage-state="speaking"] .voice-orb-ring.ring-1 {
+  animation: orbPulse 1.6s infinite ease-in-out;
+}
+
+.subby-voice-stage[data-stage-state="listening"] .voice-orb-ring.ring-2,
+.subby-voice-stage[data-stage-state="speaking"] .voice-orb-ring.ring-2 {
+  animation: orbPulse 1.6s infinite ease-in-out 0.35s;
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+.voice-orb-btn {
+  position: relative;
+  z-index: 2;
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: linear-gradient(135deg, #8b6eff 0%, #6d4aff 55%, #4b2fd6 100%);
+  color: #fff;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  box-shadow: 0 0 24px rgba(109, 74, 255, 0.65);
+  cursor: pointer;
+}
+
+.voice-orb-btn svg {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.voice-orb-btn.listening {
+  background: linear-gradient(135deg, #ff5a5f 0%, #d9383e 100%);
+  box-shadow: 0 0 28px rgba(255, 90, 95, 0.75);
+}
+
+.voice-wave-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  height: 1.5rem;
+}
+
+.voice-wave-bars span {
+  display: block;
+  width: 3px;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--mint);
+  opacity: 0.7;
+  transition: height 0.2s ease;
+}
+
+.subby-voice-stage[data-stage-state="listening"] .voice-wave-bars span,
+.subby-voice-stage[data-stage-state="speaking"] .voice-wave-bars span {
+  animation: waveBarBounce 0.75s infinite ease-in-out alternate;
+}
+
+.voice-wave-bars span:nth-child(2) { animation-delay: 0.15s; height: 0.85rem; }
+.voice-wave-bars span:nth-child(3) { animation-delay: 0.3s; height: 1.15rem; }
+.voice-wave-bars span:nth-child(4) { animation-delay: 0.45s; height: 0.65rem; }
+
+@keyframes waveBarBounce {
+  0% { transform: scaleY(0.55); opacity: 0.6; }
+  100% { transform: scaleY(1.35); opacity: 1; }
+}
+
+.voice-detector-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e4e0f5;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.voice-cards-stack {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.voice-card {
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.voice-card.reply-card {
+  background: linear-gradient(135deg, rgba(109, 74, 255, 0.24) 0%, rgba(22, 199, 154, 0.14) 100%);
+  border-color: rgba(165, 148, 255, 0.38);
+}
+
+.voice-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #c9c5ff;
+}
+
+.voice-live-badge {
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.voice-live-badge.is-live {
+  color: #ff7b7f;
+}
+
+.voice-speak-pill {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.68rem;
+}
+
+.voice-speak-pill.is-speaking {
+  background: var(--violet);
+  color: #fff;
+}
+
+.voice-transcript-text,
+.voice-reply-text {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.42;
+  color: #fff;
+}
+
+.voice-transcript-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.voice-action-pill {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  cursor: pointer;
+}
+
+.voice-action-pill.primary {
+  background: var(--mint);
+  color: #06281f;
+  border-color: var(--mint);
+}
+
+.voice-tool-slot .subby-tool-list {
+  margin-top: 0.45rem;
+  background: rgba(14, 11, 43, 0.55);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.voice-tool-slot .subby-tool-list a {
+  color: var(--sun);
+}
+
+.voice-dock {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr 1fr;
+  gap: 0.5rem;
+  padding-top: 0.2rem;
+}
+
+.voice-dock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.48rem 0.6rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.voice-dock-btn.is-muted {
+  background: rgba(255, 200, 61, 0.22);
+  border-color: var(--sun);
+  color: var(--sun);
+}
+
+.voice-dock-btn.end-voice {
+  background: var(--coral);
+  border-color: var(--coral);
+  color: #fff;
+}
+
+/* Subby Account Tool Lists & Draft Button in Chat Bubbles */
+.subby-tool-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.subby-tool-item {
+  padding: 0.25rem 0;
+  border-bottom: 1px dashed var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.subby-tool-item:last-child {
+  border-bottom: 0;
+}
+
+.subby-tool-item a {
+  font-weight: 700;
+  color: var(--violet-deep);
+  text-decoration: underline;
+}
+
+.subby-draft-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  text-decoration: none;
+}
+
+.msg-tool-btn.is-speaking {
+  background: var(--violet);
+  color: #fff;
+  border-color: var(--violet);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-orb-ring,
+  .voice-wave-bars span {
+    animation: none !important;
+  }
+}
+

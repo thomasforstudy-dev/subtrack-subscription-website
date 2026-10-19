@@ -1,23 +1,69 @@
 {% extends "base.html" %}
-{% block title %}Calendar — SubTrack{% endblock %}
+{% block title %}Calendar / Lịch gia hạn — SubTrack{% endblock %}
 {% block content %}
-  <h1>Calendar / Lịch gia hạn</h1>
-  <div class="card">
-    <p>Export the next renewal date of each active subscription as an all-day event.
-      Time zone: <strong>{{ zone }}</strong>. Dates are expected renewals, not confirmed payments.</p>
-    <p>This download is a snapshot. It does not sync later edits or archive actions.
-      Choose notifications in your calendar. Remove old events there when needed.</p>
-    <p>No notes, email addresses, prices or management links are included.</p>
-    <a class="button" href="{{ url_for('calendar.export_all') }}">Download all active renewals (.ics)</a>
+  <div class="section-head">
+    <div>
+      <h1 data-vi="Lịch gia hạn (Calendar)" data-en="Calendar">Lịch gia hạn (Calendar)</h1>
+      <p class="muted" data-vi="Xuất ngày gia hạn dự kiến tiếp theo của từng gói đang hoạt động thành sự kiện cả ngày (All-day event) cho ứng dụng lịch của bạn." data-en="Export the next renewal date of each active subscription as an all-day event.">
+        Xuất ngày gia hạn dự kiến tiếp theo của từng gói đang hoạt động thành sự kiện cả ngày (All-day event) cho ứng dụng lịch của bạn.
+      </p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="← Danh sách gói đăng ký" data-en="← Back to subscriptions">← Danh sách gói đăng ký</a>
+      <a class="button" href="{{ url_for('calendar.export_all') }}" data-vi="📥 Tải toàn bộ gói đang hoạt động (.ics)" data-en="Download all active renewals (.ics)">📥 Tải toàn bộ gói đang hoạt động (.ics)</a>
+    </div>
   </div>
+
+  <div class="card calendar-info-card" style="margin-bottom: 1.25rem;">
+    <div class="card-head-row">
+      <strong data-vi="Phạm vi dữ liệu & Quyền riêng tư khi xuất lịch" data-en="Calendar Snapshot & Privacy Boundary">Phạm vi dữ liệu & Quyền riêng tư khi xuất lịch</strong>
+      <span class="pill mint">Múi giờ (Time zone): {{ zone }}</span>
+    </div>
+    <p class="small-text" style="margin: 0.35rem 0;">
+      Export the next renewal date of each active subscription as an all-day event.
+      Time zone: <strong>{{ zone }}</strong>. Dates are expected renewals, not confirmed payments.
+    </p>
+    <p class="small-text muted" style="margin: 0.35rem 0;">
+      This download is a snapshot. It does not sync later edits or archive actions.
+      Choose notifications in your calendar. Remove old events there when needed.
+    </p>
+    <p class="small-text muted" style="margin: 0.35rem 0 0;">
+      🔒 No notes, email addresses, prices or management links are included.
+    </p>
+  </div>
+
   {% if items %}
-    <ul class="card">
-      {% for item in items %}
-        <li><a href="{{ url_for('calendar.review', item_id=item.id) }}">{{ item.name }}</a>
-          — {{ item.next_renewal_at }} <span class="muted">(all day)</span></li>
-      {% endfor %}
-    </ul>
+    <div class="card">
+      <div class="card-head-row">
+        <strong data-vi="Chọn gói đăng ký để thêm vào Google Calendar hoặc tải tệp .ics riêng" data-en="Active subscriptions ready for calendar export">Chọn gói đăng ký để thêm vào Google Calendar hoặc tải tệp .ics riêng</strong>
+        <span class="pill">{{ items|length }} gói đang hoạt động</span>
+      </div>
+      <ul class="mini-list calendar-item-list">
+        {% for item in items %}
+          <li>
+            <div class="service-cell">
+              <span class="service-tile" aria-hidden="true">{{ (item.name or 'S')[:2]|upper }}</span>
+              <div>
+                <strong><a href="{{ url_for('calendar.review', item_id=item.id) }}">{{ item.name }}</a></strong>
+                <small class="muted block-small">Ngày gia hạn dự kiến: <strong>{{ item.next_renewal_at }}</strong> · (all day)</small>
+              </div>
+            </div>
+            <div class="row-actions">
+              <a class="button secondary btn-sm" href="{{ url_for('calendar.review', item_id=item.id) }}" data-vi="📅 Xem & Thêm vào lịch" data-en="📅 Review & Add">📅 Xem & Thêm vào lịch</a>
+              <a class="button secondary btn-sm" href="{{ url_for('calendar.export_one', item_id=item.id) }}" data-vi="Tải .ics" data-en=".ics">Tải .ics</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
   {% else %}
-    <p>No active subscriptions to export.</p>
+    <div class="card empty-state-card">
+      <span class="empty-state-icon" aria-hidden="true">📅</span>
+      <p><strong>No active subscriptions to export.</strong></p>
+      <p class="muted small-text" data-vi="Bạn chưa có gói đăng ký nào đang hoạt động để xuất ra lịch." data-en="Add an active subscription first to export renewal dates.">
+        Bạn chưa có gói đăng ký nào đang hoạt động để xuất ra lịch.
+      </p>
+      <a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký" data-en="+ Add subscription">+ Thêm gói đăng ký</a>
+    </div>
   {% endif %}
 {% endblock %}
