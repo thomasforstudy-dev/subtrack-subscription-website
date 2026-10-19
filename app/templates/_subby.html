@@ -1,5 +1,5 @@
-{# Subby, trợ lý hướng dẫn. Câu hỏi gửi tới /subby/ask (xem app/subby.py).
-   Thiết kế provider-agnostic (hỗ trợ Gemini hiện tại và Phi-3.5-mini về sau). #}
+{# Subby, trợ lý hướng dẫn & tra cứu tài khoản. Câu hỏi gửi tới /subby/ask (xem app/subby.py).
+   Thiết kế provider-agnostic (hỗ trợ Gemini hiện tại và Phi-3.5-mini về sau) + Chế độ Giọng nói (Web Speech API). #}
 {% set face %}<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="13" r="1.6" fill="currentColor" stroke="none"/><path d="M19 12.5l3 1.5-3 1.5"/><path d="M10 20c3.5 3 8.5 3 12 0"/></svg>{% endset %}
 <div class="subby" data-subby data-ask-url="{{ url_for('subby.ask') }}" data-new-sub-url="{{ url_for('subscriptions.create') }}">
   <p class="subby-teaser" data-teaser data-vi="Cần hỗ trợ? Hỏi Subby nhé — vui tính hơn thông báo trừ tiền ngân hàng!" data-en="Confused? Ask me. I promise I'm funnier than your bank.">
@@ -18,6 +18,15 @@
           Sẵn sàng · Trả lời qua máy chủ AI hoặc FAQ có sẵn
         </p>
       </div>
+      <button
+        type="button"
+        class="subby-voice-toggle"
+        data-voice-mode-toggle
+        aria-pressed="false"
+        title="Chuyển sang giao diện Giọng nói (chỉ bật micro khi bạn bấm nút Mic)"
+        data-vi="🎙️ Voice"
+        data-en="🎙️ Voice"
+      >🎙️ Voice</button>
       <button class="subby-close" type="button" data-close aria-label="Đóng cửa sổ chat">×</button>
     </header>
 
@@ -35,9 +44,81 @@
       </div>
     </div>
 
+    {# Màn hình Voice Mode theo thiết kế Stitch (docs/design/subby-voice-phone.png) #}
+    <div class="subby-voice-stage" data-voice-stage data-stage-state="idle" hidden role="region" aria-label="Chế độ trò chuyện bằng giọng nói">
+      <div class="voice-stage-center">
+        <div class="voice-orb-wrap">
+          <span class="voice-orb-ring ring-1" aria-hidden="true"></span>
+          <span class="voice-orb-ring ring-2" aria-hidden="true"></span>
+          <div class="voice-wave-bars left" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <button
+            type="button"
+            class="voice-orb-btn"
+            data-voice-orb
+            aria-pressed="false"
+            aria-label="Bắt đầu hoặc dừng thu âm giọng nói"
+            title="Nhấn để bật/tắt micro"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          </button>
+          <div class="voice-wave-bars right" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <span class="voice-detector-pill" data-voice-detector-label data-vi="Nhấn biểu tượng Mic ở giữa để bắt đầu nói" data-en="Tap the center Mic orb to start speaking">
+          Nhấn biểu tượng Mic ở giữa để bắt đầu nói
+        </span>
+      </div>
+
+      <div class="voice-cards-stack">
+        <div class="voice-card you-card" data-voice-you-card>
+          <div class="voice-card-head">
+            <span class="voice-card-label" data-vi="🗣 BẠN (YOU)" data-en="🗣 YOU">🗣 BẠN (YOU)</span>
+            <span class="voice-live-badge" data-voice-live-badge data-vi="● Chờ giọng nói" data-en="● Standby">● Chờ giọng nói</span>
+          </div>
+          <p class="voice-transcript-text" data-voice-transcript data-vi="“Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”" data-en="“Tap the Mic to speak your question, or use the keyboard below…”">
+            “Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”
+          </p>
+          <div class="voice-transcript-actions" data-voice-transcript-actions hidden>
+            <button type="button" class="voice-action-pill primary" data-voice-send-now data-vi="🚀 Gửi câu hỏi này" data-en="🚀 Send question">🚀 Gửi câu hỏi này</button>
+            <button type="button" class="voice-action-pill" data-voice-to-input data-vi="✏️ Chỉnh trên ô chữ" data-en="✏️ Edit in text box">✏️ Chỉnh trên ô chữ</button>
+            <button type="button" class="voice-action-pill" data-voice-clear-draft data-vi="Xóa" data-en="Clear">Xóa</button>
+          </div>
+        </div>
+
+        <div class="voice-card reply-card" data-voice-reply-card>
+          <div class="voice-card-head">
+            <span class="voice-card-label" data-vi="🤖 PHẢN HỒI CỦA SUBBY" data-en="🤖 SUBBY'S REPLY">🤖 PHẢN HỒI CỦA SUBBY</span>
+            <span class="voice-speak-pill" data-voice-speak-pill data-vi="🔈 Sẵn sàng" data-en="🔈 Ready">🔈 Sẵn sàng</span>
+          </div>
+          <p class="voice-reply-text" data-voice-reply-text data-vi="Câu trả lời của Subby và kết quả tra cứu tài khoản sẽ hiển thị tại đây." data-en="Subby's answer and account tool results will appear here.">
+            Câu trả lời của Subby và kết quả tra cứu tài khoản sẽ hiển thị tại đây.
+          </p>
+          <div class="voice-tool-slot" data-voice-tool-slot></div>
+        </div>
+      </div>
+
+      <div class="voice-dock" role="toolbar" aria-label="Điều khiển chế độ giọng nói">
+        <button type="button" class="voice-dock-btn" data-voice-mute aria-pressed="false">
+          <span class="dock-icon" aria-hidden="true">🔊</span>
+          <span data-voice-mute-label data-vi="Đọc tiếng" data-en="Read aloud">Đọc tiếng</span>
+        </button>
+        <button type="button" class="voice-dock-btn end-voice" data-voice-end>
+          <span class="dock-icon" aria-hidden="true">📞</span>
+          <span data-vi="Kết thúc Voice" data-en="End Voice">Kết thúc Voice</span>
+        </button>
+        <button type="button" class="voice-dock-btn" data-voice-keyboard>
+          <span class="dock-icon" aria-hidden="true">⌨️</span>
+          <span data-vi="Bàn phím" data-en="Keyboard">Bàn phím</span>
+        </button>
+      </div>
+    </div>
+
     <div class="subby-log" data-log aria-live="polite"></div>
 
-    {# Thanh trạng thái thu âm giọng nói (chỉ hiện khi người dùng bấm Mic) #}
+    {# Thanh trạng thái thu âm giọng nói thu gọn (khi đang ở chế độ chat văn bản) #}
     <div class="subby-voice-bar" data-voice-bar hidden role="status" aria-live="polite">
       <div class="voice-wave" aria-hidden="true">
         <span></span><span></span><span></span><span></span>
@@ -55,6 +136,10 @@
     </div>
 
     <div class="subby-chips" aria-label="Câu hỏi gợi ý">
+      {% if current_user.is_authenticated %}
+        <button type="button" data-ask data-vi="What renews soon?" data-en="What renews soon?">Gói nào sắp gia hạn?</button>
+        <button type="button" data-ask data-vi="Summarize my recent charges" data-en="Summarize my recent charges">Tổng hợp khoản đến hạn?</button>
+      {% endif %}
       <button type="button" data-ask data-vi="Lời nhắc hoạt động thế nào?" data-en="How do reminders work?">Lời nhắc hoạt động thế nào?</button>
       <button type="button" data-ask data-vi="Cách thêm gói Netflix?" data-en="How do I add Netflix?">Cách thêm gói Netflix?</button>
       <button type="button" data-ask data-vi="Link đã ghim dùng làm gì?" data-en="What are pinned links?">Link đã ghim dùng làm gì?</button>

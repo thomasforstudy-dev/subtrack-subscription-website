@@ -1,17 +1,61 @@
 {% extends "base.html" %}
 {% block title %}Calendar: {{ item.name }} — SubTrack{% endblock %}
 {% block content %}
-  <h1>Add a renewal to your calendar</h1>
-  <div class="card">
-    <h2>{{ item.name }}</h2>
-    <p><strong>{{ item.next_renewal_at }}</strong> · all day · {{ zone }}</p>
-    <p>This is an expected renewal, not proof of payment. Choose your reminder
-      notifications in your calendar. This event will not sync future edits.</p>
-    <p>Opening Google shares the event title, date and time zone with Google.
-      Nothing is added until you review the event and press Save there.
-      Notes, prices, email and management links are omitted.</p>
-    <p><a class="button" href="{{ google_url }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Review in Google Calendar</a>
-      <a class="button secondary" href="{{ url_for('calendar.export_one', item_id=item.id) }}">Download this event (.ics)</a></p>
-    <a href="{{ url_for('calendar.index') }}">All active renewals</a>
+  <div class="form-shell">
+    <div class="form-shell-header">
+      <a class="back-link" href="{{ url_for('calendar.index') }}" data-vi="← Tất cả lịch gia hạn đang hoạt động (All active renewals)" data-en="← All active renewals">← Tất cả lịch gia hạn đang hoạt động (All active renewals)</a>
+      <h1 data-vi="Thêm ngày gia hạn vào lịch của bạn" data-en="Add a renewal to your calendar">Add a renewal to your calendar</h1>
+    </div>
+
+    <div class="card form-card">
+      <div class="card-head-row">
+        <div class="service-cell">
+          <span class="service-tile" aria-hidden="true">{{ (item.name or 'S')[:2]|upper }}</span>
+          <div>
+            <h2 style="margin: 0;">{{ item.name }}</h2>
+            <p class="muted small-text" style="margin: 0.2rem 0 0;">
+              <strong>{{ item.next_renewal_at }}</strong> · all day · {{ zone }}
+            </p>
+          </div>
+        </div>
+        <span class="pill sun-label" data-vi="Sự kiện cả ngày (All-day)" data-en="All-day event">Sự kiện cả ngày (All-day)</span>
+      </div>
+
+      <div class="honest-status-box" style="margin: 0.85rem 0;">
+        <p>
+          This is an expected renewal, not proof of payment. Choose your reminder
+          notifications in your calendar. This event will not sync future edits.
+        </p>
+        <p>
+          🔒 Opening Google shares the event title, date and time zone with Google.
+          Nothing is added until you review the event and press Save there.
+          Notes, prices, email and management links are omitted.
+        </p>
+      </div>
+
+      <div class="form-actions-bar">
+        <a
+          class="button"
+          href="{{ google_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          referrerpolicy="no-referrer"
+          data-vi="📅 Kiểm tra & Lưu trên Google Calendar ↗"
+          data-en="Review in Google Calendar"
+        >Review in Google Calendar</a>
+        <a
+          class="button secondary"
+          href="{{ url_for('calendar.export_one', item_id=item.id) }}"
+          data-vi="📥 Tải sự kiện này (.ics)"
+          data-en="Download this event (.ics)"
+        >Download this event (.ics)</a>
+        <a
+          class="button secondary"
+          href="{{ url_for('calendar.index') }}"
+          data-vi="Quay lại danh sách lịch"
+          data-en="All active renewals"
+        >All active renewals</a>
+      </div>
+    </div>
   </div>
 {% endblock %}
