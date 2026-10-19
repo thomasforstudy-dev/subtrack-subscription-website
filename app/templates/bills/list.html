@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Bills — SubTrack{% endblock %}
+{% block content %}
+  {# Plain page from the backend lane; the UI lane styles it (docs/CONTRACT.md → Bills). #}
+  <h1>Bills / Hóa đơn</h1>
+
+  <div class="card">
+    <h2>Upload a bill</h2>
+    <form method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="file" name="file" required
+             accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,image/png,image/jpeg,image/webp,application/pdf" />
+      <p class="muted">PNG, JPG, WEBP, PDF or Word (.docx). Up to 10 MB and 5 pages. Files stay private.</p>
+      <button class="button" type="submit">Upload</button>
+    </form>
+    <p><a class="button secondary" href="{{ url_for('bills.create') }}">Type a bill in without a file</a></p>
+  </div>
+
+  {% if waiting %}
+    <div class="card">
+      <h2>Waiting to be typed in</h2>
+      <ul>
+        {% for doc in waiting %}
+          <li>{{ doc.original_name }} <span class="muted">({{ doc.kind }}{% if doc.page_count %}, {{ doc.page_count }} page{{ 's' if doc.page_count != 1 }}{% endif %})</span>
+            — <a href="{{ url_for('bills.create', document_id=doc.id) }}">type it in</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if unpaid %}
+    <div class="card">
+      <h2>Card bills to pay</h2>
+      <ul>
+        {% for bill in unpaid %}
+          <li>{{ bill.merchant }}{% if bill.card_last4 %} ···{{ bill.card_last4 }}{% endif %}
+            — {{ bill.total if bill.total is not none else '?' }} {{ bill.currency }}, due {{ bill.due_date }}
+            {% if bill.due_date < today %}<strong>(late)</strong>{% endif %}
+            <form method="post" action="{{ url_for('bills.mark_paid', bill_id=bill.id) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="hidden" name="paid" value="1" />
+              <button class="button btn-sm" type="submit">Mark paid</button>
+            </form></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if totals %}
+    <div class="card">
+      <h2>Spent (confirmed receipts)</h2>
+      <ul>{% for row in totals %}<li>{{ row.total }} {{ row.currency }} <span class="muted">({{ row.count }} bills)</span></li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+
+  <form method="get" class="card">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search shop, invoice number, notes" />
+    <select name="kind">
+      <option value="">All kinds</option>
+      {% for k in kinds %}<option value="{{ k }}" {% if k == kind %}selected{% endif %}>{{ k.replace('_', ' ') }}</option>{% endfor %}
+    </select>
+    <select name="category">
+      <option value="">All categories</option>
+      {% for c in categories %}<option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+    </select>
+    <select name="status">
+      <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>Saved</option>
+      <option value="archived" {% if status == 'archived' %}selected{% endif %}>Archived</option>
+    </select>
+    <button class="button secondary" type="submit">Filter</button>
+  </form>
+
+  {% if items %}
+    <table class="card">
+      <thead><tr><th>Date</th><th>Shop / card</th><th>Total</th><th>Category</th><th></th></tr></thead>
+      <tbody>
+        {% for bill in items %}
+          <tr>
+            <td>{{ bill.transaction_date or bill.invoice_date or bill.due_date or '—' }}</td>
+            <td>{{ bill.merchant }}{% if bill.kind == 'card_bill' %} <span class="muted">(card bill{% if bill.paid_at %}, paid{% endif %})</span>{% endif %}</td>
+            <td>{{ bill.total if bill.total is not none else '—' }} {{ bill.currency }}</td>
+            <td>{{ bill.category }}</td>
+            <td>
+              <a href="{{ url_for('bills.edit', bill_id=bill.id) }}">Edit</a>
+              {% if bill.document_id %}· <a href="{{ url_for('bills.download', document_id=bill.document_id) }}">File</a>{% endif %}
+              <form method="post" action="{{ url_for('bills.restore' if status == 'archived' else 'bills.archive', bill_id=bill.id) }}" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button class="button btn-sm secondary" type="submit">{{ 'Restore' if status == 'archived' else 'Archive' }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if pages.pages > 1 %}
+      <p>
+        {% if pages.has_prev %}<a href="{{ url_for('bills.list_bills', page=pages.prev_num, q=q, kind=kind, category=category, status=status) }}">← Newer</a>{% endif %}
+        Page {{ pages.page }} of {{ pages.pages }}
+        {% if pages.has_next %}<a href="{{ url_for('bills.list_bills', page=pages.next_num, q=q, kind=kind, category=category, status=status) }}">Older →</a>{% endif %}
+      </p>
+    {% endif %}
+  {% else %}
+    <p>No bills here yet.</p>
+  {% endif %}
+
+  <p>Download your saved bills:
+    <a href="{{ url_for('bills.export', fmt='json') }}">JSON</a> ·
+    <a href="{{ url_for('bills.export', fmt='csv') }}">CSV</a> ·
+    <a href="{{ url_for('bills.export', fmt='md') }}">Markdown</a></p>
+{% endblock %}

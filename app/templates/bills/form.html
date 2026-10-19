@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit bill' if item else 'Add a bill' }} — SubTrack{% endblock %}
+{% block content %}
+  {# Plain page from the backend lane; the UI lane styles it (docs/CONTRACT.md → Bills).
+     Every value comes from `form` first, so nothing typed is lost after an error. #}
+  {% set f = form or {} %}
+  {% macro val(name, saved='') -%}{{ f.get(name, saved if saved is not none else '') }}{%- endmacro %}
+  <h1>{{ 'Edit bill' if item else 'Add a bill' }}</h1>
+
+  {% if document %}
+    <div class="card">
+      <p>From your file: <strong>{{ document.original_name }}</strong>
+        (<a href="{{ url_for('bills.download', document_id=document.id) }}">download</a>)</p>
+      {% if document.kind in ('png', 'jpeg', 'webp') %}
+        <img src="{{ url_for('bills.download', document_id=document.id, view=1) }}" alt="Your uploaded bill"
+             style="max-width:100%;height:auto" loading="lazy" referrerpolicy="no-referrer" />
+      {% endif %}
+      <p class="muted">Type in only what the bill shows. Leave a box empty if it isn't on the bill.</p>
+    </div>
+  {% endif %}
+
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    {% if document and not item %}<input type="hidden" name="document_id" value="{{ document.id }}" />{% endif %}
+
+    <label>Kind
+      <select name="kind">
+        {% for k in kinds %}<option value="{{ k }}" {% if val('kind', item.kind if item else 'receipt') == k %}selected{% endif %}>{{ 'Receipt / invoice' if k == 'receipt' else 'Credit card bill' }}</option>{% endfor %}
+      </select></label>
+    <label>Shop, or card / bank name <input name="merchant" required maxlength="200" value="{{ val('merchant', item.merchant if item else '') }}" /></label>
+    <label>Branch <input name="branch" maxlength="200" value="{{ val('branch', item.branch if item else '') }}" /></label>
+    <label>Address <input name="address" maxlength="500" value="{{ val('address', item.address if item else '') }}" /></label>
+    <label>Invoice number <input name="invoice_number" maxlength="64" value="{{ val('invoice_number', item.invoice_number if item else '') }}" /></label>
+    <label>Invoice date <input type="date" name="invoice_date" value="{{ val('invoice_date', item.invoice_date if item else '') }}" /></label>
+    <label>Paid on (date) <input type="date" name="transaction_date" value="{{ val('transaction_date', item.transaction_date if item else '') }}" /></label>
+    <label>Time <input name="transaction_time" placeholder="14:30 — leave empty if the bill shows none" value="{{ val('transaction_time', item.transaction_time.strftime('%H:%M') if item and item.transaction_time else '') }}" /></label>
+    <label>Time zone <input name="timezone" placeholder="Asia/Ho_Chi_Minh" value="{{ val('timezone', item.timezone if item else '') }}" /></label>
+    <label>Currency <input name="currency" required maxlength="3" pattern="[A-Za-z]{3}" value="{{ val('currency', item.currency if item else 'VND') }}" /></label>
+    <label>Subtotal <input name="subtotal" inputmode="decimal" value="{{ val('subtotal', item.subtotal if item else '') }}" /></label>
+    <label>Tax <input name="tax" inputmode="decimal" value="{{ val('tax', item.tax if item else '') }}" /></label>
+    <label>Total <input name="total" inputmode="decimal" value="{{ val('total', item.total if item else '') }}" /></label>
+    <label>Category
+      <select name="category">
+        {% for c in categories %}<option value="{{ c }}" {% if val('category', item.category if item else 'other') == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      </select></label>
+
+    <fieldset>
+      <legend>Credit card bill only</legend>
+      <label>Card: last 4 digits only <input name="card_last4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" autocomplete="off" value="{{ val('card_last4', item.card_last4 if item else '') }}" /></label>
+      <label>Statement from <input type="date" name="statement_start" value="{{ val('statement_start', item.statement_start if item else '') }}" /></label>
+      <label>Statement to <input type="date" name="statement_end" value="{{ val('statement_end', item.statement_end if item else '') }}" /></label>
+      <label>Pay by (due date) <input type="date" name="due_date" value="{{ val('due_date', item.due_date if item else '') }}" /></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Items</legend>
+      <table>
+        <thead><tr><th>Item</th><th>Qty</th><th>Unit price</th></tr></thead>
+        <tbody>
+          {% for n in range(1, rows + 1) %}
+            {% set saved = lines[n - 1] if n <= lines|length else {} %}
+            <tr>
+              <td><input name="item_name_{{ n }}" maxlength="300" aria-label="Item {{ n }}" value="{{ val('item_name_' ~ n, saved.description) }}" /></td>
+              <td><input name="item_qty_{{ n }}" inputmode="decimal" aria-label="Quantity {{ n }}" value="{{ val('item_qty_' ~ n, saved.quantity) }}" /></td>
+              <td><input name="item_price_{{ n }}" inputmode="decimal" aria-label="Unit price {{ n }}" value="{{ val('item_price_' ~ n, saved.unit_price) }}" /></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </fieldset>
+
+    <label>Notes <textarea name="notes" maxlength="2000">{{ val('notes', item.notes if item else '') }}</textarea></label>
+    <button class="button" type="submit">Save bill</button>
+    <a href="{{ url_for('bills.list_bills') }}">Cancel</a>
+  </form>
+{% endblock %}
