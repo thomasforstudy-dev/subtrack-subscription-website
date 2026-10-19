@@ -1,0 +1,39 @@
+{
+  "source": "https://github.com/sickn33/agentic-awesome-skills",
+  "commit": "369d1ca5fb0196f64e225e1fb464a72a09509f1e",
+  "package_version": "19.10.1",
+  "downloaded_date": "2026-10-19",
+  "activation": "none",
+  "groups": {
+    "ui_ux_frontend": [
+      "ui-ux-designer",
+      "ui-ux-pro-max",
+      "ux-audit",
+      "ui-a11y",
+      "frontend-design",
+      "frontend-security-coder"
+    ],
+    "python": [
+      "python-patterns",
+      "python-pro",
+      "python-testing-patterns",
+      "python-performance-optimization",
+      "systematic-debugging"
+    ],
+    "pytorch_ml": [
+      "ml-engineer",
+      "data-scientist",
+      "llm-fine-tuning"
+    ],
+    "backend_api": [
+      "api-design-principles",
+      "backend-security-coder",
+      "python-pro"
+    ],
+    "sql": [
+      "sql-pro",
+      "database-design",
+      "sql-optimization-patterns"
+    ]
+  }
+}
