@@ -1,16 +1,146 @@
 {% extends "base.html" %}
-{% block title %}Log in — SubTrack{% endblock %}
+{% block title %}Đăng nhập — SubTrack{% endblock %}
 {% block content %}
   <div class="card auth-card">
-    <h1>Welcome back 👋</h1>
-    <p class="muted">Log in to see what's renewing next.</p>
+    {% if request.args.get('expired') == '1' %}
+      <div class="status-banner warn" role="alert">
+        <strong data-vi="Phiên đăng nhập đã hết hạn" data-en="Session expired">Phiên đăng nhập đã hết hạn</strong>
+        <p data-vi="Vì lý do bảo mật hoặc mật khẩu vừa được cập nhật ở thiết bị khác, vui lòng đăng nhập lại để tiếp tục." data-en="Your session has expired or your password was changed. Please log in again to continue.">
+          Vì lý do bảo mật hoặc mật khẩu vừa được cập nhật ở thiết bị khác, vui lòng đăng nhập lại để tiếp tục.
+        </p>
+      </div>
+    {% endif %}
+
+    <div class="auth-header">
+      <h1 data-vi="Chào mừng trở lại 👋" data-en="Welcome back 👋">Chào mừng trở lại 👋</h1>
+      <p class="muted" data-vi="Đăng nhập để kiểm tra lịch gia hạn, hạn thẻ và các đường link đã lưu." data-en="Log in to see what's renewing next.">
+        Đăng nhập để kiểm tra lịch gia hạn, hạn thẻ và các đường link đã lưu.
+      </p>
+    </div>
+
     {% include "auth/_social.html" %}
-    <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label>Email or username <input type="text" name="identifier" required autocomplete="username" value="{{ request.form.get('identifier', '') }}" /></label>
-      <label>Password <input type="password" name="password" required autocomplete="current-password" /></label>
-      <p class="muted"><a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a></p>
-      <button type="submit">Log in</button>
+
+    <form method="post" class="auth-form" id="login-form" data-submitting-text="Đang đăng nhập…">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% endif %}
+
+      <div class="field-group">
+        {% if csrf_token is defined %}
+          <label for="login-identifier" data-vi="Email hoặc tên đăng nhập" data-en="Email or username">Email hoặc tên đăng nhập</label>
+          <input
+            id="login-identifier"
+            type="text"
+            name="identifier"
+            required
+            autocomplete="username"
+            spellcheck="false"
+            autocapitalize="none"
+            autocorrect="off"
+            enterkeyhint="next"
+            placeholder="ban@example.com hoặc username"
+            value="{{ request.form.get('identifier', '') }}"
+          />
+        {% else %}
+          <label for="login-email" data-vi="Email (hoặc tên đăng nhập khi backend nâng cấp)" data-en="Email">Email</label>
+          <input
+            id="login-email"
+            type="email"
+            name="email"
+            required
+            autocomplete="username"
+            spellcheck="false"
+            autocapitalize="none"
+            autocorrect="off"
+            inputmode="email"
+            enterkeyhint="next"
+            placeholder="ban@example.com"
+            value="{{ request.form.get('email', '') }}"
+          />
+        {% endif %}
+      </div>
+
+      <div class="field-group">
+        <div class="label-row">
+          <label for="current-password" data-vi="Mật khẩu" data-en="Password">Mật khẩu</label>
+          {% if csrf_token is defined %}
+            <a class="forgot-link" href="{{ url_for('auth.forgot_password') }}" data-vi="Quên mật khẩu?" data-en="Forgot password?">Quên mật khẩu?</a>
+          {% else %}
+            <button type="button" class="link forgot-link" data-open-dialog="dialog-auth-states" data-vi="Quên mật khẩu?" data-en="Forgot password?">Quên mật khẩu?</button>
+          {% endif %}
+        </div>
+        <div class="password-wrap">
+          <input
+            id="current-password"
+            type="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            enterkeyhint="done"
+          />
+          <button
+            type="button"
+            class="pwd-toggle"
+            data-toggle-password="current-password"
+            aria-label="Hiện mật khẩu"
+            aria-pressed="false"
+            data-vi="Hiện"
+            data-en="Show"
+          >Hiện</button>
+        </div>
+      </div>
+
+      <button type="submit" class="auth-submit" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</button>
     </form>
-    <p class="muted">No account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
+
+    <p class="muted auth-footer-link">
+      <span data-vi="Chưa có tài khoản?" data-en="No account?">Chưa có tài khoản?</span>
+      <a href="{{ url_for('auth.register') }}" data-vi="Đăng ký ngay" data-en="Sign up">Đăng ký ngay</a>
+    </p>
+
+    <details class="auth-states-preview">
+      <summary class="muted" data-vi="🔍 Xem trước các trạng thái tài khoản (Verify Email / Quên & Đặt lại mật khẩu / Hết phiên)" data-en="🔍 Preview account states (Verify Email / Forgot & Reset Password / Session Expired)">
+        🔍 Xem trước các trạng thái tài khoản (Verify Email / Quên & Đặt lại mật khẩu / Hết phiên)
+      </summary>
+      <div class="auth-states-grid">
+        <div class="state-preview-card">
+          <span class="pill" data-vi="Xác nhận Email" data-en="Verify Email">Xác nhận Email</span>
+          <strong data-vi="Xác nhận địa chỉ email của bạn" data-en="Confirm your email">Xác nhận địa chỉ email của bạn</strong>
+          <p class="muted" data-vi="Bấm nút xác nhận bên dưới để kích hoạt nhận lịch nhắc qua email. Liên kết có hiệu lực 24 giờ và chỉ dùng 1 lần." data-en="Click confirm so reminders can reach you. Valid for 24 hours, single use.">
+            Bấm nút xác nhận bên dưới để kích hoạt nhận lịch nhắc qua email. Liên kết có hiệu lực 24 giờ và chỉ dùng 1 lần.
+          </p>
+        </div>
+        <div class="state-preview-card">
+          <span class="pill sun-label" data-vi="Quên / Đặt lại mật khẩu" data-en="Forgot / Reset password">Quên / Đặt lại mật khẩu</span>
+          <strong data-vi="Khôi phục mật khẩu qua email" data-en="Reset password via email">Khôi phục mật khẩu qua email</strong>
+          <p class="muted" data-vi="Nhập email đã đăng ký để nhận liên kết đặt lại mật khẩu (hiệu lực 30 phút). Khi đổi mật khẩu, các thiết bị khác tự động đăng xuất." data-en="Enter your email to receive a 30-minute reset link. Changing password logs out other sessions.">
+            Nhập email đã đăng ký để nhận liên kết đặt lại mật khẩu (hiệu lực 30 phút). Khi đổi mật khẩu, các thiết bị khác tự động đăng xuất.
+          </p>
+        </div>
+        <div class="state-preview-card">
+          <span class="pill hot-label" data-vi="Hết phiên / Khóa tạm" data-en="Session expired / Rate limit">Hết phiên / Khóa tạm</span>
+          <strong data-vi="Bảo vệ đăng nhập sai nhiều lần" data-en="Brute-force & session protection">Bảo vệ đăng nhập sai nhiều lần</strong>
+          <p class="muted">
+            <a href="{{ url_for('auth.login', expired='1') }}" data-vi="Thử xem thông báo hết phiên (?expired=1)" data-en="Preview session-expired banner (?expired=1)">Thử xem thông báo hết phiên (?expired=1)</a>
+          </p>
+        </div>
+      </div>
+    </details>
   </div>
+
+  {% if csrf_token is not defined %}
+    <dialog id="dialog-auth-states" class="legal-dialog" aria-labelledby="forgot-preview-title">
+      <div class="legal-dialog-inner">
+        <header class="legal-dialog-head">
+          <h3 id="forgot-preview-title" data-vi="Quên mật khẩu — Giao diện chờ kết nối route" data-en="Forgot password — UI preview">Quên mật khẩu</h3>
+          <button type="button" class="subby-close" data-close-dialog aria-label="Đóng">×</button>
+        </header>
+        <div class="legal-dialog-body">
+          <p class="muted" data-vi="Template auth/forgot.html, auth/reset.html và auth/verify.html đã sẵn sàng theo đúng contract. Khi nhánh backend tài khoản được gộp, đường dẫn /forgot-password sẽ gửi email đặt lại mật khẩu thật." data-en="Templates auth/forgot.html, auth/reset.html and auth/verify.html are ready for the backend accounts route.">
+            Template <code>auth/forgot.html</code>, <code>auth/reset.html</code> và <code>auth/verify.html</code> đã sẵn sàng theo đúng contract. Khi nhánh backend tài khoản được gộp, đường dẫn <code>/forgot-password</code> sẽ hoạt động trực tiếp.
+          </p>
+        </div>
+      </div>
+    </dialog>
+  {% endif %}
 {% endblock %}

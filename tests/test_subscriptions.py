@@ -84,19 +84,20 @@ def test_editing_an_archived_one_keeps_it_archived(user, app):
 # ---------- list: search, filter, sort, pages --------------------------------
 
 def test_search_filter_sort(user):
+    from tests.html_helpers import Page
     # (Not "Netflix": Subby's panel on every page mentions it.)
     add(user, name="Hulu", amount="9.99", next_renewal_at="2026-11-05")
     add(user, name="Spotify", amount="5.00", next_renewal_at="2026-11-01", notes="family plan")
     add(user, name="Adobe", amount="20.00", next_renewal_at="2026-12-01")
 
     page = user.get("/subscriptions/?q=family").get_data(as_text=True)
-    assert "Spotify" in page and "Hulu" not in page
+    assert Page(page).subscription_names == ["Spotify"]
 
     page = user.get("/subscriptions/?sort=amount").get_data(as_text=True)
-    assert page.index("Adobe") < page.index("Hulu") < page.index("Spotify")
+    assert Page(page).subscription_names == ["Adobe", "Hulu", "Spotify"]
 
     page = user.get("/subscriptions/").get_data(as_text=True)  # soonest first
-    assert page.index("Spotify") < page.index("Hulu") < page.index("Adobe")
+    assert Page(page).subscription_names == ["Spotify", "Hulu", "Adobe"]
 
 
 def test_archived_filter(user, app):

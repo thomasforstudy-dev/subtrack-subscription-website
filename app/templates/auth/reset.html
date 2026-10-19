@@ -1,15 +1,73 @@
 {% extends "base.html" %}
-{% block title %}New password — SubTrack{% endblock %}
+{% block title %}Đặt lại mật khẩu mới — SubTrack{% endblock %}
 {% block content %}
-  {# Plain working page from the backend lane. UI lane: restyle freely, keep the form. #}
   <div class="card auth-card">
-    <h1>Choose a new password</h1>
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label>New password <input type="password" name="password" required minlength="12" maxlength="128" autocomplete="new-password" /></label>
-      <p class="muted">At least 12 characters, with an upper-case letter, a number and a special character like ! or #.</p>
-      <label>Confirm new password <input type="password" name="confirm" required minlength="12" maxlength="128" autocomplete="new-password" /></label>
-      <button type="submit">Save new password</button>
+    <div class="auth-header">
+      <h1 data-vi="Chọn mật khẩu mới" data-en="Choose a new password">Chọn mật khẩu mới</h1>
+      <p class="muted" data-vi="Sau khi lưu mật khẩu mới, các phiên đăng nhập trên thiết bị khác sẽ tự động đăng xuất để bảo vệ tài khoản của bạn." data-en="Saving a new password will sign out other browsers automatically.">
+        Sau khi lưu mật khẩu mới, các phiên đăng nhập trên thiết bị khác sẽ tự động đăng xuất để bảo vệ tài khoản của bạn.
+      </p>
+    </div>
+
+    <form method="post" id="reset-form" class="auth-form" data-submitting-text="Đang lưu mật khẩu mới…">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% endif %}
+
+      <div class="field-group">
+        <label for="reset-new-password" data-vi="Mật khẩu mới" data-en="New password">Mật khẩu mới</label>
+        <div class="password-wrap">
+          <input
+            id="reset-new-password"
+            type="password"
+            name="password"
+            required
+            minlength="12"
+            maxlength="128"
+            autocomplete="new-password"
+            aria-describedby="reset-pwd-rules"
+          />
+          <button
+            type="button"
+            class="pwd-toggle"
+            data-toggle-password="reset-new-password"
+            aria-label="Hiện mật khẩu mới"
+            aria-pressed="false"
+            data-vi="Hiện"
+            data-en="Show"
+          >Hiện</button>
+        </div>
+        <p id="reset-pwd-rules" class="field-hint" data-vi="Từ 12 đến 128 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt (như ! hoặc #)." data-en="At least 12 characters, with an upper-case letter, a number and a special character like ! or #.">
+          Từ 12 đến 128 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt (như ! hoặc #).
+          <span class="sr-only">12 to 128 characters, upper-case letter, a number, special character</span>
+        </p>
+      </div>
+
+      <div class="field-group">
+        <label for="reset-confirm-password" data-vi="Nhập lại mật khẩu mới" data-en="Confirm new password">Nhập lại mật khẩu mới</label>
+        <div class="password-wrap">
+          <input
+            id="reset-confirm-password"
+            type="password"
+            name="confirm"
+            required
+            minlength="12"
+            maxlength="128"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="pwd-toggle"
+            data-toggle-password="reset-confirm-password"
+            aria-label="Hiện mật khẩu xác nhận"
+            aria-pressed="false"
+            data-vi="Hiện"
+            data-en="Show"
+          >Hiện</button>
+        </div>
+      </div>
+
+      <button type="submit" class="auth-submit" data-vi="Lưu mật khẩu mới" data-en="Save new password">Lưu mật khẩu mới</button>
     </form>
   </div>
 {% endblock %}

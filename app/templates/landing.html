@@ -1,67 +1,87 @@
 {% extends "base.html" %}
-{% block title %}SubTrack — Renew on purpose. Cancel in time.{% endblock %}
+{% block title %}SubTrack — Quản lý gói đăng ký, hạn thẻ, link & hóa đơn{% endblock %}
 {% block body_class %}landing{% endblock %}
 {% block head %}
-  {# Mark that JavaScript runs, so pieces can start hidden and animate in.
-     Without JavaScript everything is simply shown. #}
+  {# Đánh dấu khi JavaScript hoạt động để kích hoạt hiệu ứng cuộn mượt.
+     Nếu JS tắt hoặc lỗi, mọi nội dung và nút CTA vẫn hiển thị đầy đủ. #}
   <script>document.documentElement.classList.add("js");</script>
   <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}" />
 {% endblock %}
 
-{# Demo data for the story. x/y = where the card lands (%), fx/fy = where it
-   flies in from (vw/vh), r = tilt, s = how fast it drifts while scrolling. #}
+{# Dữ liệu minh họa câu chuyện (Demo cho trang giới thiệu công khai). #}
 {% set rush = [
-  {"name": "Netflix", "tile": "N", "price": "15.49", "due": "in 2 days", "color": "#e50914", "x": 2, "y": 2, "r": -7, "fx": -70, "fy": -30, "s": 0.35},
-  {"name": "Spotify", "tile": "S", "price": "11.99", "due": "today", "color": "#1db954", "x": 52, "y": 0, "r": 5, "fx": 60, "fy": -40, "s": 0.2},
-  {"name": "YouTube Premium", "tile": "▶", "price": "13.99", "due": "in 3 days", "color": "#ff0033", "x": 26, "y": 15, "r": -3, "fx": -20, "fy": -60, "s": 0.5},
-  {"name": "ChatGPT Plus", "tile": "G", "price": "20.00", "due": "in 2 days", "color": "#10a37f", "x": 58, "y": 25, "r": 8, "fx": 80, "fy": 10, "s": 0.3},
-  {"name": "Claude Pro", "tile": "C", "price": "20.00", "due": "in 5 days", "color": "#d97757", "x": 0, "y": 34, "r": 4, "fx": -80, "fy": 20, "s": 0.45},
-  {"name": "Gemini", "tile": "✦", "price": "19.99", "due": "tomorrow", "color": "#4285f4", "x": 33, "y": 43, "r": -8, "fx": 10, "fy": 60, "s": 0.25},
-  {"name": "iCloud+", "tile": "i", "price": "2.99", "due": "in 4 days", "color": "#3693f3", "x": 62, "y": 52, "r": -4, "fx": 70, "fy": 50, "s": 0.55},
-  {"name": "Adobe CC", "tile": "A", "price": "59.99", "due": "in 2 days", "color": "#fa0f00", "x": 4, "y": 63, "r": 7, "fx": -60, "fy": 70, "s": 0.3},
-  {"name": "Disney+", "tile": "D", "price": "13.99", "due": "in 6 days", "color": "#113ccf", "x": 38, "y": 72, "r": 3, "fx": 20, "fy": 80, "s": 0.4},
-  {"name": "Canva Pro", "tile": "C", "price": "14.99", "due": "in 3 days", "color": "#7d2ae8", "x": 64, "y": 82, "r": -6, "fx": 80, "fy": 70, "s": 0.2},
+  {"name": "Netflix", "tile": "N", "price": "260.000₫", "due": "còn 2 ngày", "due_en": "in 2 days", "color": "#e50914", "x": 2, "y": 2, "r": -6, "fx": -35, "fy": -20, "s": 0.3},
+  {"name": "Spotify", "tile": "S", "price": "59.000₫", "due": "hôm nay", "due_en": "today", "color": "#1db954", "x": 52, "y": 0, "r": 5, "fx": 35, "fy": -25, "s": 0.2},
+  {"name": "YouTube Premium", "tile": "▶", "price": "79.000₫", "due": "còn 3 ngày", "due_en": "in 3 days", "color": "#ff0033", "x": 26, "y": 15, "r": -3, "fx": -15, "fy": -35, "s": 0.4},
+  {"name": "ChatGPT Plus", "tile": "G", "price": "$20.00", "due": "còn 2 ngày", "due_en": "in 2 days", "color": "#10a37f", "x": 58, "y": 25, "r": 7, "fx": 40, "fy": 10, "s": 0.25},
+  {"name": "Claude Pro", "tile": "C", "price": "$20.00", "due": "còn 5 ngày", "due_en": "in 5 days", "color": "#d97757", "x": 0, "y": 34, "r": 4, "fx": -40, "fy": 15, "s": 0.35},
+  {"name": "Gemini Advanced", "tile": "✦", "price": "499.000₫", "due": "ngày mai", "due_en": "tomorrow", "color": "#4285f4", "x": 33, "y": 43, "r": -6, "fx": 10, "fy": 35, "s": 0.2},
+  {"name": "iCloud+ 200GB", "tile": "i", "price": "69.000₫", "due": "còn 4 ngày", "due_en": "in 4 days", "color": "#3693f3", "x": 62, "y": 52, "r": -4, "fx": 35, "fy": 30, "s": 0.45},
+  {"name": "Adobe CC", "tile": "A", "price": "$59.99", "due": "còn 2 ngày", "due_en": "in 2 days", "color": "#fa0f00", "x": 4, "y": 63, "r": 6, "fx": -35, "fy": 40, "s": 0.25},
+  {"name": "Disney+", "tile": "D", "price": "$13.99", "due": "còn 6 ngày", "due_en": "in 6 days", "color": "#113ccf", "x": 38, "y": 72, "r": 3, "fx": 15, "fy": 45, "s": 0.3},
+  {"name": "Canva Pro", "tile": "C", "price": "149.000₫", "due": "còn 3 ngày", "due_en": "in 3 days", "color": "#7d2ae8", "x": 64, "y": 82, "r": -5, "fx": 40, "fy": 40, "s": 0.2},
 ] %}
 {% set ledger = [
-  {"name": "Spotify", "tile": "S", "color": "#1db954", "price": "11.99", "next": "in 2 days", "soon": true, "fx": -220, "fy": -140, "r": -12},
-  {"name": "Netflix", "tile": "N", "color": "#e50914", "price": "15.49", "next": "in 9 days", "soon": false, "fx": 240, "fy": -90, "r": 9},
-  {"name": "ChatGPT Plus", "tile": "G", "color": "#10a37f", "price": "20.00", "next": "in 13 days", "soon": false, "fx": -260, "fy": 40, "r": 7},
-  {"name": "Adobe CC", "tile": "A", "color": "#fa0f00", "price": "59.99", "next": "in 18 days", "soon": false, "fx": 220, "fy": 110, "r": -8},
-  {"name": "iCloud+", "tile": "i", "color": "#3693f3", "price": "2.99", "next": "in 20 days", "soon": false, "fx": -180, "fy": 170, "r": 11},
+  {"name": "Spotify Premium", "tile": "S", "color": "#1db954", "price": "59.000 VND", "next": "Gia hạn dự kiến: còn 2 ngày", "next_en": "Expected renewal: in 2 days", "soon": true, "fx": -120, "fy": -80, "r": -8},
+  {"name": "Netflix Tiêu chuẩn", "tile": "N", "color": "#e50914", "price": "260.000 VND", "next": "Gia hạn dự kiến: còn 9 ngày", "next_en": "Expected renewal: in 9 days", "soon": false, "fx": 120, "fy": -60, "r": 6},
+  {"name": "ChatGPT Plus", "tile": "G", "color": "#10a37f", "price": "20.00 USD", "next": "Gia hạn dự kiến: còn 13 ngày", "next_en": "Expected renewal: in 13 days", "soon": false, "fx": -140, "fy": 30, "r": 5},
+  {"name": "Adobe Creative Cloud", "tile": "A", "color": "#fa0f00", "price": "59.99 USD", "next": "Gia hạn dự kiến: còn 18 ngày", "next_en": "Expected renewal: in 18 days", "soon": false, "fx": 120, "fy": 70, "r": -6},
+  {"name": "iCloud+ 200GB", "tile": "i", "color": "#3693f3", "price": "69.000 VND", "next": "Gia hạn dự kiến: còn 20 ngày", "next_en": "Expected renewal: in 20 days", "soon": false, "fx": -100, "fy": 90, "r": 7},
 ] %}
-{% set chapters = ["Rush hour", "The surprise", "Add them once", "Reminders", "Pinned links", "Card payments", "Calm"] %}
+{% set chapters = [
+  {"id": "ch1", "vi": "1. Nhiều gói khó nhớ", "en": "1. Subscription rush hour"},
+  {"id": "ch2", "vi": "2. Bất ngờ trừ tiền", "en": "2. Surprise charges & due dates"},
+  {"id": "ch3", "vi": "3. Tổ chức lịch", "en": "3. Organized schedule"},
+  {"id": "ch4", "vi": "4. Nhắc trước hạn", "en": "4. Early reminders"},
+  {"id": "ch5", "vi": "5. Lưu link", "en": "5. Pinned links"},
+  {"id": "ch6", "vi": "6. Hóa đơn & Thẻ", "en": "6. Bills & Credit cards"},
+  {"id": "ch7", "vi": "7. Bắt đầu", "en": "7. Get started"}
+] %}
 
 {% block main %}
   <div class="progress" aria-hidden="true"></div>
-  <nav class="rail" aria-label="Chapters">
-    {% for title in chapters %}
-      <a href="#ch{{ loop.index }}" data-rail="ch{{ loop.index }}" title="{{ title }}"><span class="sr-only">{{ title }}</span></a>
+  <nav class="rail" aria-label="Các chương giới thiệu">
+    {% for ch in chapters %}
+      <a href="#{{ ch.id }}" data-rail="{{ ch.id }}" title="{{ ch.vi }}" data-title-vi="{{ ch.vi }}" data-title-en="{{ ch.en }}">
+        <span class="sr-only">{{ ch.vi }} ({{ ch.en }})</span>
+      </a>
     {% endfor %}
   </nav>
 
-  <main class="story">
+  <main class="story" id="main-content">
     <div class="landing-flash">{% include "_flashes.html" %}</div>
 
-    {# 1. Rush hour #}
+    {# 1. Nhiều gói và phí khó nhớ (Rush hour) #}
     <section class="chapter dark" id="ch1" data-theme="dark">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label hot-label">Chapter 01 · Subscription rush hour</p>
-          <h1 class="display">It's subscription <span class="hot">rush hour.</span></h1>
-          <p class="lead">Music, movies, cloud storage, three AI tools and a gym you never visit. Every one renews on its own date, and none of them warn you.</p>
-          <p class="stat-row">
-            <span class="stat"><strong>10</strong> renewals this month</span>
-            <span class="stat hot-stat"><strong>$193.42</strong> leaving quietly</span>
+          <p class="label hot-label" data-vi="Chương 01 · Nhiều gói & phí khó nhớ" data-en="Chapter 01 · Subscription rush hour">Chương 01 · Nhiều gói & phí khó nhớ</p>
+          <h1 class="display" data-vi="Giờ cao điểm của các gói đăng ký." data-en="It's subscription rush hour.">
+            Giờ cao điểm của <span class="hot">các gói đăng ký.</span>
+            <span class="sr-only">It's subscription rush hour.</span>
+          </h1>
+          <p class="lead" data-vi="Nhạc, phim, dung lượng đám mây, ba công cụ AI và thẻ tín dụng. Mỗi dịch vụ gia hạn một ngày khác nhau, không dễ nhớ hết lịch thu phí." data-en="Music, movies, cloud storage, AI tools and credit cards. Every service renews on its own date, making it hard to track.">
+            Nhạc, phim, dung lượng đám mây, ba công cụ AI và thẻ tín dụng. Mỗi dịch vụ gia hạn một ngày khác nhau, không dễ nhớ hết lịch thu phí.
           </p>
-          <a class="scroll-hint" href="#ch2">Scroll to see how it ends <span aria-hidden="true">↓</span></a>
+          <p class="stat-row">
+            <span class="stat"><strong data-vi="10 gói" data-en="10 plans">10 gói</strong> <span data-vi="xoay vòng mỗi tháng" data-en="renewing this month">xoay vòng mỗi tháng</span></span>
+            <span class="stat hot-stat"><strong>1.115.000₫ + $113.98</strong> <span data-vi="rời ví âm thầm (Minh họa)" data-en="leaving quietly (Demo)">rời ví âm thầm (Minh họa)</span></span>
+          </p>
+          <div class="hero-actions">
+            <a class="button big" href="{{ url_for('auth.register') }}" data-vi="Tạo tài khoản miễn phí" data-en="Get started free">Tạo tài khoản miễn phí</a>
+            <a class="scroll-hint" href="#ch2"><span data-vi="Cuộn xuống xem hành trình" data-en="Scroll to see the story">Cuộn xuống xem hành trình</span> <span aria-hidden="true">↓</span></a>
+          </div>
         </div>
-        <div class="rush" data-rush aria-label="A pile of subscriptions">
+        <div class="rush" data-rush aria-label="Minh họa các thẻ dịch vụ đang đến hạn">
           {% for c in rush %}
             <div class="sub-card" style="--x: {{ c.x }}; --y: {{ c.y }}; --r: {{ c.r }}deg; --fx: {{ c.fx }}vw; --fy: {{ c.fy }}vh; --s: {{ c.s }}; --i: {{ loop.index0 }}; --brand: {{ c.color }}">
               <div class="sub-card-in">
                 <span class="tile">{{ c.tile }}</span>
-                <span class="sub-name"><span>{{ c.name }}</span><small>renews {{ c.due }}</small></span>
-                <span class="sub-price">${{ c.price }}</span>
+                <span class="sub-name">
+                  <span>{{ c.name }}</span>
+                  <small data-vi="gia hạn {{ c.due }}" data-en="renews {{ c.due_en }}">gia hạn {{ c.due }}</small>
+                </span>
+                <span class="sub-price">{{ c.price }}</span>
               </div>
             </div>
           {% endfor %}
@@ -70,31 +90,39 @@
       <div class="ticker" aria-hidden="true">
         <div class="ticker-track">
           {% for _ in range(2) %}
-            {% for c in rush %}<span>−${{ c.price }} {{ c.name }}</span>{% endfor %}
+            {% for c in rush %}<span>−{{ c.price }} {{ c.name }}</span>{% endfor %}
           {% endfor %}
         </div>
       </div>
     </section>
 
-    {# 2. The surprise #}
+    {# 2. Bất ngờ gia hạn / trễ hạn thẻ (The surprise) #}
     <section class="chapter dark" id="ch2" data-theme="dark">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label hot-label">Chapter 02 · The surprise</p>
-          <h2 class="display">Then the charges <span class="hot">hit your bank.</span></h2>
-          <p class="lead">No email. No heads-up. Just a quiet Tuesday morning and a bank alert for a free trial you forgot you started.</p>
+          <p class="label hot-label" data-vi="Chương 02 · Bất ngờ gia hạn & trễ hạn thẻ" data-en="Chapter 02 · Surprise charges & late fees">Chương 02 · Bất ngờ gia hạn & trễ hạn thẻ</p>
+          <h2 class="display">
+            <span data-vi="Bất ngờ bị trừ tiền hoặc" data-en="Then the charges">Bất ngờ bị trừ tiền hoặc</span>
+            <span class="hot" data-vi="sát hạn trả thẻ." data-en="hit your bank.">sát hạn trả thẻ.</span>
+          </h2>
+          <p class="lead" data-vi="Gói dùng thử quên hủy tự động thu phí cả năm, còn kỳ sao kê thẻ tín dụng thì đến hạn đúng lúc bạn quên kiểm tra." data-en="A forgotten free trial auto-renews for a full year, right as your credit card statement payment comes due.">
+            Gói dùng thử quên hủy tự động thu phí cả năm, còn kỳ sao kê thẻ tín dụng thì đến hạn đúng lúc bạn quên kiểm tra.
+          </p>
         </div>
         <div class="surprise">
-          <div class="phone">
-            <p class="phone-top">Tuesday 7:42 AM</p>
-            <div class="notif" style="--i: 0"><strong>First Bank</strong>Card •••• 4108 charged <b>$20.00</b> by CHATGPT PLUS</div>
-            <div class="notif" style="--i: 1"><strong>First Bank</strong>Card •••• 4108 charged <b>$59.99</b> by ADOBE CREATIVE CLOUD</div>
-            <div class="notif" style="--i: 2"><strong>First Bank</strong>Card •••• 4108 charged <b>$13.99</b> by DISNEY+</div>
-            <div class="notif warn" style="--i: 3"><strong>⚠ Low balance</strong>Your balance dropped below $50</div>
-            <p class="phone-total">Unexpected this month <span class="hot">$<span data-count="347.82" data-decimals="2">347.82</span></span></p>
+          <div class="phone" aria-label="Mô phỏng thông báo trên điện thoại">
+            <p class="phone-top" data-vi="Thứ Ba · 07:42 sáng (Mô phỏng)" data-en="Tuesday · 7:42 AM (Demo)">Thứ Ba · 07:42 sáng (Mô phỏng)</p>
+            <div class="notif" style="--i: 0"><strong data-vi="Thông báo thẻ •••• 4108" data-en="Card Alert •••• 4108">Thông báo thẻ •••• 4108</strong><span data-vi="Vừa thu tự động $20.00 cho CHATGPT PLUS" data-en="Auto-charged $20.00 by CHATGPT PLUS">Vừa thu tự động <b>$20.00</b> cho CHATGPT PLUS</span></div>
+            <div class="notif" style="--i: 1"><strong data-vi="Thông báo thẻ •••• 4108" data-en="Card Alert •••• 4108">Thông báo thẻ •••• 4108</strong><span data-vi="Vừa thu tự động $59.99 cho ADOBE CC" data-en="Auto-charged $59.99 by ADOBE CC">Vừa thu tự động <b>$59.99</b> cho ADOBE CC</span></div>
+            <div class="notif" style="--i: 2"><strong data-vi="Sao kê thẻ tín dụng" data-en="Credit Card Statement">Sao kê thẻ tín dụng</strong><span data-vi="Hạn thanh toán kỳ này còn 2 ngày" data-en="Statement payment due in 2 days">Hạn thanh toán kỳ này còn <b>2 ngày</b></span></div>
+            <div class="notif warn" style="--i: 3"><strong data-vi="⚠ Cảnh báo chi vượt dự kiến" data-en="⚠ Unplanned charges alert">⚠ Cảnh báo chi vượt dự kiến</strong><span data-vi="Nhiều khoản tự gia hạn cùng tuần" data-en="Multiple auto-renewals in the same week">Nhiều khoản tự gia hạn cùng tuần</span></div>
+            <p class="phone-total">
+              <span data-vi="Phát sinh ngoài dự tính (Minh họa)" data-en="Unexpected this month (Demo)">Phát sinh ngoài dự tính (Minh họa)</span>
+              <span class="hot">$<span data-count="347.82" data-decimals="2">347.82</span></span>
+            </p>
           </div>
-          <div class="cal" aria-label="A month crowded with renewals">
-            <p class="cal-title">This month</p>
+          <div class="cal" aria-label="Lịch tháng có nhiều ngày gia hạn">
+            <p class="cal-title" data-vi="Lịch gia hạn & hạn thẻ trong tháng" data-en="Renewals & due dates this month">Lịch gia hạn & hạn thẻ trong tháng</p>
             <div class="cal-grid">
               {% for day in range(1, 29) %}
                 <span class="day{% if day in [2, 3, 5, 8, 9, 12, 14, 15, 17, 20, 21, 23, 26, 27] %} busy{% endif %}" style="--i: {{ day }}">{{ day }}</span>
@@ -105,129 +133,311 @@
       </div>
     </section>
 
-    {# The night fades into calm here #}
+    {# Chuyển cảnh từ đêm rối rắm sang sáng gọn gàng #}
     <div class="bridge" aria-hidden="true">
-      <p>…until you put them all in one place.</p>
+      <p data-vi="…cho đến khi SubTrack giúp bạn tổ chức lại mọi thứ." data-en="…until you organize them all in one place.">…cho đến khi SubTrack giúp bạn tổ chức lại mọi thứ.</p>
     </div>
 
-    {# 3. Add them once #}
+    {# 3. SubTrack tổ chức lịch (Add them once) #}
     <section class="chapter light" id="ch3" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label">Chapter 03 · Put it all in one place</p>
-          <h2 class="display">Add them once. <span class="calm">We'll keep watch.</span></h2>
-          <p class="lead">The pile snaps into one tidy list. Every price, every renewal date, and what it all costs per month.</p>
+          <p class="label" data-vi="Chương 03 · SubTrack tổ chức lịch" data-en="Chapter 03 · Organize your schedule">Chương 03 · SubTrack tổ chức lịch</p>
+          <h2 class="display">
+            <span data-vi="Ghi lại một lần." data-en="Add them once.">Ghi lại một lần.</span>
+            <span class="calm" data-vi="Lịch trình rõ ràng ngay." data-en="We'll keep watch.">Lịch trình rõ ràng ngay.</span>
+          </h2>
+          <p class="lead" data-vi="Mọi gói đăng ký được sắp xếp theo ngày gia hạn dự kiến gần nhất, tách biệt rõ ràng từng loại tiền tệ (VND, USD) để bạn nắm chắc chi phí." data-en="Every subscription is sorted by its next expected renewal date, grouped cleanly by currency so you always know what's coming.">
+            Mọi gói đăng ký được sắp xếp theo ngày gia hạn dự kiến gần nhất, tách biệt rõ ràng từng loại tiền tệ (VND, USD) để bạn nắm chắc chi phí.
+          </p>
           <p class="stat-row">
-            <span class="stat light-stat"><strong>5</strong> tracked</span>
-            <span class="stat light-stat"><strong>$<span data-count="110.46" data-decimals="2">110.46</span></strong> per month</span>
+            <span class="stat light-stat"><strong>5</strong> <span data-vi="gói đang theo dõi" data-en="tracked plans">gói đang theo dõi</span></span>
+            <span class="stat light-stat"><strong>388.000 VND</strong> + <strong>$79.99</strong> <span data-vi="/ tháng (Minh họa)" data-en="/ month (Demo)">/ tháng (Minh họa)</span></span>
           </p>
         </div>
         <div class="ledger card">
-          <p class="ledger-head">Your subscriptions <span class="pill mint">✓ All tracked</span></p>
+          <p class="ledger-head">
+            <span data-vi="Danh sách gói đăng ký (Demo)" data-en="Your subscriptions (Demo)">Danh sách gói đăng ký (Demo)</span>
+            <span class="pill mint" data-vi="✓ Đã xếp theo hạn" data-en="✓ Sorted by due date">✓ Đã xếp theo hạn</span>
+          </p>
           {% for row in ledger %}
             <div class="row{% if row.soon %} soon{% endif %}" style="--fx: {{ row.fx }}px; --fy: {{ row.fy }}px; --r: {{ row.r }}deg; --i: {{ loop.index0 }}">
               <span class="tile" style="--brand: {{ row.color }}">{{ row.tile }}</span>
-              <span class="sub-name"><span>{{ row.name }}</span><small>{% if row.soon %}<b>renews {{ row.next }}</b>{% else %}renews {{ row.next }}{% endif %}</small></span>
-              <span class="sub-price">${{ row.price }}</span>
+              <span class="sub-name">
+                <span>{{ row.name }}</span>
+                <small>{% if row.soon %}<b data-vi="{{ row.next }}" data-en="{{ row.next_en }}">{{ row.next }}</b>{% else %}<span data-vi="{{ row.next }}" data-en="{{ row.next_en }}">{{ row.next }}</span>{% endif %}</small>
+              </span>
+              <span class="sub-price">{{ row.price }}</span>
             </div>
           {% endfor %}
-          <p class="ledger-total">Monthly total <strong>$<span data-count="110.46" data-decimals="2">110.46</span></strong></p>
+          <div class="ledger-total">
+            <span data-vi="Dự kiến hàng tháng theo tiền tệ" data-en="Estimated monthly by currency">Dự kiến hàng tháng theo tiền tệ</span>
+            <strong>388.000 VND · $79.99</strong>
+          </div>
         </div>
       </div>
     </section>
 
-    {# 4. Reminders #}
+    {# 4. Nhắc trước hạn (Reminders) #}
     <section class="chapter light" id="ch4" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label">Chapter 04 · We remind you before</p>
-          <h2 class="display">We email you <span class="calm">before</span> it renews.</h2>
-          <p class="lead">Not on the morning of the charge. Early enough to decide calmly: keep it, or cancel in time.</p>
-          <p class="hint">👉 Try it: pick when you want the email.</p>
+          <p class="label" data-vi="Chương 04 · Nhắc trước hạn" data-en="Chapter 04 · Remind before renewal">Chương 04 · Nhắc trước hạn</p>
+          <h2 class="display">
+            <span data-vi="Nhắc bạn" data-en="Remind you">Nhắc bạn</span>
+            <span class="calm" data-vi="trước ngày gia hạn." data-en="before it renews.">trước ngày gia hạn.</span>
+          </h2>
+          <p class="lead" data-vi="Đặt mốc nhắc trước 14, 7 hoặc 3 ngày cho từng gói để bạn kịp tự gia hạn hoặc mở trang hủy dịch vụ đúng lúc. SubTrack chỉ nhắc lịch, không tự hủy dịch vụ bên ngoài." data-en="Set a 14, 7, or 3-day advance reminder for each plan so you can decide to keep or cancel in time. SubTrack reminds you; it does not cancel external services automatically.">
+            Đặt mốc nhắc trước 14, 7 hoặc 3 ngày cho từng gói để bạn kịp tự gia hạn hoặc mở trang hủy dịch vụ đúng lúc. SubTrack chỉ nhắc lịch, không tự hủy dịch vụ bên ngoài.
+          </p>
+          <p class="hint" data-vi="👉 Thử bấm chọn mốc ngày bạn muốn nhận lời nhắc:" data-en="👉 Try it: pick when you want your reminder:">👉 Thử bấm chọn mốc ngày bạn muốn nhận lời nhắc:</p>
         </div>
         <div class="remind">
           <div class="timeline card">
             <div class="line"><span class="line-fill"></span></div>
-            <div class="whens" role="group" aria-label="Remind me">
-              <button type="button" class="when" data-days="14" style="--i: 0">14 days</button>
-              <button type="button" class="when on" data-days="7" style="--i: 1">7 days</button>
-              <button type="button" class="when" data-days="3" style="--i: 2">3 days</button>
-              <span class="when end" style="--i: 3">Renews</span>
+            <div class="whens" role="group" aria-label="Chọn mốc nhắc trước">
+              <button type="button" class="when" data-days="14" data-days-label-vi="14 ngày" data-days-label-en="14 days" style="--i: 0" data-vi="Trước 14 ngày" data-en="14 days">Trước 14 ngày</button>
+              <button type="button" class="when on" data-days="7" data-days-label-vi="7 ngày" data-days-label-en="7 days" style="--i: 1" data-vi="Trước 7 ngày" data-en="7 days">Trước 7 ngày</button>
+              <button type="button" class="when" data-days="3" data-days-label-vi="3 ngày" data-days-label-en="3 days" style="--i: 2" data-vi="Trước 3 ngày" data-en="3 days">Trước 3 ngày</button>
+              <span class="when end" style="--i: 3" data-vi="Ngày gia hạn" data-en="Renewal day">Ngày gia hạn</span>
             </div>
           </div>
           <div class="mail card">
-            <p class="mail-from"><span class="logo small">S</span> SubTrack Reminders <span class="muted">· just now</span></p>
-            <p class="mail-subject">Adobe Creative Cloud renews in <span data-days-text>7 days</span></p>
-            <p class="muted">Your plan ($59.99) renews soon. Keep it, or cancel in time. Your saved cancel page is one tap away.</p>
-            <p class="mail-actions"><span class="button">Open cancel page</span> <span class="button secondary">Keep it</span></p>
-            <p class="set"><span class="tick-dot">✓</span> Reminder set</p>
+            <p class="mail-from">
+              <span class="logo small" aria-hidden="true">S</span>
+              <span data-vi="Xem trước lời nhắc SubTrack" data-en="SubTrack Reminder Preview">Xem trước lời nhắc SubTrack</span>
+              <span class="pill" data-vi="Mẫu minh họa" data-en="Preview">Mẫu minh họa</span>
+            </p>
+            <p class="mail-subject">
+              <span data-vi="Adobe Creative Cloud dự kiến gia hạn sau" data-en="Adobe Creative Cloud renews in">Adobe Creative Cloud dự kiến gia hạn sau</span>
+              <span data-days-text>7 ngày</span>
+            </p>
+            <p class="muted" data-vi="Gói của bạn ($59.99/tháng) sắp tới ngày gia hạn dự kiến. Bạn có thể giữ tiếp hoặc mở link hủy gói đã lưu để tự thao tác kịp thời." data-en="Your plan ($59.99/mo) is approaching its expected renewal date. Keep it, or open your saved cancel link to manage it directly.">
+              Gói của bạn ($59.99/tháng) sắp tới ngày gia hạn dự kiến. Bạn có thể giữ tiếp hoặc mở link hủy gói đã lưu để tự thao tác kịp thời.
+            </p>
+            <p class="mail-actions">
+              <span class="button" data-vi="Mở trang hủy đã lưu" data-en="Open saved cancel page">Mở trang hủy đã lưu</span>
+              <span class="button secondary" data-vi="Giữ gói đăng ký" data-en="Keep subscription">Giữ gói đăng ký</span>
+            </p>
+            <p class="set">
+              <span class="tick-dot" aria-hidden="true">✓</span>
+              <span data-vi="Đã lưu cấu hình mốc nhắc trên gói (tác vụ gửi email định kỳ đang được hoàn thiện)" data-en="Reminder preference saved on plan (scheduled email delivery in progress)">Đã lưu cấu hình mốc nhắc trên gói (tác vụ gửi email định kỳ đang được hoàn thiện)</span>
+            </p>
           </div>
         </div>
       </div>
     </section>
 
-    {# 5. Pinned links #}
+    {# 5. Lưu link (Pinned links) #}
     <section class="chapter light" id="ch5" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label sun-label">Chapter 05 · Pinned links</p>
-          <h2 class="display">Keep the links you'll <span class="calm">need later.</span></h2>
-          <p class="lead">Cancel pages, billing pages, support chats. Paste a link once, we fill in the title, and it's pinned right where you need it.</p>
+          <p class="label sun-label" data-vi="Chương 05 · Lưu & ghim link" data-en="Chapter 05 · Pinned links">Chương 05 · Lưu & ghim link</p>
+          <h2 class="display">
+            <span data-vi="Lưu sẵn mọi đường link" data-en="Keep the links you'll">Lưu sẵn mọi đường link</span>
+            <span class="calm" data-vi="cần dùng lúc gấp." data-en="need later.">cần dùng lúc gấp.</span>
+          </h2>
+          <p class="lead" data-vi="Trang hủy gói, trang quản lý thanh toán hay hỗ trợ khách hàng thường bị giấu sâu. Dán link một lần, SubTrack tự lấy tiêu đề, hiện rõ tên miền và ghim ngay trên đầu." data-en="Cancel pages, billing portals and support chats are often buried. Paste a link once, SubTrack fetches the title, shows the domain clearly, and pins it to the top.">
+            Trang hủy gói, trang quản lý thanh toán hay hỗ trợ khách hàng thường bị giấu sâu. Dán link một lần, SubTrack tự lấy tiêu đề, hiện rõ tên miền và ghim ngay trên đầu.
+          </p>
         </div>
         <div class="link-grid">
-          {% for l in [("Cancel", "Netflix: cancel plan", "netflix.com/cancelplan"), ("Billing", "Adobe: billing & invoices", "account.adobe.com"), ("Support", "Spotify: chat with support", "support.spotify.com"), ("Card", "First Bank: card statement", "firstbank.example/statements")] %}
+          {% for l in [
+            ("Hủy gói", "Cancel", "Netflix: Quản lý & hủy gói thành viên", "Netflix: Cancel membership", "netflix.com/cancelplan"),
+            ("Hóa đơn", "Billing", "Adobe: Trang quản lý gói & hóa đơn", "Adobe: Billing & invoices", "account.adobe.com"),
+            ("Hỗ trợ", "Support", "Spotify: Trung tâm trợ giúp tài khoản", "Spotify: Account support", "support.spotify.com"),
+            ("Thẻ", "Card", "Ngân hàng: Tra cứu kỳ sao kê thẻ", "Bank: Card statement portal", "portal.bank-example.vn")
+          ] %}
             <div class="lcard card" style="--i: {{ loop.index0 }}">
               <span class="pinned" aria-hidden="true">📌</span>
-              <span class="pill">{{ l[0] }}</span>
-              <strong>{{ l[1] }}</strong>
-              <span class="muted">{{ l[2] }}</span>
+              <span class="pill" data-vi="{{ l[0] }}" data-en="{{ l[1] }}">{{ l[0] }}</span>
+              <strong data-vi="{{ l[2] }}" data-en="{{ l[3] }}">{{ l[2] }}</strong>
+              <span class="muted domain-badge">🔗 {{ l[4] }}</span>
             </div>
           {% endfor %}
         </div>
       </div>
     </section>
 
-    {# 6. Card payments #}
+    {# 6. Xem hóa đơn & hạn thẻ tín dụng (Bills review + Credit card due dates) #}
     <section class="chapter light" id="ch6" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label">Chapter 06 · Credit card payments</p>
-          <h2 class="display">Never miss a card <span class="calm">payment either.</span></h2>
-          <p class="lead">Add your card's payment due date and get the same early reminder, before late fees and interest show up.</p>
+          <p class="label" data-vi="Chương 06 · Xem hóa đơn & hạn thẻ tín dụng" data-en="Chapter 06 · Bill review & Credit card due dates">Chương 06 · Xem hóa đơn & hạn thẻ tín dụng</p>
+          <h2 class="display">
+            <span data-vi="Soát hóa đơn rõ ràng," data-en="Review bills clearly,">Soát hóa đơn rõ ràng,</span>
+            <span class="calm" data-vi="không trễ hạn thẻ." data-en="never miss a card due date.">không trễ hạn thẻ.</span>
+          </h2>
+          <p class="lead" data-vi="Tải ảnh hoặc PDF hóa đơn để đối chiếu từng mặt hàng và thuế (AI đề xuất — bạn kiểm tra và xác nhận), đồng thời theo dõi kỳ sao kê và hạn thanh toán thẻ tín dụng." data-en="Upload receipt images or PDFs to verify line items and totals (AI-suggested, user-verified), while keeping track of credit card statement balances and due dates.">
+            Tải ảnh hoặc PDF hóa đơn để đối chiếu từng mặt hàng và thuế (AI đề xuất — bạn kiểm tra và xác nhận), đồng thời theo dõi kỳ sao kê và hạn thanh toán thẻ tín dụng.
+          </p>
         </div>
-        <div class="stmt">
-          <p class="stmt-top">Visa •••• 4108 <span class="pill mint">Reminder on</span></p>
-          <p class="stmt-label">Statement balance</p>
-          <p class="stmt-amount">$<span data-count="1420.50" data-decimals="2">1,420.50</span></p>
-          <p class="stmt-label">Payment due in</p>
-          <div class="countdown">
-            <span><b data-count="4" data-from="30">4</b>days</span>
-            <span><b data-count="16" data-from="59">16</b>hours</span>
-            <span><b data-count="28" data-from="59">28</b>mins</span>
+        <div class="bills-card-showcase">
+          {# Khối xem hóa đơn (Bills review preview) #}
+          <div class="bill-preview card">
+            <div class="bill-preview-head">
+              <strong data-vi="📄 Đối chiếu hóa đơn (Demo)" data-en="📄 Bill Review (Demo)">📄 Đối chiếu hóa đơn (Demo)</strong>
+              <span class="pill sun-label" data-vi="AI đề xuất — cần kiểm tra" data-en="AI suggested — needs review">AI đề xuất — cần kiểm tra</span>
+            </div>
+            <div class="bill-split-mini">
+              <div class="bill-source-mini">
+                <span class="muted" data-vi="Nguồn: receipt-adobe-p1.pdf · Trang 1/1" data-en="Source: receipt-adobe-p1.pdf · Page 1/1">Nguồn: receipt-adobe-p1.pdf · Trang 1/1</span>
+                <div class="ocr-highlight-box">
+                  <span>ADOBE SYSTEMS SOFTWARE</span>
+                  <mark>TOTAL: USD 59.99 (Tax: 5.45)</mark>
+                </div>
+              </div>
+              <div class="bill-fields-mini">
+                <div class="kv-row"><span class="muted" data-vi="Đơn vị:" data-en="Merchant:">Đơn vị:</span> <strong>Adobe Creative Cloud</strong></div>
+                <div class="kv-row"><span class="muted" data-vi="Tạm tính / Thuế:" data-en="Subtotal / Tax:">Tạm tính / Thuế:</span> <span>$54.54 / $5.45</span></div>
+                <div class="kv-row"><span class="muted" data-vi="Tổng cộng:" data-en="Total:">Tổng cộng:</span> <strong class="calm">$59.99 USD</strong></div>
+              </div>
+            </div>
           </div>
-          <p class="stmt-note">We'll email you 3 days before.</p>
+
+          {# Khối hạn thanh toán thẻ tín dụng #}
+          <div class="stmt">
+            <p class="stmt-top">
+              <span>Visa Platinum •••• 4108</span>
+              <span class="pill mint" data-vi="Minh họa kỳ sao kê" data-en="Statement Demo">Minh họa kỳ sao kê</span>
+            </p>
+            <div class="stmt-grid">
+              <div>
+                <p class="stmt-label" data-vi="Dư nợ kỳ sao kê" data-en="Statement balance">Dư nợ kỳ sao kê</p>
+                <p class="stmt-amount">$<span data-count="1420.50" data-decimals="2">1,420.50</span></p>
+              </div>
+              <div>
+                <p class="stmt-label" data-vi="Thanh toán tối thiểu" data-en="Minimum due">Thanh toán tối thiểu</p>
+                <p class="stmt-subamount">$71.00</p>
+              </div>
+            </div>
+            <p class="stmt-label" data-vi="Thời gian còn lại đến hạn thanh toán" data-en="Payment due in">Thời gian còn lại đến hạn thanh toán</p>
+            <div class="countdown">
+              <span><b data-count="4" data-from="15">4</b><small data-vi="ngày" data-en="days">ngày</small></span>
+              <span><b data-count="16" data-from="23">16</b><small data-vi="giờ" data-en="hours">giờ</small></span>
+              <span><b data-count="28" data-from="59">28</b><small data-vi="phút" data-en="mins">phút</small></span>
+            </div>
+            <p class="stmt-note" data-vi="Trạng thái: Chưa thanh toán · Nhắc trước 3 ngày để tránh phí phạt trễ hạn." data-en="Status: Unpaid · Reminds 3 days early to avoid late fees.">Trạng thái: Chưa thanh toán · Nhắc trước 3 ngày để tránh phí phạt trễ hạn.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    {# 7. Calm #}
+    {# 7. CTA bắt đầu & Footer minh bạch (Calm) #}
     <section class="chapter light final" id="ch7" data-theme="light">
       <div class="final-inner">
         <svg class="tick" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" /><path d="M20 33l8 8 16-18" /></svg>
-        <p class="label mint-label">Final chapter · Calm</p>
-        <h2 class="display">Renew on purpose. <span class="calm">Cancel in time.</span></h2>
-        <p class="lead">Add your first subscription in under a minute.</p>
+        <p class="label mint-label" data-vi="Chương cuối · Chủ động & an tâm" data-en="Final chapter · Calm & in control">Chương cuối · Chủ động & an tâm</p>
+        <h2 class="display">
+          <span data-vi="Gia hạn chủ động." data-en="Renew on purpose.">Gia hạn chủ động.</span>
+          <span class="calm" data-vi="Hủy đúng lúc." data-en="Cancel in time.">Hủy đúng lúc.</span>
+        </h2>
+        <p class="lead" data-vi="Bắt đầu quản lý gói đăng ký, link quan trọng và hóa đơn của bạn hoàn toàn miễn phí." data-en="Add your first subscription and organize your links in under a minute.">
+          Bắt đầu quản lý gói đăng ký, link quan trọng và hóa đơn của bạn hoàn toàn miễn phí.
+        </p>
         <p class="cta">
-          <a class="button big" href="{{ url_for('auth.register') }}">Get started free</a>
-          <a class="button secondary big" href="{{ url_for('auth.login') }}">Log in</a>
+          <a class="button big" href="{{ url_for('auth.register') }}" data-vi="Bắt đầu miễn phí ngay" data-en="Get started free">Bắt đầu miễn phí ngay</a>
+          <a class="button secondary big" href="{{ url_for('auth.login') }}" data-vi="Đăng nhập tài khoản" data-en="Log in">Đăng nhập tài khoản</a>
         </p>
       </div>
-      <footer class="foot">
-        <span class="brand"><span class="logo small">S</span> SubTrack</span>
-        <span class="muted">© 2026 SubTrack · A student portfolio project</span>
+
+      <footer class="foot" role="contentinfo">
+        <div class="foot-cols">
+          <div class="foot-col">
+            <p class="brand">
+              <span class="logo small" aria-hidden="true">S</span>
+              <span>SubTrack</span>
+              <span class="brand-temp-tag" data-vi="Logo SVG tạm thời" data-en="Temporary SVG logo">Logo SVG tạm thời</span>
+            </p>
+            <p class="muted foot-desc" data-vi="Ứng dụng web quản lý gói đăng ký, hạn thẻ tín dụng, lưu link và kiểm tra chứng từ/hóa đơn. Dự án học tập & portfolio sinh viên năm 2 — biểu tượng/logo hiện tại là bản tạm thời và có thể thay thế sau khi chủ sở hữu duyệt." data-en="A web app to track subscriptions, card due dates, saved links, and bill reviews. Built as a 2nd-year student portfolio project — current logo is a temporary placeholder.">
+              Ứng dụng web quản lý gói đăng ký, hạn thẻ tín dụng, lưu link và kiểm tra chứng từ/hóa đơn. Dự án học tập & portfolio sinh viên năm 2 — biểu tượng/logo hiện tại là bản tạm thời và có thể thay thế sau khi chủ sở hữu duyệt.
+            </p>
+          </div>
+
+          <div class="foot-col">
+            <strong class="foot-heading" data-vi="Thông tin & Pháp lý" data-en="About & Legal">Thông tin & Pháp lý</strong>
+            <ul class="foot-links">
+              <li><button type="button" class="link" data-open-dialog="dialog-about" data-vi="Giới thiệu về SubTrack" data-en="About SubTrack">Giới thiệu về SubTrack</button></li>
+              <li><button type="button" class="link" data-open-dialog="dialog-privacy" data-vi="Chính sách quyền riêng tư (Privacy)" data-en="Privacy Policy">Chính sách quyền riêng tư (Privacy)</button></li>
+              <li><button type="button" class="link" data-open-dialog="dialog-terms" data-vi="Điều khoản sử dụng (Terms)" data-en="Terms of Use">Điều khoản sử dụng (Terms)</button></li>
+            </ul>
+          </div>
+
+          <div class="foot-col">
+            <strong class="foot-heading" data-vi="Liên hệ chủ sở hữu" data-en="Owner Contact">Liên hệ chủ sở hữu</strong>
+            {% if contact.messenger or contact.zalo %}
+              <div class="foot-contact-list">
+                {% if contact.messenger %}
+                  <a class="chip" href="{{ contact.messenger }}" target="_blank" rel="noopener noreferrer">Messenger</a>
+                {% endif %}
+                {% if contact.zalo %}
+                  <a class="chip" href="{{ contact.zalo }}" target="_blank" rel="noopener noreferrer">Zalo</a>
+                {% endif %}
+              </div>
+            {% else %}
+              <p class="muted foot-desc" data-vi="Kênh liên hệ trực tiếp (Messenger/Zalo) được hiển thị tự động khi chủ sở hữu cấu hình trong hệ thống." data-en="Direct contact links (Messenger/Zalo) appear when configured by the owner.">
+                Kênh liên hệ trực tiếp (Messenger/Zalo) được hiển thị tự động khi chủ sở hữu cấu hình trong hệ thống.
+              </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="foot-bottom">
+          <span class="muted">© 2026 SubTrack · Portfolio Project</span>
+          <span class="muted" data-vi="Không thu thập mật khẩu ngân hàng · Dữ liệu tách biệt theo từng tài khoản" data-en="Never asks for bank passwords · Data isolated per account">Không thu thập mật khẩu ngân hàng · Dữ liệu tách biệt theo từng tài khoản</span>
+        </div>
       </footer>
     </section>
   </main>
+
+  {# Hộp thoại Giới thiệu, Quyền riêng tư & Điều khoản (dùng thẻ <dialog> chuẩn) #}
+  <dialog id="dialog-about" class="legal-dialog" aria-labelledby="about-title">
+    <div class="legal-dialog-inner">
+      <header class="legal-dialog-head">
+        <h3 id="about-title" data-vi="Giới thiệu về SubTrack" data-en="About SubTrack">Giới thiệu về SubTrack</h3>
+        <button type="button" class="subby-close" data-close-dialog aria-label="Đóng">×</button>
+      </header>
+      <div class="legal-dialog-body">
+        <p data-vi="SubTrack giúp người dùng theo dõi các gói đăng ký định kỳ (streaming, phần mềm, học tập), lưu các đường dẫn quan trọng (trang hủy gói, trang thanh toán) và kiểm tra hóa đơn trước khi gia hạn." data-en="SubTrack helps users track recurring subscriptions, save important links (cancel pages, billing portals), and review bills before renewal.">
+          SubTrack giúp người dùng theo dõi các gói đăng ký định kỳ (streaming, phần mềm, học tập), lưu các đường dẫn quan trọng (trang hủy gói, trang thanh toán) và kiểm tra hóa đơn trước khi gia hạn.
+        </p>
+        <p data-vi="Lưu ý: SubTrack đóng vai trò công cụ ghi chú và nhắc lịch cá nhân. Ứng dụng không kết nối trực tiếp tài khoản ngân hàng và không tự động hủy gói dịch vụ bên ngoài thay cho bạn." data-en="Note: SubTrack is a personal tracking and reminder tool. It does not connect directly to your bank account or cancel external services on your behalf.">
+          Lưu ý: SubTrack đóng vai trò công cụ ghi chú và nhắc lịch cá nhân. Ứng dụng không kết nối trực tiếp tài khoản ngân hàng và không tự động hủy gói dịch vụ bên ngoài thay cho bạn.
+        </p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dialog-privacy" class="legal-dialog" aria-labelledby="privacy-title">
+    <div class="legal-dialog-inner">
+      <header class="legal-dialog-head">
+        <h3 id="privacy-title" data-vi="Chính sách quyền riêng tư (Privacy Policy)" data-en="Privacy Policy">Chính sách quyền riêng tư (Privacy Policy)</h3>
+        <button type="button" class="subby-close" data-close-dialog aria-label="Đóng">×</button>
+      </header>
+      <div class="legal-dialog-body">
+        <ul>
+          <li data-vi="Dữ liệu tài khoản: Chỉ lưu địa chỉ email, tên đăng nhập (nếu có) và mã băm mật khẩu an toàn." data-en="Account data: Stores only your email, username, and salted password hash.">Dữ liệu tài khoản: Chỉ lưu địa chỉ email, tên đăng nhập (nếu có) và mã băm mật khẩu an toàn.</li>
+          <li data-vi="Cô lập dữ liệu: Mọi gói đăng ký và đường dẫn đã lưu đều được lọc theo ID tài khoản của riêng bạn; người dùng khác không thể xem dữ liệu của bạn." data-en="Data isolation: Every subscription and saved link is scoped strictly to your user ID.">Cô lập dữ liệu: Mọi gói đăng ký và đường dẫn đã lưu đều được lọc theo ID tài khoản của riêng bạn; người dùng khác không thể xem dữ liệu của bạn.</li>
+          <li data-vi="Trợ lý Subby: Câu hỏi gửi tới Subby không đính kèm mật khẩu hay dữ liệu thẻ thanh toán." data-en="Subby assistant: Questions sent to Subby never include passwords or card numbers.">Trợ lý Subby: Câu hỏi gửi tới Subby không đính kèm mật khẩu hay dữ liệu thẻ thanh toán.</li>
+        </ul>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dialog-terms" class="legal-dialog" aria-labelledby="terms-title">
+    <div class="legal-dialog-inner">
+      <header class="legal-dialog-head">
+        <h3 id="terms-title" data-vi="Điều khoản sử dụng (Terms of Use)" data-en="Terms of Use">Điều khoản sử dụng (Terms of Use)</h3>
+        <button type="button" class="subby-close" data-close-dialog aria-label="Đóng">×</button>
+      </header>
+      <div class="legal-dialog-body">
+        <ul>
+          <li data-vi="Trách nhiệm gia hạn/hủy gói: Ngày gia hạn hiển thị trên SubTrack là ngày dự kiến do bạn nhập. Bạn cần tự kiểm tra và thực hiện hủy/thanh toán trực tiếp với nhà cung cấp dịch vụ hoặc ngân hàng." data-en="Renewal responsibility: Renewal dates shown are expected dates entered by you. Always verify and cancel or pay directly with your provider or bank.">Trách nhiệm gia hạn/hủy gói: Ngày gia hạn hiển thị trên SubTrack là ngày dự kiến do bạn nhập. Bạn cần tự kiểm tra và thực hiện hủy/thanh toán trực tiếp với nhà cung cấp dịch vụ hoặc ngân hàng.</li>
+          <li data-vi="Tính năng AI & OCR: Các trường trích xuất từ hóa đơn là gợi ý hỗ trợ và luôn cần người dùng kiểm tra, xác nhận lại trước khi lưu." data-en="AI & OCR features: Extracted receipt fields are suggestions and require your review before saving.">Tính năng AI & OCR: Các trường trích xuất từ hóa đơn là gợi ý hỗ trợ và luôn cần người dùng kiểm tra, xác nhận lại trước khi lưu.</li>
+        </ul>
+      </div>
+    </div>
+  </dialog>
 {% endblock %}
 
 {% block scripts %}

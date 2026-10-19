@@ -137,6 +137,66 @@ def test_gives_up_after_max_attempts(ctx, monkeypatch):
     assert Reminder.query.one().attempts == reminders.MAX_ATTEMPTS
 
 
+def test_retry_preserves_message_and_sender_settings(ctx, monkeypatch):
+    from dataclasses import asdict
+
+    user = make_user()
+    sub = make_sub(user)
+    monkeypatch.setenv("MAIL_FROM", "first@example.com")
+    monkeypatch.setenv("MAIL_REPLY_TO", "first-reply@example.com")
+    messages = []
+
+    def send(email):
+        messages.append(asdict(email))
+        if len(messages) == 1:
+            raise MailError("Fake timeout after provider acceptance")
+
+    monkeypatch.setattr(reminders, "send_email", send)
+    assert reminders.run(at("2026-11-03 09:00"))["failed"] == 1
+    sub.name = "Changed name"
+    user.username = "changed_user"
+    db.session.commit()
+    monkeypatch.setenv("MAIL_FROM", "second@example.com")
+    monkeypatch.setenv("MAIL_REPLY_TO", "second-reply@example.com")
+    monkeypatch.setenv("SITE_URL", "https://changed.example.com")
+    assert reminders.run(at("2026-11-04 08:00"))["sent"] == 1
+    assert messages[0] == messages[1]
+
+
+def test_real_planning_query_compiles_valid_sql_server_boolean(ctx):
+    from sqlalchemy import event
+    from sqlalchemy.dialects import mssql
+
+    statements = []
+    session = db.session()
+
+    def capture(state):
+        if state.is_select:
+            statements.append(str(state.statement.compile(dialect=mssql.dialect())))
+
+    event.listen(session, "do_orm_execute", capture)
+    try:
+        reminders.plan(at("2026-11-03 09:00"))
+    finally:
+        event.remove(session, "do_orm_execute", capture)
+    sql = "\n".join(statements)
+    assert "users.reminders_enabled = 1" in sql
+    assert "users.reminders_enabled IS 1" not in sql
+
+
+@pytest.mark.parametrize("date_text,hours", [
+    ("2026-03-08", (6, 7)),
+    ("2026-11-01", (5, 6)),
+])
+def test_dst_transition_does_not_duplicate_a_reminder(ctx, date_text, hours):
+    day = date.fromisoformat(date_text)
+    make_sub(make_user(tz="America/New_York", hour=2 if day.month == 3 else 1), renewal=day, leads="0")
+    for hour in hours:
+        reminders.run(datetime.combine(day, datetime.min.time()).replace(hour=hour, minute=30))
+    assert len(mailer.sent) == 1
+    assert Reminder.query.filter_by(status="sent").count() == 1
+
+
 def test_email_not_set_up_leaves_reminders_waiting(ctx, monkeypatch):
     monkeypatch.setenv("MAIL_BACKEND", "none")
     make_sub(make_user())

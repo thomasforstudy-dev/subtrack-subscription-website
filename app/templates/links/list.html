@@ -1,40 +1,116 @@
 {% extends "base.html" %}
-{% block title %}Links — SubTrack{% endblock %}
+{% block title %}Link đã lưu (Pinned links) — SubTrack{% endblock %}
 {% block content %}
-  <h1>Pinned links</h1>
+  <div class="page-head">
+    <div>
+      <h1 data-vi="Link đã lưu (Pinned links)" data-en="Pinned links">Link đã lưu (Pinned links)</h1>
+      <p class="muted" data-vi="Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, SubTrack sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích." data-en="Save cancel pages, billing portals, or study links. Paste a URL below and SubTrack will automatically fetch the page title and show its domain.">
+        Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, SubTrack sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích.
+      </p>
+    </div>
+    <p><a class="button secondary" href="{{ url_for('links.create') }}" data-vi="+ Thêm đầy đủ (có ghi chú)" data-en="+ Full form (with notes)">+ Thêm đầy đủ (có ghi chú)</a></p>
+  </div>
 
-  <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input name="url" placeholder="Paste a link…" required aria-label="Link" />
-    <input name="title" placeholder="Title (auto-filled)" aria-label="Title" />
-    <input name="tags" placeholder="Tags, e.g. school, tools" aria-label="Tags" />
-    <button type="submit">Save link</button>
-  </form>
+  {# Form thêm nhanh (Quick-add) giữ nguyên action, method và tên các trường url, title, tags #}
+  <div class="card quick-add-card">
+    <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}" data-submitting-text="Đang lưu link…">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% endif %}
+      <div class="qa-field">
+        <label for="qa-url" class="sr-only">Đường dẫn URL</label>
+        <input id="qa-url" name="url" placeholder="Dán đường dẫn (https://…)…" required aria-label="Link" autocomplete="url" spellcheck="false" />
+      </div>
+      <div class="qa-field">
+        <label for="qa-title" class="sr-only">Tiêu đề trang</label>
+        <input id="qa-title" name="title" placeholder="Tiêu đề (tự động điền)" aria-label="Title" maxlength="200" />
+      </div>
+      <div class="qa-field">
+        <label for="qa-tags" class="sr-only">Thẻ phân loại (Tags)</label>
+        <input id="qa-tags" name="tags" placeholder="Thẻ (vd: huy-goi, hoa-don)" aria-label="Tags" maxlength="200" />
+      </div>
+      <button type="submit" data-vi="Lưu link" data-en="Save link">Lưu link</button>
+    </form>
 
-  <form class="search" method="get" action="{{ url_for('links.list_links') }}">
-    <input type="search" name="q" value="{{ q }}" placeholder="Search title, link, tags, notes" aria-label="Search" />
-    {% if tag %}<input type="hidden" name="tag" value="{{ tag }}" />{% endif %}
-    <button type="submit">Search</button>
-  </form>
+    {# Trạng thái tự động lấy tiêu đề (đang tải / thành công / không lấy được) #}
+    <p class="preview-status muted small-text" data-preview-status role="status" aria-live="polite" hidden></p>
 
-  {% if all_tags %}
-    <p class="chips">
-      <a class="chip {% if not tag %}on{% endif %}" href="{{ url_for('links.list_links', q=q or None) }}">All</a>
-      {% for t in all_tags %}
-        <a class="chip {% if t == tag %}on{% endif %}" href="{{ url_for('links.list_links', tag=t, q=q or None) }}">{{ t }}</a>
-      {% endfor %}
-    </p>
-  {% endif %}
+    {# Cảnh báo trùng URL và nút chọn sửa bản cũ #}
+    <div class="duplicate-url-banner" data-duplicate-banner role="alert" hidden>
+      <div>
+        <strong data-vi="⚠ Đường dẫn URL này đã có trong danh sách của bạn:" data-en="⚠ This URL is already saved in your list:">⚠ Đường dẫn URL này đã có trong danh sách của bạn:</strong>
+        <span data-duplicate-title class="duplicate-title-text"></span>
+      </div>
+      <a class="button secondary btn-sm" data-duplicate-edit-link href="#" data-vi="Mở sửa bản cũ" data-en="Edit existing link">Mở sửa bản cũ</a>
+    </div>
+  </div>
+
+  {# Thanh tìm kiếm & lọc theo Tag #}
+  <div class="search-filter-wrap">
+    <form class="search" method="get" action="{{ url_for('links.list_links') }}">
+      <input
+        type="search"
+        name="q"
+        value="{{ q }}"
+        placeholder="Tìm theo tiêu đề, tên miền, thẻ (tag) hoặc ghi chú…"
+        aria-label="Search"
+      />
+      {% if tag %}<input type="hidden" name="tag" value="{{ tag }}" />{% endif %}
+      <button type="submit" data-vi="Tìm kiếm" data-en="Search">Tìm kiếm</button>
+      {% if q or tag %}
+        <a class="button secondary" href="{{ url_for('links.list_links') }}" data-vi="Xóa lọc" data-en="Clear">Xóa lọc</a>
+      {% endif %}
+    </form>
+
+    {% if all_tags %}
+      <div class="chips" role="navigation" aria-label="Lọc theo thẻ (Tags)">
+        <a class="chip {% if not tag %}on{% endif %}" href="{{ url_for('links.list_links', q=q or None) }}" data-vi="Tất cả" data-en="All">Tất cả</a>
+        {% for t in all_tags %}
+          <a class="chip {% if t == tag %}on{% endif %}" href="{{ url_for('links.list_links', tag=t, q=q or None) }}">#{{ t }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
 
   {% if items %}
-    <ul class="links">
+    <ul class="links" id="saved-links-list">
       {% for link in items %}
-        <li class="{% if link.is_pinned %}pinned{% endif %}">
-          <form class="inline pin" method="post" action="{{ url_for('links.toggle_pin', link_id=link.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <button type="submit" title="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}" aria-label="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}">{{ '★' if link.is_pinned else '☆' }}</button>
+        {% set host_initial = (link.hostname[:1] or '🌐')|upper %}
+        <li
+          class="{% if link.is_pinned %}pinned{% endif %}"
+          data-saved-url="{{ link.url }}"
+          data-saved-title="{{ link.title }}"
+          data-edit-url="{{ url_for('links.edit', link_id=link.id) }}"
+        >
+          <form class="inline pin" method="post" action="{{ url_for('links.toggle_pin', link_id=link.id) }}">
+            {% if csrf_token is defined %}
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            {% endif %}
+            <button
+              type="submit"
+              title="{{ 'Bỏ ghim khỏi đầu trang' if link.is_pinned else 'Ghim lên đầu danh sách' }}"
+              aria-label="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}"
+            >{{ '★' if link.is_pinned else '☆' }}</button>
           </form>
+
+          <span class="link-favicon" aria-hidden="true" title="Tên miền: {{ link.hostname }}">
+            {% if link.favicon_url is defined and link.favicon_url %}
+              <img src="{{ link.favicon_url }}" alt="" width="16" height="16" loading="lazy" referrerpolicy="no-referrer" data-favicon-img />
+            {% endif %}
+            <span class="link-favicon-fallback">{{ host_initial }}</span>
+          </span>
+
           <div class="link-body">
-            <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
-            <span class="muted">{{ link.hostname }}</span>
+            <div class="link-title-row">
+              <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
+              <span class="domain-pill" title="Đường dẫn trỏ tới tên miền {{ link.hostname }}">🔗 {{ link.hostname }}</span>
+              {% if link.is_pinned %}
+                <span class="pill sun-label" data-vi="Đã ghim" data-en="Pinned">Đã ghim</span>
+              {% endif %}
+            </div>
+
+            <p class="link-raw-url muted small-text">{{ link.url }}</p>
+
             {% if link.tag_list %}
               <span class="chips small">
                 {% for t in link.tag_list %}<a class="chip" href="{{ url_for('links.list_links', tag=t) }}">{{ t }}</a>{% endfor %}
@@ -42,19 +118,55 @@
             {% endif %}
             {% if link.notes %}<p class="muted note">{{ link.notes }}</p>{% endif %}
           </div>
+
           <div class="link-actions">
-            <a href="{{ url_for('links.edit', link_id=link.id) }}">Edit</a>
-            <form class="inline" method="post" action="{{ url_for('links.delete', link_id=link.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit">Delete</button>
+            <a href="{{ url_for('links.edit', link_id=link.id) }}" data-vi="Sửa" data-en="Edit">Sửa</a>
+            <form class="inline delete-link-form" method="post" action="{{ url_for('links.delete', link_id=link.id) }}" data-link-title="{{ link.title }}">
+              {% if csrf_token is defined %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              {% endif %}
+              <button type="submit" data-vi="Xóa" data-en="Delete">Xóa</button>
             </form>
           </div>
         </li>
       {% endfor %}
     </ul>
   {% elif q or tag %}
-    <p class="muted">No links match. <a href="{{ url_for('links.list_links') }}">Show all</a></p>
+    <div class="card empty-state-box">
+      <p>
+        <strong data-vi="Không tìm thấy link nào khớp với bộ lọc." data-en="No links match.">Không tìm thấy link nào khớp với bộ lọc.</strong>
+        <span class="sr-only">No links match.</span>
+      </p>
+      <p class="muted"><a href="{{ url_for('links.list_links') }}" data-vi="Hiển thị toàn bộ link đã lưu" data-en="Show all">Hiển thị toàn bộ link đã lưu</a></p>
+    </div>
   {% else %}
-    <p class="muted">No links yet. Paste one above — course pages, tools, articles you want to keep.</p>
+    <div class="card empty-state-box">
+      <p><strong data-vi="Chưa có đường dẫn nào được lưu" data-en="No links yet.">Chưa có đường dẫn nào được lưu</strong></p>
+      <p class="muted" data-vi="Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại." data-en="Paste one above — cancel pages, billing portals, course pages, or tools you want to keep.">
+        Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại.
+      </p>
+    </div>
   {% endif %}
+
+  {# Hộp thoại xác nhận trước khi xóa link #}
+  <dialog id="dialog-confirm-delete-link" class="legal-dialog" aria-labelledby="del-link-title">
+    <div class="legal-dialog-inner">
+      <header class="legal-dialog-head">
+        <h3 id="del-link-title" data-vi="Xác nhận xóa đường dẫn" data-en="Confirm deleting link">Xác nhận xóa đường dẫn</h3>
+        <button type="button" class="subby-close" data-close-dialog aria-label="Đóng">×</button>
+      </header>
+      <div class="legal-dialog-body">
+        <p>
+          <span data-vi="Bạn có chắc chắn muốn xóa đường dẫn" data-en="Are you sure you want to delete">Bạn có chắc chắn muốn xóa đường dẫn</span>
+          <strong id="delete-link-target-name"></strong>?
+        </p>
+        <div class="form-actions compact-top">
+          <button type="button" class="button danger-btn" id="confirm-delete-link-btn" data-vi="Xóa vĩnh viễn" data-en="Delete">Xóa vĩnh viễn</button>
+          <button type="button" class="button secondary" data-close-dialog data-vi="Giữ lại" data-en="Cancel">Giữ lại</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <script src="{{ url_for('static', filename='link-preview.js') }}" defer></script>
 {% endblock %}

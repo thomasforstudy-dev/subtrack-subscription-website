@@ -1,0 +1,42 @@
+name: Application tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: Python 3.14 / ${{ matrix.os }} / SQLite
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    env:
+      PYTHON_DOTENV_DISABLED: "1"
+      DB_SERVER: ""
+      DATABASE_URL: "sqlite:///:memory:"
+      SECRET_KEY: "ci-test-session-key-only"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install pinned dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Check dependencies
+        run: python -m pip check
+      - name: Run isolated application tests
+        run: python -m pytest -q -ra --strict-markers --junitxml=instance/test-results.xml

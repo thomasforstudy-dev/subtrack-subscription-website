@@ -160,6 +160,8 @@ class Reminder(db.Model):
     claim_token = db.Column(db.Unicode(32))
     sent_at = db.Column(db.DateTime)
     last_error = db.Column(db.Unicode(200), default="", nullable=False)
+    # Persist before sending so a crash/retry uses exactly the same provider payload.
+    payload_json = db.Column(db.UnicodeText)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
     subscription = db.relationship("Subscription")

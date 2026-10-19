@@ -1,19 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Confirm your email — SubTrack{% endblock %}
+{% block title %}Xác nhận email — SubTrack{% endblock %}
 {% block content %}
-  {# Plain working page from the backend lane. UI lane: restyle freely, keep the form. #}
   <div class="card auth-card">
     {% if valid %}
-      <h1>Confirm your email</h1>
-      <p class="muted">One click and your reminders can reach you.</p>
-      <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button type="submit">Confirm my email</button>
+      <div class="auth-header">
+        <span class="pill mint" data-vi="Xác thực tài khoản" data-en="Email verification">Xác thực tài khoản</span>
+        <h1 data-vi="Xác nhận địa chỉ email của bạn" data-en="Confirm your email">Xác nhận địa chỉ email của bạn</h1>
+        <p class="muted" data-vi="Bấm nút bên dưới để hoàn tất xác nhận email và nhận lời nhắc gia hạn đúng hẹn." data-en="One click and your reminders can reach you.">
+          Bấm nút bên dưới để hoàn tất xác nhận email và nhận lời nhắc gia hạn đúng hẹn.
+        </p>
+      </div>
+      <form method="post" class="auth-form" data-submitting-text="Đang xác nhận…">
+        {% if csrf_token is defined %}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        {% endif %}
+        <button type="submit" class="auth-submit">
+          <span data-vi="Xác nhận email của tôi" data-en="Confirm my email">Xác nhận email của tôi</span>
+          <span class="sr-only">Confirm my email</span>
+        </button>
       </form>
     {% else %}
-      <h1>This link doesn't work any more</h1>
-      <p class="muted">It has expired or was already used. Log in and ask for a new one.</p>
-      <p><a class="button" href="{{ url_for('auth.login') }}">Log in</a></p>
+      <div class="auth-header">
+        <span class="pill hot-label" data-vi="Liên kết hết hạn" data-en="Link expired">Liên kết hết hạn</span>
+        <h1 data-vi="Liên kết xác nhận không còn hiệu lực" data-en="This link doesn't work any more">
+          Liên kết xác nhận không còn hiệu lực
+          <span class="sr-only">This link doesn't work any more</span>
+        </h1>
+        <p class="muted" data-vi="Liên kết này đã quá hạn 24 giờ hoặc đã được sử dụng trước đó. Vui lòng đăng nhập để yêu cầu gửi lại liên kết mới." data-en="It has expired or was already used. Log in and ask for a new one.">
+          Liên kết này đã quá hạn 24 giờ hoặc đã được sử dụng trước đó. Vui lòng đăng nhập để yêu cầu gửi lại liên kết mới.
+        </p>
+      </div>
+      <p><a class="button" href="{{ url_for('auth.login') }}" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a></p>
     {% endif %}
   </div>
 {% endblock %}

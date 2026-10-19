@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="none">
+  <!-- Temporary SubTrack PWA / Extension icon (replaceable placeholder) -->
+  <rect width="192" height="192" rx="44" fill="#6d4aff"/>
+  <path d="M56 68c0-13.255 10.745-24 24-24h32c13.255 0 24 10.745 24 24" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity="0.45"/>
+  <rect x="40" y="64" width="112" height="80" rx="22" fill="#ffffff"/>
+  <path d="M68 105l17 17 39-39" stroke="#16c79a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="140" cy="54" r="18" fill="#ffc83d" stroke="#6d4aff" stroke-width="7"/>
+</svg>
