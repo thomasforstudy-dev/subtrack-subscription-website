@@ -23,7 +23,7 @@
             <td>{{ item.next_renewal_at }}</td>
             <td>
               <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}">Edit</a>
-              <form class="inline" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}">
+              <form class="inline" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit">Archive</button>
               </form>
             </td>

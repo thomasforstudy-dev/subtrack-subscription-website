@@ -6,6 +6,7 @@ import pytest
 
 from app import oauth
 from app.models import User
+from tests.conftest import PASSWORD, sign_up
 
 
 class FakeResponse:
@@ -99,12 +100,59 @@ def test_github_uses_primary_verified_email(client, app, providers_on, monkeypat
         assert User.query.filter_by(email="main@example.com").count() == 1
 
 
+def google_login(client, monkeypatch, email, next_url=""):
+    query = f"?next={next_url}" if next_url else ""
+    state = parse_qs(urlparse(client.get(f"/auth/google{query}").headers["Location"]).query)["state"][0]
+    fake_provider(monkeypatch, {"email": email, "email_verified": True})
+    return client.get(f"/auth/google/callback?code=abc&state={state}")
+
+
 def test_existing_email_logs_into_same_account(client, app, providers_on, monkeypatch):
-    client.post("/register", data={"email": "me@gmail.com", "password": "password123", "confirm": "password123"})
-    client.get("/logout")
-    state = start_and_get_state(client, "google")["state"][0]
-    fake_provider(monkeypatch, {"email": "me@gmail.com", "email_verified": True})
-    client.get(f"/auth/google/callback?code=abc&state={state}")
+    sign_up(client, "me@gmail.com")
+    client.post("/logout")
+    google_login(client, monkeypatch, "me@gmail.com")
     with app.app_context():
         assert User.query.count() == 1
     assert client.get("/subscriptions/").status_code == 200
+
+
+def test_google_users_get_a_username_and_are_confirmed(client, app, providers_on, monkeypatch):
+    google_login(client, monkeypatch, "Toan.Bui@gmail.com")
+    with app.app_context():
+        user = User.query.one()
+        assert user.username == "toanbui"
+        assert user.email_verified
+        assert not user.is_admin
+
+
+def test_unconfirmed_password_account_is_taken_back_by_the_real_owner(client, app, providers_on, monkeypatch):
+    # An attacker signs up first with the victim's email and a password they know.
+    sign_up(client, "victim@gmail.com")
+    client.post("/logout")
+    # The real owner arrives with Google, which proves they own the email.
+    google_login(client, monkeypatch, "victim@gmail.com")
+    with app.app_context():
+        user = User.query.one()
+        assert user.email_verified
+        assert not user.check_password(PASSWORD)  # the attacker's password no longer works
+
+
+def test_confirmed_account_keeps_its_password(client, app, providers_on, monkeypatch):
+    sign_up(client, "me@gmail.com")
+    with app.app_context():
+        user = User.query.one()
+        user.email_verified_at = user.created_at
+        from app import db
+
+        db.session.commit()
+    client.post("/logout")
+    google_login(client, monkeypatch, "me@gmail.com")
+    with app.app_context():
+        assert User.query.one().check_password(PASSWORD)
+
+
+def test_oauth_keeps_a_safe_next_page(client, providers_on, monkeypatch):
+    assert google_login(client, monkeypatch, "a@gmail.com", "/links/").headers["Location"] == "/links/"
+    client.post("/logout")
+    res = google_login(client, monkeypatch, "a@gmail.com", "https://evil.example")
+    assert res.headers["Location"].endswith("/subscriptions/")

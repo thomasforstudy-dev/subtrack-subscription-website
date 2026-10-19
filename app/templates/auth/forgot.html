@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Forgot password — SubTrack{% endblock %}
+{% block content %}
+  {# Plain working page from the backend lane. UI lane: restyle freely, keep the form. #}
+  <div class="card auth-card">
+    <h1>Forgot your password?</h1>
+    <p class="muted">Type your email and we'll send you a link to choose a new one.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>Email <input type="email" name="email" required autocomplete="email" /></label>
+      <button type="submit">Send the link</button>
+    </form>
+    <p class="muted"><a href="{{ url_for('auth.login') }}">Back to log in</a></p>
+  </div>
+{% endblock %}

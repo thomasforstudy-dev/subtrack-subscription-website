@@ -49,6 +49,8 @@ Tick a box when the feature works **and** its tests pass.
 Things one lane needs from another. Delete a line when it's done.
 
 - Backend lane (later): help bot "Subby" — Gemini answers, voice in/out (browser speech), hand-off to owner via Messenger/Zalo. Designs: `docs/design/subby-*.png`.
+- UI lane (from Claude, 19 Oct): style the new account pages `auth/forgot.html`, `auth/reset.html`, `auth/verify.html`, the username field + password hint on sign up, "Forgot password?" on log in, the Log out button (now a small form in the top bar), and the `.verify-banner` "please confirm your email" form in `base.html`. Keep every `name=` and the `csrf_token` hidden field — see `docs/CONTRACT.md`.
+- UI lane (from Claude, 19 Oct): `subby.js` built-in answers say "I email you before a renewal". Reminder emails aren't sent yet (section B), so soften that until they are.
 
 ## Log
 
@@ -68,3 +70,4 @@ Newest at the bottom. One line each: `date — tool — what changed`.
 - 2026-10-15 — Claude — Fixed deploy scripts (admin prompt quoting in the .bat files, PowerShell 5.1 `(If ...)` error) and installed auto-start: SubTrack-Server + SubTrack-Tunnel run as SYSTEM at boot.
 - 2026-10-15 — Claude — Gemini key created (project gen-lang-client-0817360794), backup model when Gemini is busy. Google sign-in uses new project subtrack-login-3365. Keys live in .env only.
 - 2026-10-19 — codex — Archived 2,712 AAS skills in local skill-library/ (not activated; upstream clone Git-ignored), added Vietnamese guide and 19 skill recommendations for UI/UX, Python/PyTorch, backend/frontend and SQL; limited pytest discovery to application tests; 46 tests passed.
+- 2026-10-19 — Claude — Accounts (branch `claude/accounts`): usernames, 12+ char passwords with upper/number/special, login by email or username with lockout, CSRF on every form, POST logout, safe `?next=`, confirm email + forgot/reset password (one-time hashed links, `app/tokens.py`), mail adapter (`app/mailer.py`: Resend with retries, file outbox, test memory), no more first-signup-is-admin (`flask make-admin`), production refuses a weak SECRET_KEY, HTTPS-only cookies, password change logs out other browsers, Subby trusts CF-Connecting-IP only from the tunnel. `database/02_accounts.sql` + automatic SQLite upgrade (`app/migrate.py`). Contract for UI: `docs/CONTRACT.md`. 111 tests pass (SQLite); 02 script NOT run on SQL Server (not reachable on this PC).

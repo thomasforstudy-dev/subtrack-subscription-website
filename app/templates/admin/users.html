@@ -7,7 +7,9 @@
     <thead>
       <tr>
         <th>ID</th>
+        <th>Username</th>
         <th>Email</th>
+        <th>Confirmed</th>
         <th>Admin</th>
         <th>Created</th>
         <th>Last login</th>
@@ -18,7 +20,9 @@
       {% for user in accounts %}
         <tr>
           <td>{{ user.id }}</td>
+          <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
+          <td>{{ "yes" if user.email_verified else "no" }}</td>
           <td>{{ "yes" if user.is_admin else "no" }}</td>
           <td>{{ user.created_at }}</td>
           <td>{{ user.last_login_at or "—" }}</td>

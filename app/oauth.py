@@ -14,8 +14,11 @@ from urllib.parse import urlencode
 import requests
 from flask import Blueprint, abort, flash, redirect, request, session, url_for
 
+from app import db
 from app.auth import create_user, finish_login
-from app.models import User
+from app.mailer import external_url
+from app.models import User, utcnow
+from app.security import safe_next_url
 
 bp = Blueprint("oauth", __name__)
 
@@ -54,10 +57,7 @@ def enabled_providers() -> list[dict]:
 
 
 def callback_url(provider: str) -> str:
-    # SITE_URL (e.g. https://alloutdeepclean.com) is needed behind Cloudflare,
-    # because this server itself only sees plain http://127.0.0.1.
-    base = os.getenv("SITE_URL", "").strip().rstrip("/") or request.host_url.rstrip("/")
-    return base + url_for("oauth.callback", provider=provider)
+    return external_url("oauth.callback", provider=provider)
 
 
 def provider_or_404(provider: str) -> tuple[dict, tuple[str, str]]:
@@ -74,6 +74,7 @@ def start(provider):
     # into logging in with someone else's account (CSRF).
     state = secrets.token_urlsafe(24)
     session["oauth_state"] = state
+    session["oauth_next"] = safe_next_url(request.args.get("next"))
     params = {
         "client_id": client_id,
         "redirect_uri": callback_url(provider),
@@ -105,8 +106,27 @@ def callback(provider):
         flash(f"We couldn't get a verified email from {info['name']}. Please try another way.")
         return redirect(url_for("auth.login"))
 
-    user = User.query.filter_by(email=email).first() or create_user(email)
-    return finish_login(user)
+    next_url = session.pop("oauth_next", None)
+    user = User.query.filter_by(email=email).first()
+    if user is None:
+        user = create_user(email, verified=True)
+    elif not user.email_verified:
+        take_over_unverified(user)
+    return finish_login(user, next_url)
+
+
+def take_over_unverified(user: User) -> None:
+    """Google/GitHub just proved this person owns the email, but the account
+    was made with a password and never confirmed.
+
+    Someone else could have signed up with this email first and set a password
+    they know, waiting for the real owner to move in. So that password is
+    switched off. The owner can set their own with "Forgot password".
+    """
+    user.set_password(secrets.token_urlsafe(32))  # also logs out other browsers
+    user.email_verified_at = utcnow()
+    db.session.commit()
+    flash("Your email is now confirmed. To log in with a password too, use \"Forgot password\".")
 
 
 def get_access_token(provider: str, code: str, creds: tuple[str, str]) -> str:

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Confirm your email — SubTrack{% endblock %}
+{% block content %}
+  {# Plain working page from the backend lane. UI lane: restyle freely, keep the form. #}
+  <div class="card auth-card">
+    {% if valid %}
+      <h1>Confirm your email</h1>
+      <p class="muted">One click and your reminders can reach you.</p>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit">Confirm my email</button>
+      </form>
+    {% else %}
+      <h1>This link doesn't work any more</h1>
+      <p class="muted">It has expired or was already used. Log in and ask for a new one.</p>
+      <p><a class="button" href="{{ url_for('auth.login') }}">Log in</a></p>
+    {% endif %}
+  </div>
+{% endblock %}

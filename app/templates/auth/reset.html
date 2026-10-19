@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}New password — SubTrack{% endblock %}
+{% block content %}
+  {# Plain working page from the backend lane. UI lane: restyle freely, keep the form. #}
+  <div class="card auth-card">
+    <h1>Choose a new password</h1>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label>New password <input type="password" name="password" required minlength="12" maxlength="128" autocomplete="new-password" /></label>
+      <p class="muted">At least 12 characters, with an upper-case letter, a number and a special character like ! or #.</p>
+      <label>Confirm new password <input type="password" name="confirm" required minlength="12" maxlength="128" autocomplete="new-password" /></label>
+      <button type="submit">Save new password</button>
+    </form>
+  </div>
+{% endblock %}
