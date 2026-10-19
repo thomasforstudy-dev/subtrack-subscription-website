@@ -1,25 +1,22 @@
-"""Subby's brain: the help bot's questions go to Gemini from here.
+"""Subby's brain: the help bot's questions go to an AI model from here.
 
-The browser never sees the Gemini key; it only talks to /subby/ask.
-If Gemini isn't set up or fails, the browser falls back to its small
-built-in answer list (static/subby.js).
+Which model (Gemini today, Phi-3.5-mini later) is chosen in app/ai_providers.py.
+The browser never sees any key; it only talks to /subby/ask. If the model
+isn't set up or is offline, the browser falls back to its small built-in
+answer list (static/subby.js).
 """
 
-import os
-
-import requests
 from flask import Blueprint, jsonify, request
 
+from app.ai_providers import ProviderUnavailable, Turn, chat_provider, fallback_provider
 from app.security import RateLimiter, client_ip
 
 bp = Blueprint("subby", __name__, url_prefix="/subby")
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-DEFAULT_MODEL = "gemini-3.1-flash-lite"
-HANDOFF = "[HANDOFF]"  # Gemini writes this when a human should answer
+HANDOFF = "[HANDOFF]"  # the model writes this when a human should answer
 MAX_QUESTION = 300  # characters
 MAX_HISTORY = 6  # earlier messages sent along, so follow-up questions make sense
-LIMIT_PER_HOUR = 30  # questions per visitor, to protect the free Gemini quota
+LIMIT_PER_HOUR = 30  # questions per visitor, to protect the free model quota
 
 FACTS = """
 SubTrack is a website that tracks your subscriptions so you can renew or
@@ -68,47 +65,19 @@ Facts:
 questions = RateLimiter(LIMIT_PER_HOUR, 3600)
 
 
-def clean_history(raw) -> list[dict]:
-    """Turn the browser's [{role, text}, ...] into Gemini's format, safely."""
+def clean_history(raw) -> list[Turn]:
+    """Turn the browser's [{role, text}, ...] into a short, safe list of turns."""
     if not isinstance(raw, list):
         return []
     turns = []
     for item in raw[-MAX_HISTORY:]:
         if not isinstance(item, dict):
             continue
-        role = "model" if item.get("role") == "bot" else "user"
+        role = "assistant" if item.get("role") == "bot" else "user"
         text = str(item.get("text", ""))[:600]
         if text:
-            turns.append({"role": role, "parts": [{"text": text}]})
+            turns.append(Turn(role, text))
     return turns
-
-
-def models() -> list[str]:
-    """GEMINI_MODEL can list backups, e.g. "gemini-3.1-flash-lite,gemini-flash-lite-latest"."""
-    names = [m.strip() for m in os.getenv("GEMINI_MODEL", "").split(",") if m.strip()]
-    return names or [DEFAULT_MODEL]
-
-
-def ask_gemini(key: str, question: str, history: list[dict], fun: bool) -> str:
-    payload = {
-        "system_instruction": {"parts": [{"text": system_prompt(fun)}]},
-        "contents": history + [{"role": "user", "parts": [{"text": question}]}],
-        "generationConfig": {"temperature": 0.8 if fun else 0.3, "maxOutputTokens": 1024},
-    }
-    for model in models():
-        res = requests.post(
-            GEMINI_URL.format(model=model),
-            headers={"x-goog-api-key": key},
-            json=payload,
-            timeout=20,
-        )
-        # 429 = quota used up, 5xx = Google is busy: try the next model.
-        if res.status_code == 429 or res.status_code >= 500:
-            continue
-        res.raise_for_status()
-        parts = res.json()["candidates"][0]["content"]["parts"]
-        return "".join(part.get("text", "") for part in parts).strip()
-    raise requests.ConnectionError("All Gemini models are busy right now.")
 
 
 @bp.post("/ask")
@@ -121,20 +90,34 @@ def ask():
     question = str(data.get("question", "")).strip()[:MAX_QUESTION]
     if not question:
         return jsonify(error="Ask a question."), 400
-
-    key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not key:
-        return jsonify(answer=None, reason="not-set-up"), 503
     if not questions.hit(client_ip()):
         return jsonify(answer="Whoa, that's a lot of questions! Give me a little break and try again later.", handoff=False), 429
 
+    fun = bool(data.get("fun", True))
+    args = (system_prompt(fun), clean_history(data.get("history")), question, 0.8 if fun else 0.3)
     try:
-        text = ask_gemini(key, question, clean_history(data.get("history")), bool(data.get("fun", True)))
-    except (requests.RequestException, KeyError, IndexError, ValueError):
-        return jsonify(answer=None, reason="gemini-failed"), 502
+        provider = chat_provider()
+    except ProviderUnavailable:
+        return jsonify(answer=None, reason="not-set-up"), 503
+    used, fallback = provider, False
+    try:
+        text = provider.chat(*args)
+    except ProviderUnavailable as problem:
+        backup = fallback_provider()
+        if backup is None or backup.name == provider.name:
+            # No silent switch to another model: the page uses its built-in answers.
+            if str(problem) == "not-set-up":
+                return jsonify(answer=None, reason="not-set-up", provider=provider.name), 503
+            reason = "model-offline" if provider.name == "phi" else "model-failed"
+            return jsonify(answer=None, reason=reason, provider=provider.name), 502
+        try:
+            text = backup.chat(*args)
+        except ProviderUnavailable:
+            return jsonify(answer=None, reason="model-failed", provider=backup.name), 502
+        used, fallback = backup, True  # the reply says so, so the page can tell the visitor
 
     handoff = HANDOFF in text
     answer = text.replace(HANDOFF, "").strip()
     if not answer:
-        return jsonify(answer=None, reason="empty"), 502
-    return jsonify(answer=answer, handoff=handoff)
+        return jsonify(answer=None, reason="empty", provider=used.name), 502
+    return jsonify(answer=answer, handoff=handoff, provider=used.name, fallback=fallback)
