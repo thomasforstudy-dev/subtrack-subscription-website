@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Tổng quan (Dashboard) — SubTrack{% endblock %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1 data-vi="Tổng quan tài khoản (Dashboard)" data-en="Dashboard">Tổng quan tài khoản (Dashboard)</h1>
+      <p class="muted" data-vi="Chi phí dự kiến toàn tài khoản được tính bằng số thập phân chính xác (Decimal) trên toàn bộ gói đang hoạt động của bạn (không phụ thuộc phân trang hay bộ lọc). Mỗi loại tiền tệ được giữ tách biệt." data-en="What your active subscriptions should cost across your entire account (Decimal precision, independent of pagination or filters). Each currency is shown on its own.">
+        Chi phí dự kiến toàn tài khoản được tính bằng số thập phân chính xác (<code>Decimal</code>) trên toàn bộ gói đang hoạt động của bạn (không phụ thuộc phân trang hay bộ lọc). Mỗi loại tiền tệ được giữ tách biệt.
+      </p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Danh sách gói đăng ký" data-en="View all subscriptions">Danh sách gói đăng ký</a>
+      <a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký" data-en="+ Add subscription">+ Thêm gói đăng ký</a>
+    </div>
+  </div>
+
+  <div class="dashboard-grid" id="dashboard-blocks" data-state="real">
+    {# Khối 1: Chi dự kiến toàn tài khoản theo từng loại tiền tệ (Server Decimal totals) #}
+    <article class="card dash-card">
+      <header class="dash-card-head">
+        <span class="dash-label" data-vi="Chi dự kiến (Projected cost)" data-en="Projected cost">Chi dự kiến (Projected cost)</span>
+        <span class="pill mint" data-vi="Toàn tài khoản (Decimal)" data-en="Full account (Decimal)">Toàn tài khoản (Decimal)</span>
+      </header>
+      <div class="dash-body" data-dash-view="real">
+        {% if totals %}
+          <div class="table-scroll">
+            <table class="compact-table">
+              <thead>
+                <tr>
+                  <th data-vi="Tiền tệ" data-en="Currency">Tiền tệ</th>
+                  <th data-vi="Số gói" data-en="Subscriptions">Số gói</th>
+                  <th data-vi="Mỗi tháng" data-en="Per month">Mỗi tháng</th>
+                  <th data-vi="Mỗi năm" data-en="Per year">Mỗi năm</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in totals %}
+                  <tr>
+                    <td><span class="currency-code">{{ row.currency }}</span></td>
+                    <td><strong>{{ row.count }}</strong></td>
+                    <td><strong class="currency-value">{{ row.monthly }} {{ row.currency }}</strong></td>
+                    <td>{{ row.yearly }} {{ row.currency }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p class="dash-footnote muted small-text" data-vi="Tính trên toàn bộ gói đang hoạt động trong tài khoản. Không gộp chung các đồng tiền khác nhau." data-en="Computed across all active subscriptions in your account. Currencies are never mixed.">
+            Tính trên toàn bộ gói đang hoạt động trong tài khoản. Không gộp chung các đồng tiền khác nhau.
+          </p>
+        {% else %}
+          <div class="dash-empty">
+            <strong data-vi="Chưa có gói đăng ký nào đang hoạt động" data-en="No active subscriptions yet.">Chưa có gói đăng ký nào đang hoạt động</strong>
+            <p class="muted small-text">
+              <a href="{{ url_for('subscriptions.create') }}" data-vi="Thêm gói đăng ký đầu tiên →" data-en="Add one →">Thêm gói đăng ký đầu tiên →</a>
+            </p>
+          </div>
+        {% endif %}
+      </div>
+      <div class="dash-body" data-dash-view="loading" hidden>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+      <div class="dash-body" data-dash-view="error" hidden>
+        <p class="error-text" data-vi="⚠ Không tải được dữ liệu tổng hợp. Vui lòng tải lại trang." data-en="⚠ Could not load summary data.">⚠ Không tải được dữ liệu tổng hợp. Vui lòng tải lại trang.</p>
+      </div>
+    </article>
+
+    {# Khối 2: Sắp gia hạn trong 30 ngày tới (Renewing in the next 30 days) #}
+    <article class="card dash-card">
+      <header class="dash-card-head">
+        <span class="dash-label" data-vi="Sắp gia hạn (30 ngày tới)" data-en="Renewing in the next 30 days">Sắp gia hạn (30 ngày tới)</span>
+        <span class="pill">{{ upcoming|length if upcoming else 0 }}</span>
+      </header>
+      <div class="dash-body" data-dash-view="real">
+        {% if upcoming %}
+          <ul class="mini-list upcoming">
+            {% for sub in upcoming %}
+              {% set days = (sub.next_renewal_at - today).days %}
+              <li>
+                <div>
+                  <strong>{{ sub.name }}</strong>
+                  {% if sub.manage_url %}
+                    <a class="small-link" href="{{ sub.manage_url }}" rel="noopener noreferrer nofollow" target="_blank" data-vi="quản lý / hủy ↗" data-en="manage ↗">quản lý / hủy ↗</a>
+                  {% endif %}
+                  <small class="muted block-small">
+                    {{ sub.next_renewal_at }} ·
+                    {% if days <= 0 %}
+                      <b class="hot" data-vi="hôm nay" data-en="today">hôm nay</b>
+                    {% elif days == 1 %}
+                      <b class="hot" data-vi="ngày mai" data-en="tomorrow">ngày mai</b>
+                    {% else %}
+                      <span data-vi="còn {{ days }} ngày" data-en="in {{ days }} days">còn {{ days }} ngày</span>
+                    {% endif %}
+                  </small>
+                </div>
+                <strong>{{ sub.amount }} {{ sub.currency }}</strong>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="dash-empty">
+            <strong data-vi="Không có gói nào gia hạn trong 30 ngày tới" data-en="Nothing renews in the next 30 days.">Không có gói nào gia hạn trong 30 ngày tới</strong>
+            <p class="muted small-text" data-vi="Lịch gia hạn 30 ngày tới của bạn đang trống." data-en="Nothing renews in the next 30 days.">
+              Lịch gia hạn 30 ngày tới của bạn đang trống.
+            </p>
+          </div>
+        {% endif %}
+      </div>
+      <div class="dash-body" data-dash-view="loading" hidden>
+        <div class="skeleton-line"></div>
+      </div>
+      <div class="dash-body" data-dash-view="error" hidden>
+        <p class="error-text" data-vi="⚠ Không thể tải danh sách sắp gia hạn." data-en="⚠ Unable to load upcoming renewals.">⚠ Không thể tải danh sách sắp gia hạn.</p>
+      </div>
+    </article>
+
+    {# Khối 3: Khoản dự kiến đến hạn trong 60 ngày qua — Cần kiểm tra (Expected charges) #}
+    <article class="card dash-card">
+      <header class="dash-card-head">
+        <span class="dash-label" data-vi="Khoản đến hạn cần kiểm tra (60 ngày qua)" data-en="Expected charges (last 60 days)">Khoản đến hạn cần kiểm tra (60 ngày qua)</span>
+        <span class="pill {% if expected %}hot-label{% endif %}">{{ expected|length if expected else 0 }}</span>
+      </header>
+      <div class="dash-body" data-dash-view="real">
+        <p class="muted small-text" data-vi="Các ngày gia hạn đã qua. SubTrack không tự kết nối ngân hàng nên đây là khoản dự kiến cho tới khi bạn xác nhận Đã trả (Paid) hoặc Không thu (Not charged)." data-en="Renewal dates that have passed. SubTrack can't see your bank, so these are what should have been charged until you say otherwise.">
+          Các ngày gia hạn đã qua. SubTrack không tự kết nối ngân hàng nên đây là khoản dự kiến cho tới khi bạn xác nhận <strong>Đã trả (Paid)</strong> hoặc <strong>Không thu (Not charged)</strong>.
+        </p>
+        {% if expected %}
+          <div class="table-scroll compact-top">
+            <table class="compact-table">
+              <thead>
+                <tr>
+                  <th data-vi="Ngày" data-en="Date">Ngày</th>
+                  <th data-vi="Gói" data-en="Subscription">Gói</th>
+                  <th data-vi="Số tiền" data-en="Amount">Số tiền</th>
+                  <th data-vi="Trạng thái" data-en="Status">Trạng thái</th>
+                  <th data-vi="Xác nhận" data-en="Action">Xác nhận</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in expected %}
+                  <tr>
+                    <td>{{ row.due_date }}</td>
+                    <td><strong>{{ names.get(row.subscription_id, '—') }}</strong></td>
+                    <td>{{ row.amount }} {{ row.currency }}</td>
+                    <td><span class="pill">{{ row.status }}</span></td>
+                    <td>
+                      {% for value, label_vi, label_en in [('paid', 'Đã trả (Paid)', 'Paid'), ('skipped', 'Không thu (Not charged)', 'Not charged')] if row.status != value %}
+                        <form class="inline" method="post" action="{{ url_for('subscriptions.mark_renewal', renewal_id=row.id) }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                          <input type="hidden" name="status" value="{{ value }}" />
+                          <button type="submit" class="btn-sm" data-vi="{{ label_vi }}" data-en="{{ label_en }}">{{ label_vi }}</button>
+                        </form>
+                      {% endfor %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="dash-empty compact-top">
+            <strong data-vi="Chưa có khoản quá hạn nào cần xác nhận" data-en="None yet.">Chưa có khoản quá hạn nào cần xác nhận</strong>
+          </div>
+        {% endif %}
+      </div>
+      <div class="dash-body" data-dash-view="loading" hidden>
+        <div class="skeleton-line"></div>
+      </div>
+      <div class="dash-body" data-dash-view="error" hidden>
+        <p class="error-text" data-vi="⚠ Lỗi tải danh sách khoản đến hạn." data-en="⚠ Error loading expected charges.">⚠ Lỗi tải danh sách khoản đến hạn.</p>
+      </div>
+    </article>
+
+    {# Khối 4: Hạn thanh toán thẻ tín dụng (Credit-card due dates) #}
+    <article class="card dash-card" id="credit-cards">
+      <header class="dash-card-head">
+        <span class="dash-label" data-vi="Hạn thanh toán thẻ tín dụng" data-en="Credit card due dates">Hạn thanh toán thẻ tín dụng</span>
+        <span class="pill" data-vi="Chưa có dữ liệu sao kê" data-en="No statement data">Chưa có dữ liệu sao kê</span>
+      </header>
+      <div class="dash-body" data-dash-view="real">
+        <div class="dash-empty">
+          <strong data-vi="Chưa có thông tin kỳ sao kê thẻ trên máy chủ" data-en="No credit card statements stored yet">Chưa có thông tin kỳ sao kê thẻ trên máy chủ</strong>
+          <p class="muted small-text" data-vi="Bạn có thể thêm hạn thanh toán thẻ hàng tháng như một gói nhắc lịch, hoặc mở xem mẫu giao diện kỳ sao kê thẻ (DEMO) bên dưới." data-en="You can add your card's monthly due date as a reminder, or expand the DEMO statement preview below.">
+            Bạn có thể thêm hạn thanh toán thẻ hàng tháng như một gói nhắc lịch, hoặc mở xem mẫu giao diện kỳ sao kê thẻ (DEMO) bên dưới.
+          </p>
+        </div>
+        <details class="archived-info-box compact-top">
+          <summary class="small-text" data-vi="🧪 Xem mẫu giao diện Kỳ sao kê thẻ (DEMO — Dữ liệu minh họa)" data-en="🧪 Preview Statement Tracker UI (DEMO)">
+            🧪 Xem mẫu giao diện Kỳ sao kê thẻ (DEMO — Dữ liệu minh họa)
+          </summary>
+          <div class="kv-list compact-top">
+            <div class="kv-row"><span class="muted">Thẻ mẫu:</span> <strong>Visa Platinum •••• 4108 (DEMO)</strong></div>
+            <div class="kv-row"><span class="muted">Kỳ sao kê:</span> <span>25/09/2026 – 25/10/2026</span></div>
+            <div class="kv-row"><span class="muted">Hạn thanh toán dự kiến:</span> <strong class="hot">10/11/2026 (Chưa thanh toán)</strong></div>
+            <div class="kv-row"><span class="muted">Tổng dư nợ / Tối thiểu:</span> <span>14.200.000 VND / 710.000 VND</span></div>
+            <div class="kv-row"><span class="muted">Mastercard •••• 8821 (DEMO):</span> <span class="muted">Số dư & hạn trả: Chưa có thông tin</span></div>
+          </div>
+        </details>
+      </div>
+    </article>
+
+    {# Khối 5: Chi tiêu thực tế & Hóa đơn (Actual spending) #}
+    <article class="card dash-card">
+      <header class="dash-card-head">
+        <span class="dash-label" data-vi="Chi tiêu thực tế (Actual spending)" data-en="Actual spending">Chi tiêu thực tế (Actual spending)</span>
+        <a class="small-link" href="#bills" data-vi="Mở khu vực Hóa đơn ↓" data-en="Open Bills section ↓">Mở khu vực Hóa đơn ↓</a>
+      </header>
+      <div class="dash-body" data-dash-view="real">
+        <div class="dash-empty">
+          <strong data-vi="Chưa có hóa đơn đã xác nhận" data-en="Coming with bills and receipts">Chưa có hóa đơn đã xác nhận</strong>
+          <p class="muted small-text" data-vi="Chỉ những khoản thanh toán bạn trực tiếp xác nhận từ hóa đơn / biên lai mới được tính vào chi tiêu thực tế tại đây." data-en="Coming with bills and receipts: only payments you confirm will count here.">
+            Chỉ những khoản thanh toán bạn trực tiếp xác nhận từ hóa đơn / biên lai mới được tính vào chi tiêu thực tế tại đây.
+          </p>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  {# Khu vực Hóa đơn & Kiểm tra chứng từ (UI Demo — đánh dấu rõ đang chờ API /bills) #}
+  {% include "subscriptions/_bills_section.html" %}
+{% endblock %}

@@ -35,16 +35,17 @@
 
       <nav aria-label="Điều hướng chính" class="main-nav">
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}#overview" class="nav-link" data-nav-target="overview" data-vi="Tổng quan" data-en="Overview">Tổng quan</a>
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}#subscriptions" class="nav-link" data-nav-target="subscriptions" data-vi="Gói đăng ký" data-en="Subscriptions">Gói đăng ký</a>
-          <a href="{{ url_for('links.list_links') }}" class="nav-link {% if request.path.startswith('/links') %}active{% endif %}" data-nav-target="links" data-vi="Link đã lưu" data-en="Saved links">Link đã lưu</a>
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}#bills" class="nav-link" data-nav-target="bills" data-vi="Hóa đơn / Giao dịch" data-en="Bills & transactions">Hóa đơn / Giao dịch</a>
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}#reminders" class="nav-link" data-nav-target="reminders" data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</a>
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}#settings" class="nav-link" data-nav-target="settings" data-vi="Cài đặt" data-en="Settings">Cài đặt</a>
+          {% set has_dashboard_route = (current_user.timezone is defined) %}
+          <a href="{{ url_for('dashboard.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions') + '#overview' }}" class="nav-link {% if request.path.startswith('/dashboard') %}active{% endif %}" data-nav-target="overview" data-vi="Tổng quan" data-en="Dashboard">Tổng quan</a>
+          <a href="{{ url_for('subscriptions.list_subscriptions') }}" class="nav-link {% if request.path.startswith('/subscriptions') %}active{% endif %}" data-nav-target="subscriptions" data-vi="Gói đăng ký" data-en="Subscriptions">Gói đăng ký</a>
+          <a href="{{ url_for('links.list_links') }}" class="nav-link {% if request.path.startswith('/links') %}active{% endif %}" data-nav-target="links" data-vi="Link đã lưu" data-en="Links">Link đã lưu</a>
+          <a href="{{ (url_for('dashboard.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions')) + '#bills' }}" class="nav-link" data-nav-target="bills" data-vi="Hóa đơn / Giao dịch" data-en="Bills">Hóa đơn / Giao dịch</a>
+          <a href="{{ (url_for('settings.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions')) + '#reminders' }}" class="nav-link" data-nav-target="reminders" data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</a>
+          <a href="{{ url_for('settings.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions') + '#settings' }}" class="nav-link {% if request.path.startswith('/settings') %}active{% endif %}" data-nav-target="settings" data-vi="Cài đặt" data-en="Settings">Cài đặt</a>
           {% if current_user.is_admin %}
             <a href="{{ url_for('admin.users') }}" class="nav-link {% if request.path.startswith('/admin') %}active{% endif %}" data-vi="Quản trị" data-en="Admin">Quản trị</a>
           {% endif %}
-          <a class="button btn-sm nav-cta" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói" data-en="+ Add">+ Thêm gói</a>
+          <a class="button btn-sm nav-cta" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói" data-en="Add">+ Thêm gói</a>
           <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
           <span class="who" title="{{ current_user.email }}">{{ current_user.username if (current_user.username is defined and current_user.username) else current_user.email }}</span>
           {% if csrf_token is defined %}

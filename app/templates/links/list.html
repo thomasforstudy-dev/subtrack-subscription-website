@@ -93,7 +93,12 @@
             >{{ '★' if link.is_pinned else '☆' }}</button>
           </form>
 
-          <span class="link-favicon" aria-hidden="true" title="Tên miền: {{ link.hostname }}">{{ host_initial }}</span>
+          <span class="link-favicon" aria-hidden="true" title="Tên miền: {{ link.hostname }}">
+            {% if link.favicon_url is defined and link.favicon_url %}
+              <img src="{{ link.favicon_url }}" alt="" width="16" height="16" loading="lazy" referrerpolicy="no-referrer" data-favicon-img />
+            {% endif %}
+            <span class="link-favicon-fallback">{{ host_initial }}</span>
+          </span>
 
           <div class="link-body">
             <div class="link-title-row">

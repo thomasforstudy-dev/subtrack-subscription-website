@@ -1,470 +1,247 @@
 {% extends "base.html" %}
-{% block title %}Tổng quan & Gói đăng ký — SubTrack{% endblock %}
+{% block title %}Gói đăng ký (Subscriptions) — SubTrack{% endblock %}
 {% block content %}
-  {# Tính toán dữ liệu thật từ danh sách items của tài khoản đang đăng nhập.
-     Tuyệt đối không trộn số liệu Demo vào tài khoản thật. #}
-  {% set ns = namespace(upcoming=[], overdue=[], currencies={}) %}
-  {% for item in items %}
-    {% set days_left = (item.next_renewal_at - today).days %}
-    {% if days_left < 0 %}
-      {% set ns.overdue = ns.overdue + [item] %}
-    {% elif days_left <= 14 %}
-      {% set ns.upcoming = ns.upcoming + [item] %}
-    {% endif %}
-  {% endfor %}
+  {% set has_server_pager = (pages is defined) %}
 
-  {# Thanh chuyển nhanh giữa các phân khu trên trang quản lý chính #}
-  <div class="workspace-tabs" role="navigation" aria-label="Phân khu bảng điều khiển">
-    <a class="chip on" href="#overview" data-ws-tab="overview" data-vi="📊 Tổng quan" data-en="📊 Overview">📊 Tổng quan</a>
-    <a class="chip" href="#subscriptions" data-ws-tab="subscriptions" data-vi="📦 Gói đăng ký ({{ items|length }})" data-en="📦 Subscriptions ({{ items|length }})">📦 Gói đăng ký ({{ items|length }})</a>
-    <a class="chip" href="#credit-cards" data-ws-tab="credit-cards" data-vi="💳 Thẻ tín dụng" data-en="💳 Credit cards">💳 Thẻ tín dụng</a>
-    <a class="chip" href="#bills" data-ws-tab="bills" data-vi="🧾 Hóa đơn / Giao dịch" data-en="🧾 Bills & transactions">🧾 Hóa đơn / Giao dịch</a>
-    <a class="chip" href="#reminders" data-ws-tab="reminders" data-vi="🔔 Nhắc nhở" data-en="🔔 Reminders">🔔 Nhắc nhở</a>
-    <a class="chip" href="#settings" data-ws-tab="settings" data-vi="⚙ Cài đặt & Cài App" data-en="⚙ Settings & PWA">⚙ Cài đặt & Cài App</a>
+  <div class="section-head" id="subscriptions">
+    <div>
+      <h1 data-vi="Danh sách gói đăng ký (Subscriptions)" data-en="Subscriptions">Danh sách gói đăng ký (Subscriptions)</h1>
+      <p class="muted" data-vi="Lưu ý: Ngày hiển thị là ngày gia hạn dự kiến (không phải xác nhận đã trừ tiền). Lời nhắc giúp bạn chủ động tự gia hạn hoặc tự hủy trên trang nhà cung cấp." data-en="Note: Dates shown are expected renewal dates (not confirmed charges). Reminders help you renew or cancel on the provider's site.">
+        Lưu ý: Ngày hiển thị là <strong>ngày gia hạn dự kiến</strong> (không phải xác nhận đã trừ tiền). Lời nhắc giúp bạn chủ động tự gia hạn hoặc tự hủy trên trang nhà cung cấp.
+      </p>
+    </div>
+    <div class="head-actions">
+      {% if has_server_pager %}
+        <a class="button secondary" href="{{ url_for('dashboard.show') }}" data-vi="📊 Xem Tổng quan (Toàn tài khoản)" data-en="📊 Full Account Dashboard">📊 Xem Tổng quan (Toàn tài khoản)</a>
+      {% endif %}
+      <a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký" data-en="Add subscription">+ Thêm gói đăng ký</a>
+    </div>
   </div>
 
-  {# ==================== 1. DASHBOARD TỔNG QUAN ==================== #}
-  <section id="overview" class="workspace-section" aria-labelledby="overview-heading">
-    <div class="section-head">
-      <div>
-        <h1 id="overview-heading" data-vi="Tổng quan tài khoản" data-en="Account Overview">Tổng quan tài khoản</h1>
-        <p class="muted" data-vi="Số liệu gói đăng ký và chi phí dự kiến dưới đây được tính trực tiếp từ dữ liệu thật của bạn. Các khối chưa có dữ liệu máy chủ hiển thị trạng thái Trống (có nút xem thử trạng thái Đang tải / Lỗi / Demo)." data-en="Subscription counts and estimated spend below are computed strictly from your real account data. Unconnected blocks show an honest Empty state (with a state preview switcher).">
-          Số liệu gói đăng ký và chi phí dự kiến dưới đây được tính trực tiếp từ dữ liệu thật của bạn. Các khối chưa có dữ liệu máy chủ hiển thị trạng thái Trống (có nút xem thử trạng thái Đang tải / Lỗi / Demo).
-        </p>
-      </div>
-      <div class="head-actions">
-        <div class="state-switcher" role="group" aria-label="Xem thử trạng thái các khối Dashboard">
-          <span class="muted small-text" data-vi="Trạng thái khối:" data-en="Block state:">Trạng thái khối:</span>
-          <button type="button" class="chip on" data-dash-state="real" data-vi="Dữ liệu thật" data-en="Real data">Dữ liệu thật</button>
-          <button type="button" class="chip" data-dash-state="loading" data-vi="Đang tải" data-en="Loading">Đang tải</button>
-          <button type="button" class="chip" data-dash-state="error" data-vi="Lỗi tải" data-en="Error">Lỗi tải</button>
-          <button type="button" class="chip" data-dash-state="demo" data-vi="Xem mẫu Demo" data-en="Demo preview">Xem mẫu Demo</button>
+  {# Thanh tóm tắt Chi dự kiến Toàn tài khoản (lấy từ /dashboard.json bằng Decimal chuẩn, không cộng float trên trang phân trang) #}
+  {% if has_server_pager %}
+    <div class="card account-summary-strip" id="account-wide-summary" data-dashboard-json="{{ url_for('dashboard.as_json') }}">
+      <div class="summary-strip-head">
+        <div>
+          <span class="dash-label" data-vi="Chi dự kiến toàn tài khoản (Mọi trang · Decimal)" data-en="Account-wide projected spend (All pages · Decimal)">Chi dự kiến toàn tài khoản (Mọi trang · Decimal)</span>
+          <p class="muted small-text" data-vi="Số liệu này luôn tính trên toàn bộ gói đang hoạt động trong tài khoản của bạn, không bị cắt theo trang 20 mục hay bộ lọc bên dưới." data-en="Computed across all active subscriptions in your account, never limited to the current 20-item page or search filter.">
+            Số liệu này luôn tính trên toàn bộ gói đang hoạt động trong tài khoản của bạn, không bị cắt theo trang 20 mục hay bộ lọc bên dưới.
+          </p>
         </div>
-        <a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký" data-en="+ Add subscription">+ Thêm gói đăng ký</a>
+        <a class="small-link" href="{{ url_for('dashboard.show') }}" data-vi="Chi tiết Tổng quan →" data-en="Open Dashboard →">Chi tiết Tổng quan →</a>
+      </div>
+      <div id="account-wide-totals-body" class="summary-strip-totals">
+        <span class="muted small-text" data-vi="Đang đồng bộ tổng chi dự kiến toàn tài khoản…" data-en="Loading account-wide Decimal totals…">Đang đồng bộ tổng chi dự kiến toàn tài khoản…</span>
       </div>
     </div>
+  {% endif %}
 
-    <div class="dashboard-grid" id="dashboard-blocks" data-state="real">
-      {# Khối 1: Chi dự kiến hàng tháng theo từng loại tiền tệ (tính từ items thật) #}
-      <article class="card dash-card">
-        <header class="dash-card-head">
-          <span class="dash-label" data-vi="Chi dự kiến / tháng (Theo tiền tệ)" data-en="Estimated monthly spend (By currency)">Chi dự kiến / tháng (Theo tiền tệ)</span>
-          <span class="pill mint" data-vi="Tài khoản thật" data-en="Real account">Tài khoản thật</span>
-        </header>
-        <div class="dash-body" data-dash-view="real">
-          {% if items %}
-            <ul class="currency-totals">
-              {% for currency, group in items|groupby('currency') %}
-                {% set monthly_sum = namespace(val=0.0) %}
-                {% for sub in group %}
-                  {% set amt = sub.amount|float %}
-                  {% if sub.cycle == 'yearly' %}
-                    {% set monthly_sum.val = monthly_sum.val + (amt / 12.0) %}
-                  {% elif sub.cycle == 'weekly' %}
-                    {% set monthly_sum.val = monthly_sum.val + (amt * 52.0 / 12.0) %}
-                  {% else %}
-                    {% set monthly_sum.val = monthly_sum.val + amt %}
-                  {% endif %}
-                {% endfor %}
-                <li>
-                  <span class="currency-code">{{ currency }}</span>
-                  <strong class="currency-value">{{ "%.2f"|format(monthly_sum.val) }} {{ currency }}</strong>
-                  <small class="muted">({{ group|length }} <span data-vi="gói" data-en="plans">gói</span>)</small>
-                </li>
-              {% endfor %}
-            </ul>
-            <p class="dash-footnote muted" data-vi="Quy đổi ước tính theo chu kỳ (tuần/tháng/năm). Không gộp chung các đồng tiền khác nhau." data-en="Estimated from billing cycles. Currencies are kept separate.">
-              Quy đổi ước tính theo chu kỳ (tuần/tháng/năm). Không gộp chung các đồng tiền khác nhau.
-            </p>
-          {% else %}
-            <div class="dash-empty">
-              <strong data-vi="0 — Chưa có gói đăng ký nào" data-en="0 — No active subscriptions yet">0 — Chưa có gói đăng ký nào</strong>
-              <p class="muted small-text" data-vi="Thêm gói đăng ký đầu tiên để xem chi phí dự kiến theo từng loại tiền tệ." data-en="Add your first subscription to see estimated monthly spend by currency.">
-                Thêm gói đăng ký đầu tiên để xem chi phí dự kiến theo từng loại tiền tệ.
-              </p>
-            </div>
-          {% endif %}
-        </div>
-        <div class="dash-body" data-dash-view="loading" hidden>
-          <div class="skeleton-line"></div>
-          <div class="skeleton-line short"></div>
-          <p class="muted small-text" data-vi="Đang tính toán chi phí dự kiến…" data-en="Calculating estimated spend…">Đang tính toán chi phí dự kiến…</p>
-        </div>
-        <div class="dash-body" data-dash-view="error" hidden>
-          <p class="error-text" data-vi="⚠ Không tải được dữ liệu tổng hợp. Vui lòng tải lại trang." data-en="⚠ Could not load summary data. Please refresh.">⚠ Không tải được dữ liệu tổng hợp. Vui lòng tải lại trang.</p>
-        </div>
-        <div class="dash-body" data-dash-view="demo" hidden>
-          <span class="pill sun-label">DEMO — Dữ liệu minh họa</span>
-          <ul class="currency-totals">
-            <li><span class="currency-code">VND</span> <strong class="currency-value">388,000.00 VND</strong> <small class="muted">(3 gói mẫu)</small></li>
-            <li><span class="currency-code">USD</span> <strong class="currency-value">79.99 USD</strong> <small class="muted">(2 gói mẫu)</small></li>
-          </ul>
-        </div>
-      </article>
-
-      {# Khối 2: Sắp gia hạn (Upcoming renewals trong 14 ngày tới từ items thật) #}
-      <article class="card dash-card">
-        <header class="dash-card-head">
-          <span class="dash-label" data-vi="Sắp gia hạn (≤ 14 ngày tới)" data-en="Upcoming renewals (next 14 days)">Sắp gia hạn (≤ 14 ngày tới)</span>
-          <span class="pill">{% if ns.upcoming %}{{ ns.upcoming|length }}{% else %}0{% endif %}</span>
-        </header>
-        <div class="dash-body" data-dash-view="real">
-          {% if ns.upcoming %}
-            <ul class="mini-list">
-              {% for sub in ns.upcoming[:4] %}
-                {% set d = (sub.next_renewal_at - today).days %}
-                <li>
-                  <div>
-                    <strong>{{ sub.name }}</strong>
-                    <small class="muted block-small">
-                      <span data-vi="Ngày gia hạn dự kiến:" data-en="Expected renewal:">Ngày gia hạn dự kiến:</span> {{ sub.next_renewal_at }}
-                      ({% if d == 0 %}<b class="hot" data-vi="Hôm nay" data-en="Today">Hôm nay</b>{% else %}<span data-vi="còn {{ d }} ngày" data-en="in {{ d }} days">còn {{ d }} ngày</span>{% endif %})
-                    </small>
-                  </div>
-                  <strong>{{ sub.amount }} {{ sub.currency }}</strong>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <div class="dash-empty">
-              <strong data-vi="Không có gói nào đến hạn trong 14 ngày tới" data-en="No renewals due in the next 14 days">Không có gói nào đến hạn trong 14 ngày tới</strong>
-              <p class="muted small-text" data-vi="Lịch của bạn đang thông thoáng. Lưu ý: Ngày gia hạn là ngày dự kiến, không phải xác nhận đã trừ tiền." data-en="Your schedule is clear. Note: Renewal dates are expected dates, not confirmed bank charges.">
-                Lịch của bạn đang thông thoáng. Lưu ý: Ngày gia hạn là ngày dự kiến, không phải xác nhận đã trừ tiền.
-              </p>
-            </div>
-          {% endif %}
-        </div>
-        <div class="dash-body" data-dash-view="loading" hidden>
-          <div class="skeleton-line"></div>
-          <div class="skeleton-line short"></div>
-          <p class="muted small-text" data-vi="Đang tải danh sách sắp gia hạn…" data-en="Loading upcoming renewals…">Đang tải danh sách sắp gia hạn…</p>
-        </div>
-        <div class="dash-body" data-dash-view="error" hidden>
-          <p class="error-text" data-vi="⚠ Không thể kiểm tra lịch gia hạn lúc này." data-en="⚠ Unable to check upcoming renewals right now.">⚠ Không thể kiểm tra lịch gia hạn lúc này.</p>
-        </div>
-        <div class="dash-body" data-dash-view="demo" hidden>
-          <span class="pill sun-label">DEMO — Dữ liệu minh họa</span>
-          <ul class="mini-list">
-            <li><div><strong>Spotify Premium (Demo)</strong><small class="muted block-small">Dự kiến: còn 2 ngày</small></div><strong>59.000 VND</strong></li>
-            <li><div><strong>Netflix (Demo)</strong><small class="muted block-small">Dự kiến: còn 9 ngày</small></div><strong>260.000 VND</strong></li>
-          </ul>
-        </div>
-      </article>
-
-      {# Khối 3: Cần kiểm tra (Needs review: các gói đã qua ngày dự kiến hoặc hóa đơn chờ duyệt) #}
-      <article class="card dash-card">
-        <header class="dash-card-head">
-          <span class="dash-label" data-vi="Cần kiểm tra" data-en="Needs review">Cần kiểm tra</span>
-          <span class="pill {% if ns.overdue %}hot-label{% endif %}">{{ ns.overdue|length }}</span>
-        </header>
-        <div class="dash-body" data-dash-view="real">
-          {% if ns.overdue %}
-            <ul class="mini-list">
-              {% for sub in ns.overdue[:3] %}
-                <li>
-                  <div>
-                    <strong>{{ sub.name }}</strong>
-                    <small class="hot block-small" data-vi="Đã qua ngày gia hạn dự kiến ({{ sub.next_renewal_at }}) — hãy cập nhật kỳ mới hoặc lưu trữ" data-en="Past expected renewal date ({{ sub.next_renewal_at }}) — update next date or archive">
-                      Đã qua ngày gia hạn dự kiến ({{ sub.next_renewal_at }}) — hãy cập nhật kỳ mới hoặc lưu trữ
-                    </small>
-                  </div>
-                  <a class="chip" href="{{ url_for('subscriptions.edit', item_id=sub.id) }}" data-vi="Cập nhật" data-en="Update">Cập nhật</a>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <div class="dash-empty">
-              <strong data-vi="Không có mục nào cần kiểm tra gấp" data-en="Nothing urgent to review">Không có mục nào cần kiểm tra gấp</strong>
-              <p class="muted small-text" data-vi="Khi có gói quá ngày dự kiến hoặc hóa đơn OCR thiếu thông tin, cảnh báo sẽ xuất hiện tại đây." data-en="Overdue expected dates or OCR receipts needing attention will appear here.">
-                Khi có gói quá ngày dự kiến hoặc hóa đơn OCR thiếu thông tin, cảnh báo sẽ xuất hiện tại đây.
-              </p>
-            </div>
-          {% endif %}
-        </div>
-        <div class="dash-body" data-dash-view="loading" hidden>
-          <div class="skeleton-line"></div>
-          <p class="muted small-text" data-vi="Đang kiểm tra các mục cần duyệt…" data-en="Checking items needing review…">Đang kiểm tra các mục cần duyệt…</p>
-        </div>
-        <div class="dash-body" data-dash-view="error" hidden>
-          <p class="error-text" data-vi="⚠ Lỗi kết nối khi tải danh sách cần kiểm tra." data-en="⚠ Connection error loading review items.">⚠ Lỗi kết nối khi tải danh sách cần kiểm tra.</p>
-        </div>
-        <div class="dash-body" data-dash-view="demo" hidden>
-          <span class="pill sun-label">DEMO — Dữ liệu minh họa</span>
-          <p class="small-text"><strong>1 hóa đơn OCR (Adobe CC)</strong> bị cắt mép dưới Trang 2 — thiếu trường Địa chỉ & Giờ giao dịch. <a href="#bills">Mở kiểm tra →</a></p>
-        </div>
-      </article>
-
-      {# Khối 4: Hạn trả thẻ tín dụng (Credit-card due dates) #}
-      <article class="card dash-card">
-        <header class="dash-card-head">
-          <span class="dash-label" data-vi="Hạn thanh toán thẻ tín dụng" data-en="Credit card due dates">Hạn thanh toán thẻ tín dụng</span>
-          <a class="small-link" href="#credit-cards" data-vi="Chi tiết thẻ →" data-en="Card details →">Chi tiết thẻ →</a>
-        </header>
-        <div class="dash-body" data-dash-view="real">
-          <div class="dash-empty">
-            <strong data-vi="Chưa có thông tin kỳ sao kê thẻ" data-en="No credit card statements added yet">Chưa có thông tin kỳ sao kê thẻ</strong>
-            <p class="muted small-text" data-vi="Bạn có thể thêm ngày đến hạn thẻ như một gói nhắc lịch hoặc xem giao diện kỳ sao kê thẻ ở bên dưới." data-en="Add your card due date as a reminder or preview the statement tracker below.">
-              Bạn có thể thêm ngày đến hạn thẻ như một gói nhắc lịch hoặc xem giao diện kỳ sao kê thẻ ở bên dưới.
-            </p>
-          </div>
-        </div>
-        <div class="dash-body" data-dash-view="loading" hidden>
-          <div class="skeleton-line"></div>
-          <p class="muted small-text" data-vi="Đang tải lịch sao kê thẻ…" data-en="Loading card statements…">Đang tải lịch sao kê thẻ…</p>
-        </div>
-        <div class="dash-body" data-dash-view="error" hidden>
-          <p class="error-text" data-vi="⚠ Không thể tải thông tin hạn thẻ." data-en="⚠ Could not load card due dates.">⚠ Không thể tải thông tin hạn thẻ.</p>
-        </div>
-        <div class="dash-body" data-dash-view="demo" hidden>
-          <span class="pill sun-label">DEMO — Dữ liệu minh họa</span>
-          <ul class="mini-list">
-            <li><div><strong>Visa Platinum •••• 4108</strong><small class="muted block-small">Hạn trả: 25/10/2026 (Chưa thanh toán)</small></div><strong>$1,420.50</strong></li>
-            <li><div><strong>Mastercard •••• 8821</strong><small class="muted block-small">Số dư sao kê: Chưa có thông tin</small></div><span class="muted">Chưa có thông tin</span></li>
-          </ul>
-        </div>
-      </article>
-
-      {# Khối 5: Giao dịch gần đây (Recent transactions) #}
-      <article class="card dash-card">
-        <header class="dash-card-head">
-          <span class="dash-label" data-vi="Giao dịch / Hóa đơn gần đây" data-en="Recent transactions & bills">Giao dịch / Hóa đơn gần đây</span>
-          <a class="small-link" href="#bills" data-vi="Mở mục Hóa đơn →" data-en="Open Bills →">Mở mục Hóa đơn →</a>
-        </header>
-        <div class="dash-body" data-dash-view="real">
-          <div class="dash-empty">
-            <strong data-vi="Chưa có giao dịch đã xác nhận" data-en="No confirmed transactions yet">Chưa có giao dịch đã xác nhận</strong>
-            <p class="muted small-text" data-vi="Tải hóa đơn PDF/Ảnh tại mục Hóa đơn để trích xuất và kiểm tra các khoản thu." data-en="Upload PDF or image receipts in the Bills section to review charges.">
-              Tải hóa đơn PDF/Ảnh tại mục Hóa đơn để trích xuất và kiểm tra các khoản thu.
-            </p>
-          </div>
-        </div>
-        <div class="dash-body" data-dash-view="loading" hidden>
-          <div class="skeleton-line"></div>
-          <p class="muted small-text" data-vi="Đang tải giao dịch gần đây…" data-en="Loading recent transactions…">Đang tải giao dịch gần đây…</p>
-        </div>
-        <div class="dash-body" data-dash-view="error" hidden>
-          <p class="error-text" data-vi="⚠ Không thể tải danh sách giao dịch." data-en="⚠ Failed to load recent transactions.">⚠ Không thể tải danh sách giao dịch.</p>
-        </div>
-        <div class="dash-body" data-dash-view="demo" hidden>
-          <span class="pill sun-label">DEMO — Dữ liệu minh họa</span>
-          <ul class="mini-list">
-            <li><div><strong>Adobe Systems (Demo)</strong><small class="muted block-small">2026-10-15 · Chờ duyệt</small></div><strong>59.99 USD</strong></li>
-            <li><div><strong>Netflix (Demo)</strong><small class="muted block-small">2026-10-10 · Đã kiểm tra</small></div><strong>260.000 VND</strong></li>
-          </ul>
-        </div>
-      </article>
+  {# Thanh Tìm kiếm, Lọc trạng thái (active/archived/all) và Sắp xếp gửi trực tiếp lên máy chủ (GET /subscriptions/) #}
+  <form class="search filter-bar card compact-card" method="get" action="{{ url_for('subscriptions.list_subscriptions') }}" aria-label="Tìm kiếm, lọc và sắp xếp gói đăng ký trên toàn tài khoản">
+    <div class="filter-search-wrap">
+      <label for="sub-q-input" class="sr-only">Tìm theo tên hoặc ghi chú</label>
+      <input
+        id="sub-q-input"
+        type="search"
+        name="q"
+        value="{{ q if q is defined else '' }}"
+        placeholder="Tìm theo tên gói hoặc ghi chú trên toàn tài khoản…"
+        aria-label="Search name or notes"
+      />
     </div>
-  </section>
+    <div class="filter-selects">
+      <label for="sub-status-select" class="sr-only">Trạng thái gói</label>
+      <select id="sub-status-select" name="status" aria-label="Status">
+        {% set cur_status = status if status is defined else 'active' %}
+        {% for value, label_vi, label_en in [
+          ('active', 'Đang hoạt động (Active)', 'Active'),
+          ('archived', 'Đã lưu trữ (Archived)', 'Archived'),
+          ('all', 'Tất cả trạng thái (All)', 'All')
+        ] %}
+          <option value="{{ value }}" {% if cur_status == value %}selected{% endif %} data-vi="{{ label_vi }}" data-en="{{ label_en }}">{{ label_vi }}</option>
+        {% endfor %}
+      </select>
 
-  {# ==================== 2. DANH SÁCH GÓI ĐĂNG KÝ ==================== #}
-  <section id="subscriptions" class="workspace-section" aria-labelledby="subs-heading">
-    <div class="section-head">
-      <div>
-        <h2 id="subs-heading" data-vi="Danh sách gói đăng ký (Subscriptions)" data-en="Subscriptions">Danh sách gói đăng ký (Subscriptions)</h2>
-        <p class="muted" data-vi="Lưu ý: Ngày hiển thị là ngày gia hạn dự kiến (không phải xác nhận đã trừ tiền). Lời nhắc giúp bạn tự gia hạn hoặc tự hủy trên trang dịch vụ." data-en="Note: Dates shown are expected renewal dates (not confirmed charges). Reminders help you renew or cancel on the provider's site.">
-          Lưu ý: Ngày hiển thị là <strong>ngày gia hạn dự kiến</strong> (không phải xác nhận đã trừ tiền). Lời nhắc giúp bạn tự gia hạn hoặc tự hủy trên trang dịch vụ.
-        </p>
-      </div>
-      <p><a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký" data-en="Add subscription">+ Thêm gói đăng ký</a></p>
+      <label for="sub-sort-select" class="sr-only">Sắp xếp theo</label>
+      <select id="sub-sort-select" name="sort" aria-label="Sort">
+        {% set cur_sort = sort if sort is defined else 'renewal' %}
+        {% for value, label_vi, label_en in [
+          ('renewal', 'Sắp xếp: Gia hạn gần nhất (Next renewal)', 'Next renewal'),
+          ('name', 'Sắp xếp: Tên A → Z (Name)', 'Name'),
+          ('amount', 'Sắp xếp: Giá cao trước (Price high first)', 'Price (high first)')
+        ] %}
+          <option value="{{ value }}" {% if cur_sort == value %}selected{% endif %} data-vi="{{ label_vi }}" data-en="{{ label_en }}">{{ label_vi }}</option>
+        {% endfor %}
+      </select>
+
+      <button type="submit" data-vi="Hiển thị (Show)" data-en="Show">Hiển thị (Show)</button>
+      {% if (q is defined and q) or (status is defined and status != 'active') or (sort is defined and sort != 'renewal') %}
+        <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Đặt lại" data-en="Reset">Đặt lại</a>
+      {% endif %}
     </div>
+  </form>
 
-    {% if items %}
-      <div class="filter-bar card compact-card" aria-label="Tìm kiếm, lọc và sắp xếp gói đăng ký">
-        <input
-          type="search"
-          id="sub-search"
-          placeholder="Tìm theo tên dịch vụ, ghi chú, tiền tệ…"
-          aria-label="Tìm kiếm gói đăng ký"
-        />
-        <select id="sub-cycle-filter" aria-label="Lọc theo chu kỳ">
-          <option value="all" data-vi="Tất cả chu kỳ" data-en="All cycles">Tất cả chu kỳ</option>
-          <option value="monthly" data-vi="Hàng tháng (monthly)" data-en="Monthly">Hàng tháng (monthly)</option>
-          <option value="yearly" data-vi="Hàng năm (yearly)" data-en="Yearly">Hàng năm (yearly)</option>
-          <option value="weekly" data-vi="Hàng tuần (weekly)" data-en="Weekly">Hàng tuần (weekly)</option>
-        </select>
-        <select id="sub-status-filter" aria-label="Lọc theo hạn gia hạn">
-          <option value="all" data-vi="Mọi trạng thái hạn" data-en="All due states">Mọi trạng thái hạn</option>
-          <option value="due" data-vi="Đến hạn / Quá ngày dự kiến" data-en="Due / Past expected date">Đến hạn / Quá ngày dự kiến</option>
-          <option value="soon" data-vi="Sắp gia hạn (≤ 7 ngày)" data-en="Renewing soon (≤ 7 days)">Sắp gia hạn (≤ 7 ngày)</option>
-        </select>
-        <select id="sub-sort" aria-label="Sắp xếp danh sách">
-          <option value="date-asc" data-vi="Sắp xếp: Gia hạn gần nhất" data-en="Sort: Next renewal">Sắp xếp: Gia hạn gần nhất</option>
-          <option value="amount-desc" data-vi="Sắp xếp: Số tiền giảm dần" data-en="Sort: Amount high → low">Sắp xếp: Số tiền giảm dần</option>
-          <option value="name-asc" data-vi="Sắp xếp: Tên A → Z" data-en="Sort: Name A → Z">Sắp xếp: Tên A → Z</option>
-        </select>
+  {% if items %}
+    {% if has_server_pager %}
+      <div class="scope-notice muted small-text">
+        <span>
+          <strong data-vi="Phạm vi hiển thị:" data-en="Showing scope:">Phạm vi hiển thị:</strong>
+          {{ items|length }} / {{ pages.total }} gói khớp điều kiện
+          (Page {{ pages.page }} of {{ pages.pages }})
+          {% if q %} · Từ khóa: <code>{{ q }}</code>{% endif %}
+          {% if status is defined %} · Trạng thái: <code>{{ status }}</code>{% endif %}
+        </span>
       </div>
+    {% endif %}
 
-      <div class="table-scroll">
-        <table id="subs-table">
-          <thead>
-            <tr>
-              <th data-vi="Dịch vụ" data-en="Name">Dịch vụ</th>
-              <th data-vi="Số tiền" data-en="Amount">Số tiền</th>
-              <th data-vi="Chu kỳ" data-en="Cycle">Chu kỳ</th>
-              <th data-vi="Ngày gia hạn dự kiến" data-en="Next renewal">Ngày gia hạn dự kiến</th>
-              <th data-vi="Trạng thái & Nhắc lịch" data-en="Status & Reminder">Trạng thái & Nhắc lịch</th>
-              <th data-vi="Thao tác" data-en="Actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="subs-tbody">
-            {% for item in items %}
-              {% set days_left = (item.next_renewal_at - today).days %}
-              {% set lname = item.name|lower %}
-              {% if 'netflix' in lname %}{% set bcolor = '#e50914' %}{% set btile = 'N' %}
-              {% elif 'spotify' in lname %}{% set bcolor = '#1db954' %}{% set btile = 'S' %}
-              {% elif 'youtube' in lname %}{% set bcolor = '#ff0033' %}{% set btile = '▶' %}
-              {% elif 'chatgpt' in lname or 'openai' in lname %}{% set bcolor = '#10a37f' %}{% set btile = 'G' %}
-              {% elif 'claude' in lname %}{% set bcolor = '#d97757' %}{% set btile = 'C' %}
-              {% elif 'gemini' in lname or 'google' in lname %}{% set bcolor = '#4285f4' %}{% set btile = '✦' %}
-              {% elif 'icloud' in lname or 'apple' in lname %}{% set bcolor = '#3693f3' %}{% set btile = 'i' %}
-              {% elif 'adobe' in lname %}{% set bcolor = '#fa0f00' %}{% set btile = 'A' %}
-              {% elif 'canva' in lname %}{% set bcolor = '#7d2ae8' %}{% set btile = 'C' %}
-              {% else %}{% set bcolor = '#6d4aff' %}{% set btile = (item.name[:1] or 'S')|upper %}{% endif %}
+    <div class="table-scroll">
+      <table id="subs-table">
+        <thead>
+          <tr>
+            <th data-vi="Dịch vụ" data-en="Name">Dịch vụ</th>
+            <th data-vi="Số tiền" data-en="Amount">Số tiền</th>
+            <th data-vi="Chu kỳ" data-en="Cycle">Chu kỳ</th>
+            <th data-vi="Ngày gia hạn dự kiến" data-en="Next renewal">Ngày gia hạn dự kiến</th>
+            <th data-vi="Trạng thái & Nhắc trước" data-en="Status & Lead days">Trạng thái & Nhắc trước</th>
+            <th data-vi="Thao tác" data-en="Actions">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="subs-tbody">
+          {% for item in items %}
+            {% set days_left = (item.next_renewal_at - today).days %}
+            {% set btile = (item.name[:1] or 'S')|upper %}
+            {% set is_active = (item.status is not defined or item.status == 'active') %}
 
-              <tr
-                class="{% if item.next_renewal_at <= today %}due{% elif days_left <= 7 %}soon-row{% endif %}"
-                data-sub-row
-                data-name="{{ item.name|lower }}"
-                data-notes="{{ (item.notes or '')|lower }}"
-                data-currency="{{ item.currency }}"
-                data-amount="{{ item.amount }}"
-                data-cycle="{{ item.cycle }}"
-                data-date="{{ item.next_renewal_at.isoformat() }}"
-                data-days="{{ days_left }}"
-              >
-                <td>
-                  <div class="service-cell">
-                    <span class="service-tile" style="--brand: {{ bcolor }}" aria-hidden="true">{{ btile }}</span>
-                    <div class="service-info">
+            <tr
+              class="{% if is_active and item.next_renewal_at <= today %}due{% elif is_active and days_left <= 7 %}soon-row{% endif %}"
+              data-sub-row
+              data-name="{{ item.name }}"
+              data-currency="{{ item.currency }}"
+              data-amount="{{ item.amount }}"
+              data-cycle="{{ item.cycle }}"
+              data-date="{{ item.next_renewal_at.isoformat() }}"
+              data-status="{{ item.status if item.status is defined else 'active' }}"
+            >
+              <td>
+                <div class="service-cell">
+                  <span class="service-tile" aria-hidden="true">{{ btile }}</span>
+                  <div class="service-info">
+                    <div class="sub-card-title-row">
                       <strong class="service-name">{{ item.name }}</strong>
-                      {% if item.notes %}
-                        <small class="muted service-note">{{ item.notes }}</small>
+                      {% if item.manage_url is defined and item.manage_url %}
+                        <a class="pill small-link" href="{{ item.manage_url }}" rel="noopener noreferrer nofollow" target="_blank" data-vi="quản lý / hủy ↗" data-en="manage">manage</a>
                       {% endif %}
                     </div>
+                    {% if item.notes %}
+                      <small class="muted service-note">{{ item.notes }}</small>
+                    {% endif %}
                   </div>
-                </td>
-                <td class="num-cell">
-                  <strong>{{ item.amount }} {{ item.currency }}</strong>
-                </td>
-                <td>
-                  <span class="pill">
-                    {% if item.cycle == 'monthly' %}<span data-vi="Hàng tháng" data-en="monthly">Hàng tháng</span>
-                    {% elif item.cycle == 'yearly' %}<span data-vi="Hàng năm" data-en="yearly">Hàng năm</span>
-                    {% elif item.cycle == 'weekly' %}<span data-vi="Hàng tuần" data-en="weekly">Hàng tuần</span>
-                    {% else %}{{ item.cycle }}{% endif %}
-                  </span>
-                  <span class="sr-only">{{ item.cycle }}</span>
-                </td>
-                <td>
-                  <strong class="num-cell">{{ item.next_renewal_at }}</strong>
+                </div>
+              </td>
+              <td class="num-cell">
+                <strong>{{ item.amount }} {{ item.currency }}</strong>
+              </td>
+              <td>
+                <span class="pill">{{ item.cycle }}</span>
+              </td>
+              <td>
+                <strong class="num-cell">{{ item.next_renewal_at }}</strong>
+                {% if is_active %}
                   <small class="block-small muted">
                     {% if days_left < 0 %}
-                      <span class="hot" data-vi="Quá ngày dự kiến {{ -days_left }} ngày" data-en="{{ -days_left }} days past expected date">Quá ngày dự kiến {{ -days_left }} ngày</span>
+                      <span class="hot" data-vi="Quá ngày dự kiến {{ -days_left }} ngày" data-en="{{ -days_left }}d past expected">Quá ngày dự kiến {{ -days_left }} ngày</span>
                     {% elif days_left == 0 %}
-                      <span class="hot" data-vi="Dự kiến gia hạn hôm nay" data-en="Expected today">Dự kiến gia hạn hôm nay</span>
+                      <span class="hot" data-vi="Dự kiến hôm nay" data-en="Expected today">Dự kiến hôm nay</span>
                     {% else %}
                       <span data-vi="Còn {{ days_left }} ngày" data-en="In {{ days_left }} days">Còn {{ days_left }} ngày</span>
                     {% endif %}
                   </small>
-                </td>
-                <td>
-                  <span class="pill mint" data-vi="Đang theo dõi" data-en="Active">Đang theo dõi</span>
-                  <small class="block-small muted" data-vi="Lời nhắc: trước {{ item.remind_days }} ngày" data-en="Reminder: {{ item.remind_days }}d before">
-                    Lời nhắc: trước {{ item.remind_days }} ngày
-                  </small>
-                </td>
-                <td class="actions-cell">
-                  <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}" data-vi="Sửa" data-en="Edit">Sửa</a>
+                {% endif %}
+              </td>
+              <td>
+                {% if is_active %}
+                  <span class="pill mint" data-vi="Đang hoạt động" data-en="Active">Đang hoạt động</span>
+                {% else %}
+                  <span class="pill sun-label" data-vi="Đã lưu trữ" data-en="Archived">Đã lưu trữ</span>
+                {% endif %}
+                <small class="block-small muted">
+                  <span data-vi="Nhắc trước:" data-en="Remind:">Nhắc trước:</span>
+                  {{ item.lead_days if (item.lead_days is defined and item.lead_days) else item.remind_days }}d
+                </small>
+              </td>
+              <td class="actions-cell">
+                <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}" data-vi="Sửa" data-en="Edit">Sửa</a>
+                {% if is_active %}
                   <form class="inline archive-form" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}" data-sub-title="{{ item.name }}">
                     {% if csrf_token is defined %}
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     {% endif %}
                     <button type="submit" data-vi="Lưu trữ" data-en="Archive">Lưu trữ</button>
                   </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <p id="subs-filter-empty" class="muted" hidden data-vi="Không có gói đăng ký nào khớp với bộ lọc hiện tại." data-en="No subscriptions match the current filter.">
-        Không có gói đăng ký nào khớp với bộ lọc hiện tại.
-      </p>
-    {% else %}
-      <div class="card empty-state-box">
-        <p><strong data-vi="Chưa có gói đăng ký nào đang hoạt động" data-en="None yet. Add Netflix, school tools, or anything that renews.">Chưa có gói đăng ký nào đang hoạt động</strong></p>
-        <p class="muted" data-vi="Hãy thêm Netflix, Spotify, công cụ học tập hoặc bất kỳ dịch vụ nào gia hạn định kỳ để SubTrack nhắc bạn trước hạn." data-en="Add Netflix, school tools, or anything that renews so SubTrack can remind you in time.">
-          Hãy thêm Netflix, Spotify, công cụ học tập hoặc bất kỳ dịch vụ nào gia hạn định kỳ để SubTrack nhắc bạn trước hạn.
-        </p>
-        <p><a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký đầu tiên" data-en="Add subscription">+ Thêm gói đăng ký đầu tiên</a></p>
-      </div>
+                {% elif csrf_token is defined %}
+                  <form class="inline restore-form" method="post" action="{{ url_for('subscriptions.restore', item_id=item.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" data-vi="Khôi phục" data-en="Restore">Khôi phục</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# Phân trang máy chủ (Server-side pagination: 20 mục / trang) #}
+    {% if has_server_pager and pages.pages > 1 %}
+      <nav class="pager card compact-card" aria-label="Phân trang gói đăng ký">
+        {% if pages.has_prev %}
+          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.prev_num) }}">← Newer</a>
+        {% endif %}
+        <span class="pager-info">Page {{ pages.page }} of {{ pages.pages }}</span>
+        {% if pages.has_next %}
+          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.next_num) }}">More →</a>
+        {% endif %}
+      </nav>
     {% endif %}
 
-    <details class="archived-info-box">
-      <summary class="muted small-text" data-vi="📦 Về gói đã lưu trữ (Archive) & Khôi phục" data-en="📦 About archived subscriptions & Restore">
-        📦 Về gói đã lưu trữ (Archive) & Khôi phục
-      </summary>
-      <p class="muted small-text" data-vi="Khi bạn bấm Lưu trữ (Archive), gói sẽ chuyển sang trạng thái 'archived' và ẩn khỏi danh sách đang hoạt động (không bị xóa khỏi cơ sở dữ liệu). Yêu cầu bổ sung danh sách gói đã lưu trữ và nút Khôi phục (/subscriptions/<id>/restore) đã được ghi trong docs/PROGRESS.md cho nhánh Backend." data-en="Archiving sets a subscription's status to 'archived' without deleting it. A route to view and restore archived items (/subscriptions/<id>/restore) is listed in docs/PROGRESS.md Requests for the backend lane.">
-        Khi bạn bấm <strong>Lưu trữ (Archive)</strong>, gói sẽ chuyển sang trạng thái <code>archived</code> và ẩn khỏi danh sách đang hoạt động (không bị xóa khỏi cơ sở dữ liệu). Yêu cầu bổ sung danh sách gói đã lưu trữ và nút <strong>Khôi phục</strong> (<code>POST /subscriptions/&lt;id&gt;/restore</code>) đã được ghi trong <code>docs/PROGRESS.md</code> cho nhánh Backend.
-      </p>
-    </details>
-  </section>
-
-  {# ==================== 3. THẺ TÍN DỤNG & KỲ SAO KÊ ==================== #}
-  <section id="credit-cards" class="workspace-section" aria-labelledby="cards-heading">
-    <div class="section-head">
+    {# Khối xuất dữ liệu với phạm vi rõ ràng (Explicit export scope & CSV formula safety) #}
+    <div class="card compact-card export-scope-bar">
       <div>
-        <span class="pill sun-label" data-vi="Giao diện kỳ sao kê thẻ — Chế độ xem mẫu / Gợi ý thêm nhắc lịch" data-en="Statement Tracker UI — Preview / Reminder helper">Giao diện kỳ sao kê thẻ — Chế độ xem mẫu / Gợi ý thêm nhắc lịch</span>
-        <h2 id="cards-heading" data-vi="Kỳ sao kê & Hạn thanh toán Thẻ tín dụng" data-en="Credit Card Statements & Due Dates">Kỳ sao kê & Hạn thanh toán Thẻ tín dụng</h2>
-        <p class="muted" data-vi="Theo dõi ngày chốt sao kê, hạn thanh toán, tổng dư nợ hoặc mức thanh toán tối thiểu. Khoản tiền hoặc hạn nào chưa biết sẽ hiển thị rõ 'Chưa có thông tin' — không tự ý đánh dấu đã thanh toán khi chưa xác nhận." data-en="Track statement dates, payment due dates, statement balances, and minimum due amounts. Unknown amounts or dates explicitly show 'No information yet'.">
-          Theo dõi ngày chốt sao kê, hạn thanh toán, tổng dư nợ hoặc mức thanh toán tối thiểu. Khoản tiền hoặc hạn nào chưa biết sẽ hiển thị rõ <strong>"Chưa có thông tin"</strong> — không tự ý đánh dấu đã thanh toán khi chưa xác nhận.
+        <strong class="small-text" data-vi="Xuất dữ liệu bảng đang hiển thị (Phạm vi: {{ items|length }} dòng trên trang/bộ lọc hiện tại)" data-en="Export visible table rows (Scope: {{ items|length }} rows on current page/filter)">
+          Xuất dữ liệu bảng đang hiển thị (Phạm vi: {{ items|length }} dòng trên trang/bộ lọc hiện tại)
+        </strong>
+        <p class="muted small-text" data-vi="Lưu ý: Tệp tải xuống chỉ bao gồm các dòng đang hiển thị trên trang hiện tại (không phải bản sao lưu toàn bộ các trang ẩn). Giá trị CSV được bảo vệ chống chèn công thức (formula-safe)." data-en="Note: Exports only the rows currently shown on this page (not hidden pages). CSV cells are sanitized against formula injection.">
+          Lưu ý: Tệp tải xuống chỉ bao gồm các dòng đang hiển thị trên trang hiện tại (không phải bản sao lưu toàn bộ các trang ẩn). Giá trị CSV được bảo vệ chống chèn công thức (formula-safe).
         </p>
       </div>
-      <button type="button" class="chip" data-toggle-card-demo aria-pressed="false" data-vi="🧪 Xem thẻ mẫu (Demo)" data-en="🧪 Show Demo Cards">🧪 Xem thẻ mẫu (Demo)</button>
+      <div class="head-actions">
+        <button type="button" class="button secondary btn-sm" data-export-subs="csv" data-vi="⬇ Xuất trang hiện tại (.CSV)" data-en="⬇ Export current page (.CSV)">⬇ Xuất trang hiện tại (.CSV)</button>
+        <button type="button" class="button secondary btn-sm" data-export-subs="json" data-vi="⬇ Xuất trang hiện tại (.JSON)" data-en="⬇ Export current page (.JSON)">⬇ Xuất trang hiện tại (.JSON)</button>
+      </div>
+      <p id="export-subs-status" class="field-hint" role="status" aria-live="polite" hidden></p>
     </div>
 
-    <div id="cc-real-empty" class="card empty-state-box">
-      <p><strong data-vi="Chưa có thông tin kỳ sao kê thẻ tín dụng trên máy chủ" data-en="No credit card statements stored yet">Chưa có thông tin kỳ sao kê thẻ tín dụng trên máy chủ</strong></p>
-      <p class="muted small-text" data-vi="Trong lúc chờ bảng dữ liệu sao kê thẻ chuyên biệt từ Backend, bạn có thể bấm nút bên dưới để thêm ngay hạn thanh toán thẻ như một gói nhắc lịch hàng tháng, hoặc bấm '🧪 Xem thẻ mẫu (Demo)' để kiểm tra giao diện kỳ sao kê." data-en="While the dedicated statement schema is pending on the backend, you can track your card's monthly due date as a subscription reminder, or toggle 'Show Demo Cards' to inspect the statement UI.">
-        Trong lúc chờ bảng dữ liệu sao kê thẻ chuyên biệt từ Backend, bạn có thể bấm nút bên dưới để thêm ngay hạn thanh toán thẻ như một gói nhắc lịch hàng tháng, hoặc bấm <strong>🧪 Xem thẻ mẫu (Demo)</strong> để kiểm tra giao diện kỳ sao kê.
+  {% elif (q is defined and q) or (status is defined and status != 'active') %}
+    <div class="card empty-state-box">
+      <p>
+        <strong data-vi="Không có gói đăng ký nào khớp với điều kiện lọc." data-en="Nothing matches.">Không có gói đăng ký nào khớp với điều kiện lọc.</strong>
+        <span class="sr-only">Nothing matches.</span>
       </p>
-      <p><a class="button secondary btn-sm" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm nhắc lịch hạn thẻ tín dụng" data-en="+ Add credit card due date reminder">+ Thêm nhắc lịch hạn thẻ tín dụng</a></p>
+      <p class="muted">
+        <a href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Hiển thị toàn bộ gói đang hoạt động (Show all active)" data-en="Show all active">Hiển thị toàn bộ gói đang hoạt động (Show all active)</a>
+      </p>
     </div>
-
-    <div id="cc-demo-grid" class="cc-grid" hidden>
-      <div class="card cc-card">
-        <div class="cc-card-head">
-          <strong>Visa Platinum •••• 4108</strong>
-          <span class="pill sun-label" data-vi="DEMO · Chưa thanh toán" data-en="DEMO · Unpaid">DEMO · Chưa thanh toán</span>
-        </div>
-        <div class="kv-list">
-          <div class="kv-row"><span class="muted" data-vi="Kỳ sao kê:" data-en="Statement period:">Kỳ sao kê:</span> <span>25/09/2026 – 25/10/2026</span></div>
-          <div class="kv-row"><span class="muted" data-vi="Hạn thanh toán:" data-en="Payment due date:">Hạn thanh toán:</span> <strong class="hot">10/11/2026 (Dự kiến)</strong></div>
-          <div class="kv-row"><span class="muted" data-vi="Tổng dư nợ sao kê:" data-en="Statement balance:">Tổng dư nợ sao kê:</span> <strong>14.200.000 VND</strong></div>
-          <div class="kv-row"><span class="muted" data-vi="Thanh toán tối thiểu (Minimum due):" data-en="Minimum due:">Thanh toán tối thiểu (Minimum due):</span> <span>710.000 VND</span></div>
-        </div>
-      </div>
-
-      <div class="card cc-card">
-        <div class="cc-card-head">
-          <strong>Mastercard Cashback •••• 8821</strong>
-          <span class="pill" data-vi="DEMO · Chưa chốt sao kê" data-en="DEMO · Statement pending">DEMO · Chưa chốt sao kê</span>
-        </div>
-        <div class="kv-list">
-          <div class="kv-row"><span class="muted" data-vi="Kỳ sao kê:" data-en="Statement period:">Kỳ sao kê:</span> <span class="muted" data-vi="Chưa có thông tin" data-en="No information yet">Chưa có thông tin</span></div>
-          <div class="kv-row"><span class="muted" data-vi="Hạn thanh toán:" data-en="Payment due date:">Hạn thanh toán:</span> <strong>20/11/2026</strong></div>
-          <div class="kv-row"><span class="muted" data-vi="Tổng dư nợ sao kê:" data-en="Statement balance:">Tổng dư nợ sao kê:</span> <span class="muted" data-vi="Chưa có thông tin" data-en="No information yet">Chưa có thông tin</span></div>
-          <div class="kv-row"><span class="muted" data-vi="Thanh toán tối thiểu:" data-en="Minimum due:">Thanh toán tối thiểu:</span> <span class="muted" data-vi="Chưa có thông tin" data-en="No information yet">Chưa có thông tin</span></div>
-        </div>
-      </div>
+  {% else %}
+    <div class="card empty-state-box">
+      <p>
+        <strong data-vi="Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để SubTrack nhắc trước hạn." data-en="None yet. Add your first subscription to get reminded in time.">
+          Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để SubTrack nhắc trước hạn.
+        </strong>
+        <span class="sr-only">None yet.</span>
+      </p>
+      <p><a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký đầu tiên" data-en="Add subscription">+ Thêm gói đăng ký đầu tiên</a></p>
     </div>
-  </section>
-
-  {# ==================== 4. HÓA ĐƠN & CHỨNG TỪ (SECTION 5) ==================== #}
-  {% include "subscriptions/_bills_section.html" %}
-
-  {# ==================== 5. NHẮC NHỞ & CÀI ĐẶT (SECTION 7) ==================== #}
-  {% include "subscriptions/_settings_section.html" %}
+  {% endif %}
 
   {# Hộp thoại xác nhận trước khi Lưu trữ (Archive) gói đăng ký #}
   <dialog id="dialog-confirm-archive" class="legal-dialog" aria-labelledby="archive-dialog-title">
@@ -478,8 +255,8 @@
           <span data-vi="Bạn có chắc muốn lưu trữ gói" data-en="Are you sure you want to archive">Bạn có chắc muốn lưu trữ gói</span>
           <strong id="archive-target-name"></strong>?
         </p>
-        <p class="muted small-text" data-vi="Lưu ý: Thao tác này chỉ ẩn gói khỏi danh sách theo dõi trên SubTrack, KHÔNG tự động hủy gói cước của bạn tại nhà cung cấp dịch vụ bên ngoài." data-en="Note: This only hides the subscription from your active list on SubTrack; it does NOT cancel your plan with the external provider.">
-          Lưu ý: Thao tác này chỉ ẩn gói khỏi danh sách theo dõi trên SubTrack, <strong>KHÔNG</strong> tự động hủy gói cước của bạn tại nhà cung cấp dịch vụ bên ngoài.
+        <p class="muted small-text" data-vi="Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (Archived) trên SubTrack, KHÔNG tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài." data-en="Note: This stops reminders and moves the plan to Archived on SubTrack; it does NOT cancel your subscription with the external provider.">
+          Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (<code>Archived</code>) trên SubTrack, <strong>KHÔNG</strong> tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài.
         </p>
         <div class="form-actions compact-top">
           <button type="button" class="button" id="confirm-archive-btn" data-vi="Đồng ý lưu trữ" data-en="Yes, archive">Đồng ý lưu trữ</button>

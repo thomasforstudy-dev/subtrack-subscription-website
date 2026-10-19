@@ -200,8 +200,124 @@
         }
     }
 
-    // --- 6. Links Delete Confirmation Dialog ---
+    // --- 5b. Account-Wide Decimal Totals Summary (/dashboard.json) ---
+    function initAccountWideSummary() {
+        var box = document.getElementById("account-wide-summary");
+        var body = document.getElementById("account-wide-totals-body");
+        if (!box || !body) return;
+        var url = box.getAttribute("data-summary-url");
+        if (!url) return;
+
+        fetch(url, { headers: { "Accept": "application/json" } })
+            .then(function (res) {
+                if (!res.ok) throw new Error("status-" + res.status);
+                return res.json();
+            })
+            .then(function (data) {
+                if (!data || !Array.isArray(data.totals)) {
+                    throw new Error("invalid-payload");
+                }
+                body.textContent = "";
+                if (data.totals.length === 0) {
+                    var emptyP = document.createElement("p");
+                    emptyP.className = "hint";
+                    emptyP.style.margin = "0.35rem 0 0";
+                    emptyP.textContent = "Chưa có gói đăng ký đang hoạt động để tính tổng toàn tài khoản.";
+                    body.appendChild(emptyP);
+                    return;
+                }
+                var grid = document.createElement("div");
+                grid.className = "summary-grid";
+                grid.style.marginTop = "0.55rem";
+                data.totals.forEach(function (t) {
+                    var card = document.createElement("div");
+                    card.className = "stat-card";
+
+                    var label = document.createElement("span");
+                    label.className = "stat-label";
+                    label.textContent = "Tổng quy đổi (" + String(t.currency || "") + ")";
+
+                    var val = document.createElement("strong");
+                    val.className = "stat-value";
+                    val.textContent = String(t.currency || "") + " " + String(t.monthly || "0.00") + " / tháng";
+
+                    var sub = document.createElement("span");
+                    sub.className = "stat-sub";
+                    sub.textContent =
+                        String(t.currency || "") +
+                        " " +
+                        String(t.yearly || "0.00") +
+                        " / năm · " +
+                        String(t.count || 0) +
+                        " gói đang hoạt động";
+
+                    card.appendChild(label);
+                    card.appendChild(val);
+                    card.appendChild(sub);
+                    grid.appendChild(card);
+                });
+                body.appendChild(grid);
+            })
+            .catch(function () {
+                body.textContent = "";
+                var fallbackP = document.createElement("p");
+                fallbackP.className = "hint";
+                fallbackP.style.margin = "0.35rem 0 0";
+                fallbackP.textContent =
+                    "Mở trang Bảng điều khiển (/dashboard) để xem tổng chi phí Decimal toàn tài khoản theo từng loại tiền tệ.";
+                body.appendChild(fallbackP);
+            });
+    }
+
+    // --- 5c. Subscription Form Presets & Lead Days Chips ---
+    function initSubscriptionFormHelpers() {
+        document.querySelectorAll("[data-preset-sub]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var raw = btn.getAttribute("data-preset-sub");
+                if (!raw) return;
+                var parts = raw.split("|");
+                var nameEl = document.getElementById("name");
+                var amountEl = document.getElementById("amount");
+                var currencyEl = document.getElementById("currency");
+                var cycleEl = document.getElementById("cycle");
+                var urlEl = document.getElementById("manage_url");
+                if (nameEl && parts[0]) nameEl.value = parts[0];
+                if (amountEl && parts[1]) amountEl.value = parts[1];
+                if (currencyEl && parts[2]) currencyEl.value = parts[2];
+                if (cycleEl && parts[3]) cycleEl.value = parts[3];
+                if (urlEl && parts[4]) urlEl.value = parts[4];
+            });
+        });
+
+        document.querySelectorAll("[data-set-remind]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var val = btn.getAttribute("data-set-remind") || "7,1";
+                var input = document.getElementById("lead_days");
+                if (input) input.value = val;
+            });
+        });
+
+        document.querySelectorAll("[data-clear-input]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-clear-input");
+                var input = id ? document.getElementById(id) : null;
+                if (input) input.value = "";
+            });
+        });
+    }
+
+    // --- 6. Links Delete Confirmation Dialog & Favicon Fallback ---
     function initLinksDeleteDialog() {
+        document.querySelectorAll("img[data-favicon-img]").forEach(function (img) {
+            img.addEventListener("error", function () {
+                img.hidden = true;
+                var wrap = img.parentElement;
+                if (!wrap) return;
+                var fb = wrap.querySelector("[data-favicon-fallback]");
+                if (fb) fb.hidden = false;
+            });
+        });
+
         var deleteDialog = document.getElementById("dialog-confirm-delete-link");
         var deleteTargetName = document.getElementById("delete-link-target-name");
         var confirmDeleteBtn = document.getElementById("confirm-delete-link-btn");
@@ -249,7 +365,6 @@
             if (errorBanner) {
                 errorBanner.hidden = step !== "error";
             }
-            var order = ["upload", "ocr", "suggest", "review"];
             var activeIdx = step === "upload" ? 0 : step === "ocr" ? 1 : 3;
             stepItems.forEach(function (li, idx) {
                 li.classList.toggle("done", idx < activeIdx);
@@ -389,7 +504,15 @@
         if (txCatFilter) txCatFilter.addEventListener("change", filterTxRows);
     }
 
-    // --- 8. Settings Preferences, PWA Banner Dismissal & JSON/CSV Export ---
+    // --- 8. Settings Preferences, PWA Banner Dismissal & Formula-Safe JSON/CSV Export ---
+    function sanitizeCsvCell(value) {
+        var str = String(value == null ? "" : value);
+        if (/^[=+\-@\t\r]/.test(str)) {
+            str = "'" + str;
+        }
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+
     function initSettingsControls() {
         var regForm = document.getElementById("regional-settings-form");
         var regStatus = document.getElementById("regional-save-status");
@@ -405,7 +528,7 @@
                 }
                 if (regStatus) {
                     regStatus.hidden = false;
-                    regStatus.textContent = "✓ Đã lưu tùy chọn múi giờ và tiền tệ trên trình duyệt này.";
+                    regStatus.textContent = "✓ Đã lưu tùy chọn hiển thị cục bộ trên trình duyệt này.";
                 }
             });
         }
@@ -421,13 +544,15 @@
         function collectSubscriptions() {
             var list = [];
             document.querySelectorAll("[data-sub-row]").forEach(function (row) {
+                if (row.hidden) return;
                 var nameEl = row.querySelector(".service-name");
                 list.push({
                     name: nameEl ? nameEl.textContent.trim() : row.getAttribute("data-name") || "",
-                    amount: parseFloat(row.getAttribute("data-amount") || "0"),
+                    amount: String(row.getAttribute("data-amount") || "0.00"),
                     currency: row.getAttribute("data-currency") || "USD",
                     cycle: row.getAttribute("data-cycle") || "monthly",
-                    next_renewal_at: row.getAttribute("data-date") || ""
+                    next_renewal_at: row.getAttribute("data-date") || "",
+                    status: row.getAttribute("data-status") || "active"
                 });
             });
             return list;
@@ -452,21 +577,43 @@
                 var subs = collectSubscriptions();
                 if (fmt === "json") {
                     downloadBlob(
-                        "subtrack-subscriptions.json",
-                        JSON.stringify({ exported_at: new Date().toISOString(), subscriptions: subs }, null, 2),
+                        "subtrack-current-page-subscriptions.json",
+                        JSON.stringify(
+                            {
+                                exported_at: new Date().toISOString(),
+                                scope: "current_page_filtered_rows",
+                                count: subs.length,
+                                subscriptions: subs
+                            },
+                            null,
+                            2
+                        ),
                         "application/json;charset=utf-8"
                     );
                 } else {
-                    var lines = ["name,amount,currency,cycle,next_renewal_at"];
+                    var lines = ["name,amount,currency,cycle,next_renewal_at,status"];
                     subs.forEach(function (s) {
-                        var safe = '"' + String(s.name).replace(/"/g, '""') + '"';
-                        lines.push([safe, s.amount, s.currency, s.cycle, s.next_renewal_at].join(","));
+                        lines.push(
+                            [
+                                sanitizeCsvCell(s.name),
+                                sanitizeCsvCell(s.amount),
+                                sanitizeCsvCell(s.currency),
+                                sanitizeCsvCell(s.cycle),
+                                sanitizeCsvCell(s.next_renewal_at),
+                                sanitizeCsvCell(s.status)
+                            ].join(",")
+                        );
                     });
-                    downloadBlob("subtrack-subscriptions.csv", lines.join("\n"), "text/csv;charset=utf-8");
+                    downloadBlob("subtrack-current-page-subscriptions.csv", lines.join("\n"), "text/csv;charset=utf-8");
                 }
                 if (exportStatus) {
                     exportStatus.hidden = false;
-                    exportStatus.textContent = "✓ Đã xuất " + subs.length + " gói đăng ký ra tệp ." + fmt.toUpperCase();
+                    exportStatus.textContent =
+                        "✓ Đã xuất " +
+                        subs.length +
+                        " dòng đang hiển thị trên trang hiện tại ra tệp ." +
+                        fmt.toUpperCase() +
+                        " (đã bảo vệ chống CSV formula injection).";
                 }
             });
         });
@@ -514,9 +661,12 @@
         initTopbarAndForms();
         initDashboardStateSwitcher();
         initSubscriptionsControls();
+        initAccountWideSummary();
+        initSubscriptionFormHelpers();
         initLinksDeleteDialog();
         initBillsSection();
         initSettingsControls();
         initLanguageToggle();
     });
 })();
+
