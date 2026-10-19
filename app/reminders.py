@@ -258,6 +258,10 @@ def saved_email(reminder: Reminder, token: str, sub: Subscription, user: User, n
     idempotency key only works when the retry also sends the identical payload.
     """
     if reminder.payload_json is None:
+        # Freeze only when it can really be sent now. Freezing while email is
+        # off would save an empty sender, and the reminder would stay stuck.
+        if not mailer.mail_ready():
+            raise MailNotReady("Email sending isn't set up (MAIL_BACKEND / RESEND_API_KEY).")
         if mailer.backend() == "resend" and not (
             os.getenv("RESEND_API_KEY", "").strip() and os.getenv("MAIL_FROM", "").strip()
         ):

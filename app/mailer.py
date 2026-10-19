@@ -99,7 +99,9 @@ def _save_to_file(email: Email) -> None:
 
 def _send_with_resend(email: Email) -> None:
     key = os.getenv("RESEND_API_KEY", "").strip()
-    sender = email.sender if email.sender is not None else os.getenv("MAIL_FROM", "").strip()
+    # An empty saved sender was never accepted by Resend (we refuse to send
+    # without one), so using today's MAIL_FROM can't break the idempotency key.
+    sender = email.sender or os.getenv("MAIL_FROM", "").strip()
     if not key or not sender:
         raise MailNotReady("RESEND_API_KEY and MAIL_FROM must both be set.")
     payload = {"from": sender, "to": [email.to], "subject": email.subject, "text": email.text}
