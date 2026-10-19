@@ -1,54 +1,87 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>{% block title %}SubTrack{% endblock %}</title>
+    {% if csrf_token is defined %}
+      <meta name="csrf-token" content="{{ csrf_token() }}" />
+    {% endif %}
+    <meta name="theme-color" content="#6d4aff" />
+    <title>{% block title %}SubTrack — Quản lý gói đăng ký, link & hóa đơn{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
     {% block head %}{% endblock %}
   </head>
   <body class="{% block body_class %}{% endblock %}">
-    <header class="bar">
-      <a class="brand" href="{{ url_for('main.index') }}"><span class="logo" aria-hidden="true">S</span> SubTrack</a>
-      <nav>
+    <a class="skip-link" href="#main-content" data-vi="Chuyển tới nội dung chính" data-en="Skip to main content">Chuyển tới nội dung chính</a>
+    <header class="bar" role="banner">
+      <div class="bar-start">
+        <a class="brand" href="{{ url_for('main.index') }}" title="SubTrack (Logo SVG tạm thời — có thể thay sau khi chủ sở hữu duyệt)">
+          <span class="logo" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+              <rect x="4" y="9" width="24" height="17" rx="5" fill="#ffffff"/>
+              <path d="M10 17.5l4 4 8.5-8.5" stroke="#16c79a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="24" cy="8" r="3.5" fill="#ffc83d"/>
+            </svg>
+          </span>
+          <span class="brand-text">SubTrack</span>
+          <span class="brand-temp-tag" data-vi="Logo tạm" data-en="Temp logo">Logo tạm</span>
+        </a>
+      </div>
+
+      <nav aria-label="Điều hướng chính" class="main-nav">
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('dashboard.show') }}">Dashboard</a>
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}">Subscriptions</a>
-          <a href="{{ url_for('subscriptions.create') }}">Add</a>
-          <a href="{{ url_for('links.list_links') }}">Links</a>
-          <a href="{{ url_for('settings.show') }}">Settings</a>
+          {% set has_dashboard_route = (current_user.timezone is defined) %}
+          <a href="{{ url_for('dashboard.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions') + '#overview' }}" class="nav-link {% if request.path.startswith('/dashboard') %}active{% endif %}" data-nav-target="overview" data-vi="Tổng quan" data-en="Dashboard">Tổng quan</a>
+          <a href="{{ url_for('subscriptions.list_subscriptions') }}" class="nav-link {% if request.path.startswith('/subscriptions') %}active{% endif %}" data-nav-target="subscriptions" data-vi="Gói đăng ký" data-en="Subscriptions">Gói đăng ký</a>
+          <a href="{{ url_for('links.list_links') }}" class="nav-link {% if request.path.startswith('/links') %}active{% endif %}" data-nav-target="links" data-vi="Link đã lưu" data-en="Links">Link đã lưu</a>
+          <a href="{{ (url_for('dashboard.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions')) + '#bills' }}" class="nav-link" data-nav-target="bills" data-vi="Hóa đơn / Giao dịch" data-en="Bills">Hóa đơn / Giao dịch</a>
+          <a href="{{ (url_for('settings.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions')) + '#reminders' }}" class="nav-link" data-nav-target="reminders" data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</a>
+          <a href="{{ url_for('settings.show') if has_dashboard_route else url_for('subscriptions.list_subscriptions') + '#settings' }}" class="nav-link {% if request.path.startswith('/settings') %}active{% endif %}" data-nav-target="settings" data-vi="Cài đặt" data-en="Settings">Cài đặt</a>
           {% if current_user.is_admin %}
-            <a href="{{ url_for('admin.users') }}">Admin</a>
+            <a href="{{ url_for('admin.users') }}" class="nav-link {% if request.path.startswith('/admin') %}active{% endif %}" data-vi="Quản trị" data-en="Admin">Quản trị</a>
           {% endif %}
-          <span class="who">{{ current_user.username }}</span>
-          <form class="inline" method="post" action="{{ url_for('auth.logout') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <button type="submit" class="link">Log out</button>
-          </form>
+          <a class="button btn-sm nav-cta" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói" data-en="Add">+ Thêm gói</a>
+          <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
+          <span class="who" title="{{ current_user.email }}">{{ current_user.username if (current_user.username is defined and current_user.username) else current_user.email }}</span>
+          {% if csrf_token is defined %}
+            <form class="inline" method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="link nav-logout" data-vi="Đăng xuất" data-en="Log out">Đăng xuất</button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('auth.logout') }}" class="nav-logout" data-vi="Đăng xuất" data-en="Log out">Đăng xuất</a>
+          {% endif %}
         {% else %}
-          <a href="{{ url_for('auth.login') }}">Log in</a>
-          <a class="button" href="{{ url_for('auth.register') }}">Sign up</a>
+          <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
+          <a href="{{ url_for('auth.login') }}" class="nav-link" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a>
+          <a class="button" href="{{ url_for('auth.register') }}" data-vi="Đăng ký" data-en="Sign up">Đăng ký</a>
         {% endif %}
       </nav>
     </header>
+
     {% block main %}
-      <main>
+      <main id="main-content">
         {% include "_flashes.html" %}
-        {% if current_user.is_authenticated and not current_user.email_verified %}
+        {% if current_user.is_authenticated and (current_user.email_verified is defined and not current_user.email_verified) %}
           <form class="verify-banner" method="post" action="{{ url_for('auth.resend_verification') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            Please confirm your email ({{ current_user.email }}) so we can send your reminders.
-            <button type="submit" class="link">Send the link again</button>
+            <span data-vi="Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn." data-en="Please confirm your email ({{ current_user.email }}) so we can send your reminders.">
+              Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn. <span class="sr-only">Please confirm your email ({{ current_user.email }}) so we can send your reminders.</span>
+            </span>
+            <button type="submit" class="link" data-vi="Gửi lại liên kết xác nhận" data-en="Send the link again">Gửi lại liên kết xác nhận</button>
           </form>
         {% endif %}
         {% block content %}{% endblock %}
       </main>
     {% endblock %}
+
     {% include "_subby.html" %}
+    <script src="{{ url_for('static', filename='app-ui.js') }}" defer></script>
     <script src="{{ url_for('static', filename='subby.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>

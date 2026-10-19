@@ -1,30 +1,198 @@
 {% extends "base.html" %}
-{% block title %}Sign up — SubTrack{% endblock %}
+{% block title %}Đăng ký tài khoản — SubTrack{% endblock %}
 {% block content %}
   <div class="card auth-card">
-    <h1>Create your account</h1>
-    <p class="muted">Add your subscriptions once. We'll remind you before they renew.</p>
+    <div class="auth-header">
+      <h1 data-vi="Tạo tài khoản SubTrack" data-en="Create your account">Tạo tài khoản SubTrack</h1>
+      <p class="muted" data-vi="Thêm gói đăng ký một lần, theo dõi lịch gia hạn và lưu link quan trọng." data-en="Add your subscriptions once. We'll remind you before they renew.">
+        Thêm gói đăng ký một lần, theo dõi lịch gia hạn và lưu link quan trọng.
+      </p>
+    </div>
+
     {% include "auth/_social.html" %}
-    <form method="post" id="register-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label>Username <input type="text" name="username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" title="3–30 letters, numbers or _" autocomplete="username" value="{{ request.form.get('username', '') }}" /></label>
-      <label>Email <input type="email" name="email" required autocomplete="email" value="{{ request.form.get('email', '') }}" /></label>
-      <label>Password <input type="password" name="password" required minlength="12" maxlength="128" autocomplete="new-password" /></label>
-      <p class="muted">At least 12 characters, with an upper-case letter, a number and a special character like ! or #.</p>
-      <label>Confirm password <input type="password" name="confirm" required minlength="12" maxlength="128" autocomplete="new-password" /></label>
-      <button type="submit">Create account</button>
+
+    <form method="post" id="register-form" class="auth-form" data-submitting-text="Đang tạo tài khoản…">
+      {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% endif %}
+
+      <div class="field-group">
+        <label for="reg-username" data-vi="Tên đăng nhập (Username)" data-en="Username">Tên đăng nhập (Username)</label>
+        <input
+          id="reg-username"
+          type="text"
+          name="username"
+          required
+          minlength="3"
+          maxlength="30"
+          pattern="[A-Za-z0-9_]{3,30}"
+          title="Từ 3–30 ký tự: chữ cái không dấu (a-z), chữ số (0-9) hoặc dấu gạch dưới (_)"
+          autocomplete="username"
+          spellcheck="false"
+          autocapitalize="none"
+          autocorrect="off"
+          enterkeyhint="next"
+          placeholder="vd: toan_subtrack"
+          value="{{ request.form.get('username', '') }}"
+          aria-describedby="username-hint username-error"
+        />
+        <small id="username-hint" class="field-hint" data-vi="3–30 ký tự gồm chữ cái không dấu (a–z), số (0–9) hoặc dấu gạch dưới (_)." data-en="3–30 characters: letters (a–z), numbers (0–9), or underscore (_).">
+          3–30 ký tự gồm chữ cái không dấu (a–z), số (0–9) hoặc dấu gạch dưới (_).
+        </small>
+        <small id="username-error" class="field-error" role="status" aria-live="polite" hidden></small>
+      </div>
+
+      <div class="field-group">
+        <label for="reg-email" data-vi="Địa chỉ Email" data-en="Email address">Địa chỉ Email</label>
+        <input
+          id="reg-email"
+          type="email"
+          name="email"
+          required
+          maxlength="255"
+          autocomplete="email"
+          spellcheck="false"
+          autocapitalize="none"
+          autocorrect="off"
+          inputmode="email"
+          enterkeyhint="next"
+          placeholder="ban@example.com"
+          value="{{ request.form.get('email', '') }}"
+          aria-describedby="email-error"
+        />
+        <small id="email-error" class="field-error" role="status" aria-live="polite" hidden></small>
+      </div>
+
+      <div class="field-group">
+        <label for="new-password" data-vi="Mật khẩu" data-en="Password">Mật khẩu</label>
+        <div class="password-wrap">
+          <input
+            id="new-password"
+            type="password"
+            name="password"
+            required
+            minlength="{{ 12 if csrf_token is defined else 8 }}"
+            maxlength="128"
+            autocomplete="new-password"
+            enterkeyhint="next"
+            aria-describedby="pwd-rules pwd-error"
+          />
+          <button
+            type="button"
+            class="pwd-toggle"
+            data-toggle-password="new-password"
+            aria-label="Hiện mật khẩu"
+            aria-pressed="false"
+            data-vi="Hiện"
+            data-en="Show"
+          >Hiện</button>
+        </div>
+        <small id="pwd-error" class="field-error" role="status" aria-live="polite" hidden></small>
+
+        <div id="pwd-rules" class="pwd-rules" aria-label="Quy tắc mật khẩu">
+          <p class="pwd-rules-title" data-vi="Quy tắc bảo mật mật khẩu (server kiểm tra khi gửi):" data-en="Password requirements (verified by server):">
+            Quy tắc bảo mật mật khẩu (server kiểm tra khi gửi):
+          </p>
+          <ul>
+            <li data-rule="length" data-vi="Độ dài từ 12 đến 128 ký tự (tối thiểu 8 ký tự trên bản dev cũ)" data-en="12 to 128 characters long">Độ dài từ 12 đến 128 ký tự (tối thiểu 8 ký tự trên bản dev cũ)</li>
+            <li data-rule="upper" data-vi="Có ít nhất 1 chữ cái viết hoa (A–Z)" data-en="At least 1 uppercase letter (A–Z)">Có ít nhất 1 chữ cái viết hoa (A–Z)</li>
+            <li data-rule="digit" data-vi="Có ít nhất 1 chữ số (0–9)" data-en="At least 1 number (0–9)">Có ít nhất 1 chữ số (0–9)</li>
+            <li data-rule="special" data-vi="Có ít nhất 1 ký tự đặc biệt (ví dụ: ! @ # $ % ^ & *)" data-en="At least 1 special character (e.g. ! @ # $)">Có ít nhất 1 ký tự đặc biệt (ví dụ: ! @ # $ % ^ & *)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="confirm-password" data-vi="Nhập lại mật khẩu" data-en="Confirm password">Nhập lại mật khẩu</label>
+        <div class="password-wrap">
+          <input
+            id="confirm-password"
+            type="password"
+            name="confirm"
+            required
+            minlength="{{ 12 if csrf_token is defined else 8 }}"
+            maxlength="128"
+            autocomplete="new-password"
+            enterkeyhint="done"
+            aria-describedby="confirm-error"
+          />
+          <button
+            type="button"
+            class="pwd-toggle"
+            data-toggle-password="confirm-password"
+            aria-label="Hiện mật khẩu xác nhận"
+            aria-pressed="false"
+            data-vi="Hiện"
+            data-en="Show"
+          >Hiện</button>
+        </div>
+        <small id="confirm-error" class="field-error" role="status" aria-live="polite" hidden></small>
+      </div>
+
+      <button type="submit" class="auth-submit" data-vi="Tạo tài khoản" data-en="Create account">Tạo tài khoản</button>
     </form>
-    <p class="muted">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+
+    <p class="muted auth-footer-link">
+      <span data-vi="Đã có tài khoản?" data-en="Already have an account?">Đã có tài khoản?</span>
+      <a href="{{ url_for('auth.login') }}" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a>
+    </p>
   </div>
+
   <script>
-    // Tell the user right away if the two passwords differ.
-    // The server checks again, so this is only a convenience.
     (function () {
       const form = document.getElementById("register-form");
+      if (!form) return;
+      const pwd = form.elements.password;
       const confirm = form.elements.confirm;
-      const check = () =>
-        confirm.setCustomValidity(confirm.value === form.elements.password.value ? "" : "The passwords don't match.");
-      form.elements.password.addEventListener("input", check);
-      confirm.addEventListener("input", check);
+      const username = form.elements.username;
+      const confirmError = document.getElementById("confirm-error");
+      const usernameError = document.getElementById("username-error");
+
+      function updateRules() {
+        const val = pwd.value || "";
+        const checks = {
+          length: val.length >= 12 && val.length <= 128,
+          upper: /[A-Z]/.test(val),
+          digit: /[0-9]/.test(val),
+          special: /[^A-Za-z0-9]/.test(val),
+        };
+        Object.keys(checks).forEach((key) => {
+          const item = form.querySelector('[data-rule="' + key + '"]');
+          if (item) {
+            item.classList.toggle("rule-ok", checks[key]);
+          }
+        });
+      }
+
+      function checkConfirm() {
+        const mismatch = confirm.value && confirm.value !== pwd.value;
+        confirm.setCustomValidity(mismatch ? "The passwords don't match." : "");
+        if (confirmError) {
+          confirmError.hidden = !mismatch;
+          confirmError.textContent = mismatch
+            ? "Mật khẩu nhập lại chưa khớp với mật khẩu ở trên."
+            : "";
+        }
+      }
+
+      function checkUsername() {
+        if (!username) return;
+        const val = username.value.trim();
+        const invalid = val.length > 0 && !/^[A-Za-z0-9_]{3,30}$/.test(val);
+        if (usernameError) {
+          usernameError.hidden = !invalid;
+          usernameError.textContent = invalid
+            ? "Tên đăng nhập cần từ 3–30 ký tự (chữ không dấu, số hoặc dấu _)."
+            : "";
+        }
+      }
+
+      pwd.addEventListener("input", () => {
+        updateRules();
+        checkConfirm();
+      });
+      confirm.addEventListener("input", checkConfirm);
+      if (username) username.addEventListener("input", checkUsername);
     })();
   </script>
 {% endblock %}

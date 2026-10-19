@@ -35,6 +35,9 @@ class Email:
     # Resend ignores a repeat with the same key for 24 hours, so a retry
     # after a timeout can't send the same email twice.
     idempotency_key: str = ""
+    # None means use current configuration; reminders freeze these with their payload.
+    sender: str | None = None
+    reply_to: str | None = None
 
 
 class MailNotReady(Exception):
@@ -96,11 +99,11 @@ def _save_to_file(email: Email) -> None:
 
 def _send_with_resend(email: Email) -> None:
     key = os.getenv("RESEND_API_KEY", "").strip()
-    sender = os.getenv("MAIL_FROM", "").strip()
+    sender = email.sender if email.sender is not None else os.getenv("MAIL_FROM", "").strip()
     if not key or not sender:
         raise MailNotReady("RESEND_API_KEY and MAIL_FROM must both be set.")
     payload = {"from": sender, "to": [email.to], "subject": email.subject, "text": email.text}
-    reply_to = os.getenv("MAIL_REPLY_TO", "").strip()
+    reply_to = email.reply_to if email.reply_to is not None else os.getenv("MAIL_REPLY_TO", "").strip()
     if reply_to:
         payload["reply_to"] = reply_to
     headers = {"Authorization": f"Bearer {key}"}

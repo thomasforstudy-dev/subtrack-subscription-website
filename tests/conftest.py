@@ -1,16 +1,54 @@
 """Shared test setup: every test gets a fresh, empty test database."""
 
+import ipaddress
 import os
+import socket
 
 import pytest
 from flask.testing import FlaskClient
 
 # Never touch SQL Server, real email or your real .env values while testing.
+os.environ["PYTHON_DOTENV_DISABLED"] = "1"
 os.environ["DB_SERVER"] = ""
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["APP_ENV"] = "development"
 os.environ["SECRET_KEY"] = "test-secret-key-that-is-long-enough-1234"
 os.environ["MAIL_BACKEND"] = "memory"
 os.environ["RESEND_API_KEY"] = ""
+for name in (
+    "DB_USER", "DB_PASSWORD", "GEMINI_API_KEY", "GEMINI_MODEL",
+    "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET", "SITE_URL", "MESSENGER_URL", "ZALO_URL",
+    "PHI_API_KEY", "PHI_API_URL", "SUBBY_FALLBACK", "MAIL_FROM",
+):
+    os.environ.pop(name, None)
+os.environ["SUBBY_PROVIDER"] = "fake"
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    # The pinned dotenv 1.1.1 predates its disable environment flag.
+    patcher = pytest.MonkeyPatch()
+    patcher.setattr("dotenv.load_dotenv", lambda *args, **kwargs: False)
+    config.add_cleanup(patcher.undo)
+
+
+@pytest.fixture(autouse=True)
+def local_network_only(monkeypatch):
+    real_connect = socket.socket.connect
+
+    def connect(sock, address):
+        if sock.family in (socket.AF_INET, socket.AF_INET6):
+            try:
+                local = ipaddress.ip_address(address[0]).is_loopback
+            except ValueError:
+                local = False
+            if not local:
+                raise OSError("Tests must mock external network connections.")
+        return real_connect(sock, address)
+
+    monkeypatch.setattr(socket.socket, "connect", connect)
+    monkeypatch.setenv("NO_PROXY", "*")
 
 PASSWORD = "Password123!"  # meets the sign-up rules
 
@@ -56,7 +94,14 @@ def app(tmp_path, monkeypatch):
     app = create_app()
     app.config.update(TESTING=True)
     app.test_client_class = CSRFClient
-    yield app
+    try:
+        yield app
+    finally:
+        from app import db
+
+        with app.app_context():
+            db.session.remove()
+            db.engine.dispose()
 
 
 @pytest.fixture()

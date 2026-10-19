@@ -18,18 +18,20 @@ drops the repeat (Resend remembers keys for 24 hours). That makes duplicates
 very unlikely, but no email system can promise "exactly once".
 """
 
+import json
 import logging
 import os
 import secrets
+from dataclasses import asdict
 from datetime import datetime, time, timedelta
 
 import click
 from flask import current_app
 from flask.cli import with_appcontext
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, true
 from sqlalchemy.exc import IntegrityError
 
-from app import db
+from app import db, mailer
 from app.mailer import Email, MailError, MailNotReady, external_url, send_email
 from app.models import Reminder, Renewal, Subscription, User, utcnow
 from app.schedule import local_now, passed_renewals
@@ -103,7 +105,7 @@ def plan(now: datetime) -> tuple[int, int]:
         .join(User, User.id == Subscription.user_id)
         .filter(
             Subscription.status == "active",
-            User.reminders_enabled.is_(True),
+            User.reminders_enabled == true(),  # SQL Server BIT uses = 1, never IS 1
             User.email_verified_at.isnot(None),  # only confirmed addresses get email
         )
         .all()
@@ -229,7 +231,10 @@ def deliver(reminder: Reminder, token: str, now: datetime) -> str:
         return "skipped"
 
     try:
-        send_email(build_email(reminder, sub, user, now))
+        email = saved_email(reminder, token, sub, user, now)
+        if email is None:
+            return "skipped"  # the claim expired, or the recipient changed
+        send_email(email)
     except MailNotReady as exc:
         # Not the reminder's fault: put it back without counting a try.
         finish(reminder.id, token, status="pending")
@@ -244,6 +249,36 @@ def deliver(reminder: Reminder, token: str, now: datetime) -> str:
         return "failed"
     finish(reminder.id, token, status="sent", sent_at=now, attempts=reminder.attempts + 1, last_error="")
     return "sent"
+
+
+def saved_email(reminder: Reminder, token: str, sub: Subscription, user: User, now: datetime) -> Email | None:
+    """Freeze the entire message before the first send, including sender settings.
+
+    A provider may have accepted an email before our process died. Reusing its
+    idempotency key only works when the retry also sends the identical payload.
+    """
+    if reminder.payload_json is None:
+        if mailer.backend() == "resend" and not (
+            os.getenv("RESEND_API_KEY", "").strip() and os.getenv("MAIL_FROM", "").strip()
+        ):
+            raise MailNotReady("RESEND_API_KEY and MAIL_FROM must both be set.")
+        email = build_email(reminder, sub, user, now)
+        email.sender = os.getenv("MAIL_FROM", "").strip()
+        email.reply_to = os.getenv("MAIL_REPLY_TO", "").strip()
+        won = Reminder.query.filter_by(id=reminder.id, claim_token=token).filter(
+            Reminder.payload_json.is_(None)
+        ).update({"payload_json": json.dumps(asdict(email), ensure_ascii=False)}, synchronize_session=False)
+        db.session.commit()
+        if won != 1:
+            return None
+        db.session.refresh(reminder)
+    if reminder.claim_token != token:
+        return None
+    email = Email(**json.loads(reminder.payload_json))
+    if email.to != user.email:
+        finish(reminder.id, token, status="skipped")
+        return None
+    return email
 
 
 def send_due(now: datetime) -> dict:

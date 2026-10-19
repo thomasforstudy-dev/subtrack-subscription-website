@@ -26,6 +26,8 @@ NEW_COLUMNS = [
     # 04_links.sql
     ("links", "url_hash", "ALTER TABLE links ADD COLUMN url_hash VARCHAR(64)"),
     ("links", "favicon_url", "ALTER TABLE links ADD COLUMN favicon_url VARCHAR(2048) NOT NULL DEFAULT ''"),
+    # 05_reminder_payload.sql
+    ("reminders", "payload_json", "ALTER TABLE reminders ADD COLUMN payload_json TEXT"),
 ]
 
 AFTER_COLUMNS = [

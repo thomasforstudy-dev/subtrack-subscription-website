@@ -186,6 +186,11 @@ preferences and never change when reminders are sent.
 Safe to run every 15–60 minutes and twice at once. Prints counts. Exits with an
 error if email isn't set up (rows stay waiting). Only confirmed emails get reminders.
 
+Since integration validation, the first attempted email is persisted before
+sending (`database/05_reminder_payload.sql`). Crash retries reuse its complete
+payload and idempotency key, including sender/reply-to. A recipient change skips
+the saved message. SQL Server reminder planning uses a portable BIT comparison.
+
 ## Pinned links
 
 Routes and field names are unchanged (`url`, `title`, `tags`, `notes`, `is_pinned`, `form`).

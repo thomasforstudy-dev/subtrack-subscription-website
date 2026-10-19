@@ -56,3 +56,11 @@ def test_local_date_depends_on_time_zone():
     assert local_now("Asia/Ho_Chi_Minh", late_utc).date() == date(2026, 11, 1)  # UTC+7
     assert local_now("America/Los_Angeles", late_utc).date() == date(2026, 10, 31)
     assert local_now("Not/AZone", late_utc).date() == date(2026, 10, 31)  # falls back to UTC
+
+
+def test_dst_skipped_hour_and_repeated_hour_are_explicit():
+    spring = [local_now("America/New_York", datetime(2026, 3, 8, hour, 30)) for hour in (6, 7)]
+    assert [value.hour for value in spring] == [1, 3]  # no 02:30 local time that day
+    autumn = [local_now("America/New_York", datetime(2026, 11, 1, hour, 30)) for hour in (5, 6)]
+    assert [value.hour for value in autumn] == [1, 1]
+    assert [value.fold for value in autumn] == [0, 1]

@@ -1,38 +1,155 @@
 {% extends "base.html" %}
-{% block title %}Settings — SubTrack{% endblock %}
+{% block title %}Cài đặt & Nhắc nhở (Settings) — SubTrack{% endblock %}
 {% block content %}
-  {# Plain working page from the backend lane. UI lane: restyle freely, keep the form. #}
-  <h1>Settings</h1>
-  <div class="card">
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label>
-        Time zone
-        <input name="timezone" list="zones" required value="{{ current_user.timezone }}" />
-        <datalist id="zones">
-          {% for zone in zones %}<option value="{{ zone }}"></option>{% endfor %}
-        </datalist>
-      </label>
-      <label>
-        <input type="checkbox" name="reminders_enabled" {% if current_user.reminders_enabled %}checked{% endif %} />
-        Send me reminders
-      </label>
-      <label>
-        Send them at (hour, 0–23, your time)
-        <input type="number" name="reminder_hour" min="0" max="23" required value="{{ current_user.reminder_hour }}" />
-      </label>
-      <fieldset>
-        <legend>Where</legend>
-        {% for channel in channels %}
-          <label>
-            <input type="checkbox" name="channels" value="{{ channel }}" {% if channel in current_user.channel_list %}checked{% endif %} />
-            {{ channel|capitalize }}
+  <div class="section-head" id="reminders">
+    <div>
+      <h1 data-vi="Cài đặt Tài khoản & Lịch nhắc (Settings)" data-en="Settings">Cài đặt Tài khoản & Lịch nhắc (Settings)</h1>
+      <p class="muted" data-vi="Các thiết lập Múi giờ, Giờ gửi nhắc nhở, Bật/Tắt nhắc lịch và Kênh nhận bên dưới được lưu trực tiếp vào cơ sở dữ liệu máy chủ cho tài khoản của bạn." data-en="Your timezone, reminder hour, reminder toggle, and delivery channels below are saved directly on the server for your account.">
+        Các thiết lập <strong>Múi giờ, Giờ gửi nhắc nhở, Bật/Tắt nhắc lịch và Kênh nhận</strong> bên dưới được lưu trực tiếp vào cơ sở dữ liệu máy chủ cho tài khoản của bạn.
+      </p>
+    </div>
+  </div>
+
+  <div class="settings-cards-grid" id="settings">
+    {# 1. Cài đặt Máy chủ: Múi giờ & Nhắc nhở (Server-persisted settings) #}
+    <div class="card">
+      <div class="card-head-row">
+        <h2 class="card-title" data-vi="1. Lịch nhắc nhở & Múi giờ (Lưu trên máy chủ)" data-en="1. Reminder Schedule & Timezone (Saved on server)">1. Lịch nhắc nhở & Múi giờ (Lưu trên máy chủ)</h2>
+        <span class="pill mint" data-vi="Đồng bộ máy chủ" data-en="Server persisted">Đồng bộ máy chủ</span>
+      </div>
+
+      <div class="kv-list">
+        <div class="kv-row">
+          <span class="muted" data-vi="Tài khoản:" data-en="Account:">Tài khoản:</span>
+          <strong>{{ current_user.username if (current_user.username is defined and current_user.username) else current_user.email }} ({{ current_user.email }})</strong>
+        </div>
+        {% if current_user.email_verified is defined %}
+          <div class="kv-row">
+            <span class="muted" data-vi="Trạng thái xác thực email:" data-en="Email confirmation:">Trạng thái xác thực email:</span>
+            <span class="pill {% if current_user.email_verified %}mint{% else %}sun-label{% endif %}">
+              {{ "Đã xác nhận email (Đủ điều kiện nhận nhắc lịch)" if current_user.email_verified else "Chưa xác nhận email (Cần xác nhận để nhận email nhắc)" }}
+            </span>
+          </div>
+        {% endif %}
+      </div>
+
+      <form method="post" action="{{ url_for('settings.show') }}" class="sub-form compact-top" data-submitting-text="Đang lưu cài đặt…">
+        {% if csrf_token is defined %}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        {% endif %}
+
+        <div class="field-group">
+          <label for="settings-timezone" data-vi="Múi giờ của bạn (Time zone — chuẩn IANA)" data-en="Time zone">Múi giờ của bạn (Time zone — chuẩn IANA)</label>
+          <input
+            id="settings-timezone"
+            name="timezone"
+            list="zones"
+            required
+            placeholder="Asia/Ho_Chi_Minh"
+            value="{{ current_user.timezone }}"
+          />
+          <datalist id="zones">
+            {% for zone in zones %}<option value="{{ zone }}"></option>{% endfor %}
+          </datalist>
+          <small class="field-hint" data-vi="Ví dụ: Asia/Ho_Chi_Minh, UTC, Asia/Singapore, Europe/London." data-en="e.g. Asia/Ho_Chi_Minh, UTC, Europe/London.">
+            Ví dụ: <code>Asia/Ho_Chi_Minh</code>, <code>UTC</code>, <code>Asia/Singapore</code>.
+          </small>
+        </div>
+
+        <div class="field-group">
+          <label class="check" for="settings-reminders-enabled">
+            <input
+              id="settings-reminders-enabled"
+              type="checkbox"
+              name="reminders_enabled"
+              {% if current_user.reminders_enabled %}checked{% endif %}
+            />
+            <span data-vi="Bật gửi lời nhắc trước hạn gia hạn (Send me reminders)" data-en="Send me reminders">Bật gửi lời nhắc trước hạn gia hạn (Send me reminders)</span>
           </label>
-        {% endfor %}
-        <p class="muted">Chrome extension and calendar are coming soon.</p>
-      </fieldset>
-      <p class="muted">"Days before" is set on each subscription.</p>
-      <button type="submit">Save</button>
-    </form>
+        </div>
+
+        <div class="field-group">
+          <label for="settings-reminder-hour" data-vi="Giờ gửi lời nhắc trong ngày (0–23, theo múi giờ của bạn)" data-en="Send them at (hour, 0–23, your time)">Giờ gửi lời nhắc trong ngày (0–23, theo múi giờ của bạn)</label>
+          <input
+            id="settings-reminder-hour"
+            type="number"
+            name="reminder_hour"
+            min="0"
+            max="23"
+            required
+            value="{{ current_user.reminder_hour }}"
+          />
+        </div>
+
+        <fieldset class="settings-fieldset">
+          <legend data-vi="Kênh nhận lời nhắc (Where)" data-en="Where">Kênh nhận lời nhắc (Where)</legend>
+          {% for channel in channels %}
+            <label class="check">
+              <input
+                type="checkbox"
+                name="channels"
+                value="{{ channel }}"
+                {% if channel in current_user.channel_list %}checked{% endif %}
+              />
+              <span>{{ channel|capitalize }} ({{ current_user.email }})</span>
+            </label>
+          {% endfor %}
+          <p class="muted small-text" data-vi="Tiện ích Chrome Extension và lịch Calendar đang trong giai đoạn phát triển (chưa phát hành)." data-en="Chrome extension and calendar are coming soon.">
+            Tiện ích Chrome Extension và lịch Calendar đang trong giai đoạn phát triển (chưa phát hành).
+          </p>
+        </fieldset>
+
+        <p class="muted small-text" data-vi="Lưu ý: Số ngày nhắc trước (lead_days, ví dụ 14, 7, 3) được thiết lập riêng trên từng gói đăng ký." data-en="'Days before' is set on each subscription.">
+          Lưu ý: Số ngày nhắc trước (<code>lead_days</code>, ví dụ <code>14, 7, 3</code>) được thiết lập riêng trên từng gói đăng ký.
+        </p>
+
+        <div class="form-actions">
+          <button type="submit" data-vi="Lưu cài đặt máy chủ (Save)" data-en="Save">Lưu cài đặt máy chủ (Save)</button>
+        </div>
+      </form>
+    </div>
+
+    {# 2. Tùy chọn chỉ hiển thị trên trình duyệt & Kết nối Gmail (UI Preparation) #}
+    <div class="card">
+      <div class="card-head-row">
+        <h2 class="card-title" data-vi="2. Tùy chọn giao diện trình duyệt & Gmail (Chuẩn bị UI)" data-en="2. Browser Display & Gmail Sync (UI Preparation)">2. Tùy chọn giao diện trình duyệt & Gmail (Chuẩn bị UI)</h2>
+        <span class="pill sun-label" data-vi="Tách biệt với máy chủ" data-en="Browser-local / Prep">Tách biệt với máy chủ</span>
+      </div>
+
+      <div class="status-banner info compact">
+        <strong data-vi="Tùy chọn ngôn ngữ hiển thị (Chỉ lưu trên trình duyệt này)" data-en="Display language preference (Browser-local only)">Tùy chọn ngôn ngữ hiển thị (Chỉ lưu trên trình duyệt này)</strong>
+        <p class="muted small-text" data-vi="Nút chuyển đổi ngôn ngữ VI / EN trên thanh điều hướng chỉ lưu trong localStorage của trình duyệt để đổi nhãn giao diện; tuyệt đối KHÔNG thay đổi múi giờ hay bộ lập lịch gửi email trên máy chủ." data-en="The VI / EN toggle in the top bar is stored in browser localStorage for UI labels only; it does NOT change your server timezone or reminder scheduler.">
+          Nút chuyển đổi ngôn ngữ <strong>VI / EN</strong> trên thanh điều hướng chỉ lưu trong <code>localStorage</code> của trình duyệt để đổi nhãn giao diện; tuyệt đối <strong>KHÔNG</strong> thay đổi múi giờ hay bộ lập lịch gửi email trên máy chủ.
+        </p>
+      </div>
+
+      <div class="status-banner warn compact">
+        <strong data-vi="Kết nối Gmail đọc hóa đơn: Chưa kết nối (Chuẩn bị UI)" data-en="Gmail Invoice Sync: Not connected (UI Preparation)">Kết nối Gmail đọc hóa đơn: Chưa kết nối (Chuẩn bị UI)</strong>
+        <p class="muted small-text" data-vi="Đăng nhập bằng Google (Continue with Google) chỉ xác thực tài khoản, KHÔNG cấp quyền đọc hộp thư Gmail. Luồng OAuth đọc hóa đơn Gmail cần sự đồng ý riêng và hiện chưa kích hoạt." data-en="Google Sign-In only authenticates your account and does NOT grant Gmail read access. Gmail invoice OAuth requires separate consent and is not active yet.">
+          Đăng nhập bằng Google (<em>Continue with Google</em>) chỉ xác thực tài khoản, <strong>KHÔNG</strong> cấp quyền đọc hộp thư Gmail. Luồng OAuth đọc hóa đơn Gmail cần sự đồng ý riêng và hiện chưa kích hoạt.
+        </p>
+        <button type="button" class="button secondary btn-sm" disabled data-vi="Kết nối Gmail (Chờ OAuth endpoint)" data-en="Connect Gmail (Awaiting OAuth endpoint)">
+          Kết nối Gmail (Chờ OAuth endpoint)
+        </button>
+      </div>
+
+      <div id="pwa-install-banner" class="pwa-banner">
+        <div>
+          <strong data-vi="3. Hướng dẫn cài đặt ứng dụng (PWA) & Tiện ích mở rộng" data-en="3. App Install Guide (PWA) & Browser Extension">3. Hướng dẫn cài đặt ứng dụng (PWA) & Tiện ích mở rộng</strong>
+          <ul class="pwa-guide-list muted small-text">
+            <li data-vi="Chrome / Edge: Bấm biểu tượng Cài đặt (⊕) trên thanh địa chỉ hoặc Menu (⋮) → Cài đặt ứng dụng." data-en="Chrome / Edge: Click Install (⊕) in the address bar or Menu (⋮) → Install app.">
+              <strong>Chrome / Edge:</strong> Bấm biểu tượng Cài đặt (⊕) trên thanh địa chỉ hoặc Menu (⋮) → <em>Cài đặt ứng dụng</em>.
+            </li>
+            <li data-vi="Safari (iOS): Bấm Chia sẻ (Share) → chọn 'Thêm vào MH chính' (Add to Home Screen)." data-en="Safari (iOS): Tap Share → 'Add to Home Screen'.">
+              <strong>Safari (iOS):</strong> Bấm Chia sẻ (Share) → chọn <em>Thêm vào MH chính</em>.
+            </li>
+          </ul>
+          <p class="muted small-text" data-vi="Lưu ý: Tệp manifest.webmanifest cung cấp biểu tượng cài đặt nhanh; ứng dụng không lưu hóa đơn hay dữ liệu nhạy cảm vào bộ nhớ đệm ngoại tuyến dùng chung. Tiện ích Chrome Extension hiện chưa phát hành." data-en="Note: manifest.webmanifest enables home-screen shortcuts; private bills and account responses are never cached in shared offline storage. The Chrome Extension is unreleased.">
+            Lưu ý: Tệp <code>manifest.webmanifest</code> cung cấp biểu tượng cài đặt nhanh; ứng dụng không lưu hóa đơn hay dữ liệu nhạy cảm vào bộ nhớ đệm ngoại tuyến dùng chung. Tiện ích Chrome Extension hiện <strong>chưa phát hành</strong>.
+          </p>
+        </div>
+        <button type="button" class="link small-text" data-dismiss-pwa data-vi="Ẩn hướng dẫn" data-en="Dismiss">Ẩn hướng dẫn</button>
+      </div>
+    </div>
   </div>
 {% endblock %}
