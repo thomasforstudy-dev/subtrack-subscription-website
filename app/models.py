@@ -228,6 +228,10 @@ class Link(db.Model):
     notes = db.Column(db.UnicodeText, default="", nullable=False)
     is_pinned = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    # Fingerprint of the cleaned-up address (see links.url_fingerprint), to
+    # spot the same page saved twice. Empty for links saved before 04_links.sql.
+    url_hash = db.Column(db.Unicode(64), index=True)
+    favicon_url = db.Column(db.Unicode(2048), default="", nullable=False)  # the site's own icon
 
     @property
     def tag_list(self) -> list[str]:

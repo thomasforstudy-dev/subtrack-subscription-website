@@ -1,18 +1,21 @@
 """Pinned links: save useful websites, tag them, search them."""
 
+import hashlib
 import re
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit
 
+import click
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
 
 from app import db
-from app.link_preview import fetch_preview
+from app.link_preview import fetch_preview, icon_url
 from app.models import Link
 from app.validation import escape_like
 
-bp =Blueprint("links", __name__, url_prefix="/links")
+# cli_group=None: the command is "flask fill-link-fingerprints".
+bp = Blueprint("links", __name__, url_prefix="/links", cli_group=None)
 
 MAX_TAGS = 10
 
@@ -122,19 +125,66 @@ def _fill_link(link: Link) -> str | None:
     url, error = normalize_url(request.form.get("url") or "")
     if error:
         return error
+    fingerprint = url_fingerprint(url)
+    same = Link.query.filter(
+        Link.user_id == current_user.id, Link.url_hash == fingerprint, Link.id != (link.id or 0)
+    ).first()
+    if same:
+        return f"You already saved this link as “{same.title}”. Search for it, or edit that one."
+
     link.url = url
+    link.url_hash = fingerprint
     link.title = (request.form.get("title") or "").strip()[:200]
     link.tags = normalize_tags(request.form.get("tags") or "")
     link.notes = (request.form.get("notes") or "").strip()
+    found = {}
     if not link.title:
         # No title typed: look up the page's real name (falls back to the domain).
         found = fetch_preview(url)
         link.title = found.get("title") or urlparse(url).netloc
         if not link.notes and found.get("description"):
             link.notes = found["description"]
+    link.favicon_url = found.get("icon") or icon_url(url)
     if "is_pinned" in request.form or request.form.get("form") == "full":
         link.is_pinned = request.form.get("is_pinned") == "on"
     return None
+
+
+# Query parts that only say where a click came from, not which page it is.
+TRACKING_PREFIXES = ("utm_", "fbclid", "gclid", "mc_eid", "igshid", "ref_src")
+
+
+def url_fingerprint(url: str) -> str:
+    """The same page written differently gets the same fingerprint:
+    http/https, "www.", a trailing "/", "#section" and tracking tags are ignored.
+    "https://www.Example.com/a/?utm_source=x#top" == "http://example.com/a"."""
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower().removeprefix("www.")
+    if parts.port and parts.port not in (80, 443):
+        host += f":{parts.port}"
+    query = sorted(
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if not key.lower().startswith(TRACKING_PREFIXES)
+    )
+    key = host + parts.path.rstrip("/") + ("?" + urlencode(query) if query else "")
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+@bp.cli.command("fill-link-fingerprints")
+def fill_link_fingerprints_command():
+    """For SQL Server after 04_links.sql: give older links a fingerprint and icon."""
+    click.echo(f"Updated {fill_missing_fingerprints()} links.")
+
+
+def fill_missing_fingerprints() -> int:
+    """Links saved before fingerprints existed get one (run at start-up / by command)."""
+    links = Link.query.filter(Link.url_hash.is_(None)).limit(5000).all()
+    for link in links:
+        link.url_hash = url_fingerprint(link.url)
+        link.favicon_url = link.favicon_url or icon_url(link.url)
+    db.session.commit()
+    return len(links)
 
 
 def normalize_url(raw: str) -> tuple[str, str | None]:

@@ -4,7 +4,7 @@ What the backend promises the UI lane (Antigravity) and the extension/calendar
 lane (Codex). **Field `name=`s and routes here must not change without updating
 this file and keeping the old name working.** Owner of this file: backend lane.
 
-Last change: 2026-10-19 — Claude — accounts (section A); subscriptions, dashboard, settings, reminders (section B).
+Last change: 2026-10-19 — Claude — accounts (section A); subscriptions, dashboard, settings, reminders (section B); link icons + duplicates (section C).
 
 ## Rules for every form
 
@@ -149,6 +149,18 @@ API tokens later (backend lane).
 
 Safe to run every 15–60 minutes and twice at once. Prints counts. Exits with an
 error if email isn't set up (rows stay waiting). Only confirmed emails get reminders.
+
+## Pinned links
+
+Routes and field names are unchanged (`url`, `title`, `tags`, `notes`, `is_pinned`, `form`).
+
+| New | Detail |
+|---|---|
+| `link.favicon_url` | The site's **own** icon (from its `<link rel="icon">`, else `https://<site>/favicon.ico`). Show it with `<img src="{{ link.favicon_url }}" alt="" width="16" height="16" loading="lazy" referrerpolicy="no-referrer">` and a letter fallback when it fails. Never use a third-party favicon service (it would learn every saved link). Note: showing it lets the saved site see the viewer's IP, like opening the link. |
+| Duplicates | Saving the same page twice (ignoring http/https, `www.`, trailing `/`, `#...`, `utm_*` and similar) is refused with a flash: "You already saved this link as “…”." |
+| `POST /links/preview` | JSON now may include `"icon"` next to `"title"`, `"site_name"`, `"description"`. Send `X-CSRF-Token`. |
+
+External links keep `target="_blank" rel="noopener noreferrer"`. Never `|safe` on titles or notes.
 
 ## Admin
 

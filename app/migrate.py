@@ -23,6 +23,9 @@ NEW_COLUMNS = [
     ("subscriptions", "billing_day", "ALTER TABLE subscriptions ADD COLUMN billing_day INTEGER"),
     ("subscriptions", "lead_days", "ALTER TABLE subscriptions ADD COLUMN lead_days VARCHAR(40) NOT NULL DEFAULT '7'"),
     ("subscriptions", "manage_url", "ALTER TABLE subscriptions ADD COLUMN manage_url VARCHAR(2048) NOT NULL DEFAULT ''"),
+    # 04_links.sql
+    ("links", "url_hash", "ALTER TABLE links ADD COLUMN url_hash VARCHAR(64)"),
+    ("links", "favicon_url", "ALTER TABLE links ADD COLUMN favicon_url VARCHAR(2048) NOT NULL DEFAULT ''"),
 ]
 
 AFTER_COLUMNS = [
@@ -33,6 +36,8 @@ AFTER_COLUMNS = [
     # 03_reminders.sql: older subscriptions keep their single "remind days".
     "UPDATE subscriptions SET lead_days = CAST(remind_days AS TEXT) WHERE lead_days = '7' AND remind_days <> 7",
     "UPDATE subscriptions SET billing_day = CAST(strftime('%d', next_renewal_at) AS INTEGER) WHERE billing_day IS NULL",
+    # 04_links.sql (the fingerprints themselves are filled in by Python: links.fill_missing_fingerprints)
+    "CREATE INDEX IF NOT EXISTS ix_links_url_hash ON links (url_hash)",
 ]
 
 

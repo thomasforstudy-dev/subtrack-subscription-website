@@ -123,8 +123,11 @@ def create_app() -> Flask:
         if db.engine.dialect.name == "sqlite":
             from app.migrate import upgrade_sqlite
 
+            from app.links import fill_missing_fingerprints
+
             db.create_all()
             upgrade_sqlite(db.engine)
+            fill_missing_fingerprints()
 
     @app.cli.command("check-db")
     def check_db():
