@@ -38,6 +38,7 @@ helper, and install a Chrome extension for reminders.
 | `app/subscriptions.py` | Subscription pages |
 | `app/schedule.py`, `app/reminders.py` | Renewal date rules; the `flask send-reminders` job |
 | `app/dashboard.py`, `app/settings.py` | Dashboard (+ JSON) and reminder settings |
+| `app/subby.py`, `app/ai_providers.py` | Help bot endpoint; which AI model answers (Gemini / Phi / fake) |
 | `app/links.py`, `app/link_preview.py` | Pinned links + automatic page titles |
 | `app/admin.py` | Admin user list |
 | `app/templates/` | HTML pages |

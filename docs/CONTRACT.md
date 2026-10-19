@@ -162,6 +162,17 @@ Routes and field names are unchanged (`url`, `title`, `tags`, `notes`, `is_pinne
 
 External links keep `target="_blank" rel="noopener noreferrer"`. Never `|safe` on titles or notes.
 
+## Subby — `POST /subby/ask` (JSON, no CSRF token needed)
+
+Request: `{"question": "...", "fun": true, "history": [{"role": "user"|"bot", "text": "..."}]}`
+
+| Status | Body | Page should |
+|---|---|---|
+| 200 | `{"answer", "handoff": bool, "provider": "gemini"/"phi"/"fake", "fallback": bool}` | Show the answer. **If `fallback` is true, add a small note: "answered by a cloud model".** |
+| 429 | `{"answer": "...slow down...", "handoff": false}` | Show it |
+| 502 | `{"answer": null, "reason": "model-offline"/"model-failed"/"empty", "provider"}` | Use the built-in answers |
+| 503 | `{"answer": null, "reason": "not-set-up"}` | Use the built-in answers |
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:
