@@ -176,13 +176,17 @@
     <article class="card dash-card" id="credit-cards">
       <header class="dash-card-head">
         <span class="dash-label" data-vi="Hạn thanh toán thẻ tín dụng" data-en="Credit card due dates">Hạn thanh toán thẻ tín dụng</span>
-        <span class="pill" data-vi="Chưa có dữ liệu sao kê" data-en="No statement data">Chưa có dữ liệu sao kê</span>
+        <a class="small-link" href="{{ url_for('bills.list_bills', kind='card_bill') }}" data-vi="Mở sao kê thẻ →" data-en="View card bills →">Mở sao kê thẻ →</a>
       </header>
       <div class="dash-body" data-dash-view="real">
         <div class="dash-empty">
-          <strong data-vi="Chưa có thông tin kỳ sao kê thẻ trên máy chủ" data-en="No credit card statements stored yet">Chưa có thông tin kỳ sao kê thẻ trên máy chủ</strong>
-          <p class="muted small-text" data-vi="Bạn có thể thêm hạn thanh toán thẻ hàng tháng như một gói nhắc lịch, hoặc mở xem mẫu giao diện kỳ sao kê thẻ (DEMO) bên dưới." data-en="You can add your card's monthly due date as a reminder, or expand the DEMO statement preview below.">
-            Bạn có thể thêm hạn thanh toán thẻ hàng tháng như một gói nhắc lịch, hoặc mở xem mẫu giao diện kỳ sao kê thẻ (DEMO) bên dưới.
+          <strong data-vi="Quản lý kỳ sao kê & hạn thanh toán thẻ tín dụng" data-en="Track credit card statements & due dates">Quản lý kỳ sao kê & hạn thanh toán thẻ tín dụng</strong>
+          <p class="muted small-text" data-vi="Lưu kỳ sao kê thẻ tín dụng (chỉ 4 số cuối thẻ, ngày sao kê, hạn thanh toán) và đánh dấu đã trả trực tiếp tại mục Hóa đơn." data-en="Save credit card bills (last 4 digits only, statement dates, payment due date) and mark them paid in Bills.">
+            Lưu kỳ sao kê thẻ tín dụng (chỉ 4 số cuối thẻ, ngày sao kê, hạn thanh toán) và đánh dấu đã trả trực tiếp tại mục Hóa đơn.
+          </p>
+          <p class="compact-top">
+            <a class="button secondary btn-sm" href="{{ url_for('bills.list_bills', kind='card_bill') }}" data-vi="Danh sách sao kê thẻ" data-en="Card bills">Danh sách sao kê thẻ</a>
+            <a class="button btn-sm" href="{{ url_for('bills.create') }}" data-vi="+ Thêm sao kê thẻ" data-en="+ Add card bill">+ Thêm sao kê thẻ</a>
           </p>
         </div>
         <details class="archived-info-box compact-top">
@@ -204,19 +208,23 @@
     <article class="card dash-card">
       <header class="dash-card-head">
         <span class="dash-label" data-vi="Chi tiêu thực tế (Actual spending)" data-en="Actual spending">Chi tiêu thực tế (Actual spending)</span>
-        <a class="small-link" href="#bills" data-vi="Mở khu vực Hóa đơn ↓" data-en="Open Bills section ↓">Mở khu vực Hóa đơn ↓</a>
+        <a class="small-link" href="{{ url_for('bills.list_bills') }}" data-vi="Mở trang Hóa đơn →" data-en="Open Bills →">Mở trang Hóa đơn →</a>
       </header>
       <div class="dash-body" data-dash-view="real">
         <div class="dash-empty">
-          <strong data-vi="Chưa có hóa đơn đã xác nhận" data-en="Coming with bills and receipts">Chưa có hóa đơn đã xác nhận</strong>
-          <p class="muted small-text" data-vi="Chỉ những khoản thanh toán bạn trực tiếp xác nhận từ hóa đơn / biên lai mới được tính vào chi tiêu thực tế tại đây." data-en="Coming with bills and receipts: only payments you confirm will count here.">
-            Chỉ những khoản thanh toán bạn trực tiếp xác nhận từ hóa đơn / biên lai mới được tính vào chi tiêu thực tế tại đây.
+          <strong data-vi="Biên lai đã xác nhận & Tải tệp riêng tư" data-en="Confirmed receipts & Private uploads">Biên lai đã xác nhận & Tải tệp riêng tư</strong>
+          <p class="muted small-text" data-vi="Chỉ những khoản thanh toán bạn trực tiếp xác nhận từ hóa đơn / biên lai mới được tính vào chi tiêu thực tế theo từng loại tiền tệ tại trang Hóa đơn." data-en="Only payments you confirm from receipts count toward your actual spending per currency on the Bills page.">
+            Chỉ những khoản thanh toán bạn trực tiếp xác nhận từ hóa đơn / biên lai mới được tính vào chi tiêu thực tế theo từng loại tiền tệ tại trang Hóa đơn.
+          </p>
+          <p class="compact-top">
+            <a class="button secondary btn-sm" href="{{ url_for('bills.list_bills') }}" data-vi="Xem Hóa đơn & Xuất JSON/CSV/MD" data-en="View Bills & Export">Xem Hóa đơn & Xuất JSON/CSV/MD</a>
+            <a class="button btn-sm" href="{{ url_for('bills.create') }}" data-vi="+ Nhập hóa đơn" data-en="+ Add bill">+ Nhập hóa đơn</a>
           </p>
         </div>
       </div>
     </article>
   </div>
 
-  {# Khu vực Hóa đơn & Kiểm tra chứng từ (UI Demo — đánh dấu rõ đang chờ API /bills) #}
+  {# Khu vực Hóa đơn: kết nối tải tệp thật & xuất thật tới /bills/, giữ phần OCR AI ở chế độ Demo #}
   {% include "subscriptions/_bills_section.html" %}
 {% endblock %}
