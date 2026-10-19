@@ -2,12 +2,16 @@
 
 Never trust the file name or what the browser says the type is: anyone can
 rename virus.exe to bill.pdf. The type comes from the file's first bytes
-("magic numbers"). Then:
-- at most MAX_BYTES, and at most MAX_PAGES pages for a PDF
+("magic numbers"), and then the file is really opened:
+- photos are fully decoded by Pillow, after checking their size in pixels
+  (a tiny file can claim to be 100000 x 100000 pixels and eat all memory)
+- PDFs are read by pypdf, which counts pages even when they are packed
+  away (compressed); a PDF whose pages can't be counted is refused
+- at most MAX_BYTES, and at most MAX_PAGES pages
 - a .docx is a zip file: check it isn't a "zip bomb" (a tiny file that
   unpacks to gigabytes) and really is a Word document. It is never unpacked
-  to disk.
-- old .doc files and password-protected PDFs are refused with a clear message
+  to disk, and nothing it links to is ever fetched.
+- old .doc files and password-protected files are refused with a clear message
 - the file is saved in instance/uploads/ (not static/, so nobody can open it
   by guessing an address) under a random name the server makes up
 """
@@ -16,13 +20,19 @@ import hashlib
 import io
 import re
 import secrets
+import warnings
 import zipfile
 from pathlib import Path
 
 from flask import current_app
+from PIL import Image
+from pypdf import PdfReader
+from pypdf.errors import PyPdfError
 
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB, the same limit the page shows
 MAX_PAGES = 5
+MAX_SIDE = 12_000  # pixels, the longest side of a photo
+MAX_PIXELS = 30_000_000  # about a 30-megapixel photo: enough for any phone
 MAX_NAME = 255
 # A .docx: at most this many files inside, and this much once unpacked.
 ZIP_MAX_FILES = 1000
@@ -62,18 +72,43 @@ def detect_kind(data: bytes) -> str:
     raise UploadError("Please upload a PNG, JPG or WEBP photo, a PDF, or a Word (.docx) file.")
 
 
-def pdf_page_count(data: bytes) -> int | None:
-    """Count "/Type /Page" objects. Some PDFs pack these away (compressed), and
-    then the count is unknown (None) rather than a wrong number."""
-    count = len(re.findall(rb"/Type\s*/Page(?![a-zA-Z])", data))
-    return count or None
+PILLOW_FORMATS = {"png": "PNG", "jpeg": "JPEG", "webp": "WEBP"}
+# What a broken file makes the parsers raise. Anything else is a real bug and is not hidden.
+PDF_PROBLEMS = (PyPdfError, ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError, OSError)
+IMAGE_PROBLEMS = (OSError, ValueError, SyntaxError, Image.DecompressionBombError)
 
 
-def check_pdf(data: bytes) -> int | None:
-    if b"/Encrypt" in data:
-        raise UploadError("This PDF is password-protected. Please upload a copy without a password.")
-    pages = pdf_page_count(data)
-    if pages is not None and pages > MAX_PAGES:
+def check_image(data: bytes, kind: str) -> None:
+    """Open the photo, check its size in pixels FIRST, then decode all of it."""
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(data)) as image:
+                # Image.open only reads the header, so this check is cheap.
+                if image.format != PILLOW_FORMATS[kind]:
+                    raise UploadError("This photo looks damaged. Please take or save it again.")
+                width, height = image.size
+                if max(width, height) > MAX_SIDE or width * height > MAX_PIXELS:
+                    raise UploadError("This photo is too large in pixels. Please upload a smaller copy.")
+                if getattr(image, "n_frames", 1) > 1:
+                    raise UploadError("Animated pictures aren't supported. Please upload a normal photo.")
+                image.load()  # decode every pixel: a cut-off or broken file fails here
+    except IMAGE_PROBLEMS:
+        raise UploadError("This photo looks damaged. Please take or save it again.") from None
+
+
+def check_pdf(data: bytes) -> int:
+    """Read the PDF properly and count its pages. Returns the page count."""
+    try:
+        reader = PdfReader(io.BytesIO(data))
+        if reader.is_encrypted:
+            raise UploadError("This PDF is password-protected. Please upload a copy without a password.")
+        pages = len(reader.pages)  # walks the real page tree, compressed or not
+    except PDF_PROBLEMS:
+        raise UploadError("This PDF looks damaged. Please save or export it again and retry.") from None
+    if pages < 1:
+        raise UploadError("This PDF has no pages.")
+    if pages > MAX_PAGES:
         raise UploadError(f"This PDF has {pages} pages. Please upload at most {MAX_PAGES} pages.")
     return pages
 
@@ -96,7 +131,8 @@ def check_docx(data: bytes) -> None:
             raise UploadError("This Word file is too big once opened.")
     if unpacked > ZIP_MAX_UNPACKED:
         raise UploadError("This Word file is too big once opened.")
-    if "word/document.xml" not in archive.namelist():
+    names = archive.namelist()
+    if "word/document.xml" not in names or "[Content_Types].xml" not in names:
         raise UploadError("Please upload a PNG, JPG or WEBP photo, a PDF, or a Word (.docx) file.")
 
 
@@ -121,10 +157,13 @@ def read_upload(stream) -> bytes:
 def inspect(data: bytes) -> dict:
     """Check the file. Returns its kind, page count and fingerprint, or raises UploadError."""
     kind = detect_kind(data)
-    pages = 1 if kind in IMAGES else None
-    if kind == "pdf":
+    pages = None  # a Word file has no fixed pages
+    if kind in IMAGES:
+        check_image(data, kind)
+        pages = 1
+    elif kind == "pdf":
         pages = check_pdf(data)
-    elif kind == "docx":
+    else:
         check_docx(data)
     return {"kind": kind, "page_count": pages, "sha256": hashlib.sha256(data).hexdigest(), "size_bytes": len(data)}
 

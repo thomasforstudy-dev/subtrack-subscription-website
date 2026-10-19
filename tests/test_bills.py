@@ -7,13 +7,25 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from PIL import Image
+from pypdf import PdfWriter
 
 from app import db, documents
 from app.models import Bill, Document
 
 from .conftest import sign_up
 
-PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 200
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def image(kind="PNG", size=(40, 20), mode="RGB", **save) -> bytes:
+    """A real, valid picture made with Pillow (not just a fake header)."""
+    out = io.BytesIO()
+    Image.new(mode, size, "white").save(out, kind, **save)
+    return out.getvalue()
+
+
+PNG = image()
 RECEIPT = {
     "kind": "receipt", "merchant": "Highlands Coffee", "branch": "Takashimaya",
     "currency": "vnd", "transaction_date": "2026-10-18", "transaction_time": "",
@@ -23,16 +35,31 @@ RECEIPT = {
 }
 
 
-def pdf(pages: int, extra: bytes = b"") -> bytes:
-    body = b"".join(b"%d 0 obj << /Type /Page /Parent 1 0 R >> endobj\n" % n for n in range(pages))
-    return b"%PDF-1.4\n1 0 obj << /Type /Pages >> endobj\n" + body + extra + b"%%EOF"
+def pdf(pages: int, password: str | None = None) -> bytes:
+    """A real PDF made with pypdf."""
+    writer = PdfWriter()
+    for _ in range(pages):
+        writer.add_blank_page(width=200, height=200)
+    if password:
+        writer.encrypt(password)
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
 
 
 def docx(files: dict | None = None) -> bytes:
     out = io.BytesIO()
+    default = {"[Content_Types].xml": b"<Types/>", "word/document.xml": b"<w:document/>"}
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
-        for name, content in (files or {"word/document.xml": b"<w:document/>"}).items():
+        for name, content in (files or default).items():
             archive.writestr(name, content)
+    return out.getvalue()
+
+
+def animated_png() -> bytes:
+    out = io.BytesIO()
+    frames = [Image.new("RGB", (10, 10), colour) for colour in ("white", "black")]
+    frames[0].save(out, "PNG", save_all=True, append_images=frames[1:])
     return out.getvalue()
 
 
@@ -164,17 +191,33 @@ def test_same_file_twice_is_kept_once(user, app):
         assert Document.query.count() == 1
 
 
-@pytest.mark.parametrize("data,name,message", [
+BAD_FILES = [
     (b"just text pretending", "bill.pdf", "Please upload a PNG"),
     (b"MZ\x90\x00 an exe", "bill.png", "Please upload a PNG"),
     (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 50, "old.doc", ".doc files"),
+    # Header-only fakes and cut-off files (review B1).
+    (b"\x89PNG\r\n\x1a\n" + b"\x00" * 32, "broken.png", "photo looks damaged"),
+    (image("PNG", (300, 300), "RGB")[:-200], "cut.png", "photo looks damaged"),
+    (image("JPEG", (300, 300))[:400], "cut.jpg", "photo looks damaged"),
+    (b"%PDF-1.7\nnot a valid PDF", "broken.pdf", "PDF looks damaged"),
+    (pdf(2)[:150], "cut.pdf", "PDF looks damaged"),
+    # Too many pages, even when the pages are packed away (compressed).
     (pdf(6), "long.pdf", "6 pages"),
-    (pdf(1, b"/Encrypt 5 0 R"), "locked.pdf", "password"),
+    ((FIXTURES / "synthetic-six-page-compressed.pdf").read_bytes(), "packed.pdf", "6 pages"),
+    (pdf(1, password="secret"), "locked.pdf", "password"),
+    # Small files that claim huge pictures.
+    (image("PNG", (12_001, 10), "1"), "wide.png", "too large in pixels"),
+    (image("PNG", (6_000, 6_000), "1"), "huge.png", "too large in pixels"),
+    (animated_png(), "moving.png", "Animated"),
     (docx({"hello.txt": b"not word"}), "fake.docx", "Please upload a PNG"),
     (docx({"word/document.xml": b"\x00" * 3_000_000}), "bomb.docx", "too big once opened"),
     (b"PK\x03\x04 broken zip", "broken.docx", "damaged"),
     (b"", "empty.png", "That file is empty"),
-])
+]
+
+
+# Name each case after its file (the bytes themselves would make a huge test name).
+@pytest.mark.parametrize("data,name,message", BAD_FILES, ids=[case[1] for case in BAD_FILES])
 def test_bad_files_are_refused(user, app, data, name, message):
     res = upload(user, data, name=name)
     assert res.status_code == 302
@@ -183,11 +226,24 @@ def test_bad_files_are_refused(user, app, data, name, message):
         assert Document.query.count() == 0
 
 
-def test_good_pdf_and_docx_are_accepted(user, app):
-    upload(user, pdf(2), name="statement.pdf")
+def test_good_files_of_every_kind_are_accepted(user, app):
+    upload(user, pdf(5), name="statement.pdf")  # exactly the limit
     upload(user, docx(), name="invoice.docx")
+    upload(user, image("JPEG", (64, 48)), name="photo.jpg")
+    upload(user, image("WEBP", (64, 48)), name="photo.webp")
     with app.app_context():
-        assert sorted((d.kind, d.page_count) for d in Document.query) == [("docx", None), ("pdf", 2)]
+        assert sorted((d.kind, d.page_count) for d in Document.query) == [
+            ("docx", None), ("jpeg", 1), ("pdf", 5), ("webp", 1)]
+
+
+def test_a_real_bug_in_the_parser_is_not_hidden(monkeypatch):
+    """Only "broken file" errors become a friendly message; a programming bug still shows."""
+    def bug(*args, **kwargs):
+        raise ZeroDivisionError("a bug, not a bad file")
+
+    monkeypatch.setattr(documents, "PdfReader", bug)
+    with pytest.raises(ZeroDivisionError):
+        documents.inspect(pdf(1))
 
 
 def test_file_over_10_mb_is_refused(user, app, monkeypatch):
@@ -293,3 +349,74 @@ def test_unknown_export_format(user):
 def test_bills_pages_need_login(client):
     for path in ["/bills/", "/bills/new", "/bills/export.json"]:
         assert client.get(path).status_code == 302
+
+
+# ---------- review repairs B2 / B3 and money checks ---------------------------
+
+def test_line_amount_must_fit_the_database(user, app):
+    """9999999 x 99999999.99 doesn't fit DECIMAL(12,2) on SQL Server (review B2)."""
+    page = user.post("/bills/new", data={**RECEIPT, "currency": "USD",
+                                         "item_qty_1": "9999999", "item_price_1": "99999999.99"})
+    assert "too big" in page.get_data(as_text=True)
+    with app.app_context():
+        assert Bill.query.count() == 0
+    # The largest amount that fits is fine.
+    user.post("/bills/new", data={**RECEIPT, "currency": "USD", "subtotal": "", "tax": "", "total": "",
+                                  "item_qty_1": "1", "item_price_1": "9999999999.99"})
+    assert only_bill(app).lines[0].amount == Decimal("9999999999.99")
+
+
+def test_rejected_edit_leaves_the_saved_bill_alone(user, app):
+    user.post("/bills/new", data=RECEIPT)
+    bill_id = only_bill(app).id
+    user.post(f"/bills/{bill_id}/edit", data={**RECEIPT, "item_qty_1": "2", "item_price_1": "6000000000"})
+    bill = only_bill(app)
+    assert bill.lines[0].amount == Decimal("90000.00") and bill.total == Decimal("99000.00")
+
+
+@pytest.mark.parametrize("field", ["total", "item_price_1"])
+def test_whole_number_currencies_have_no_decimals(user, app, field):
+    page = user.post("/bills/new", data={**RECEIPT, field: "45000.50"}).get_data(as_text=True)
+    assert "VND has no decimals" in page
+    user.post("/bills/new", data={**RECEIPT, "currency": "USD", field: "45000.50"})
+    with app.app_context():
+        assert Bill.query.count() == 1  # cents are fine in USD
+
+
+def test_every_typed_row_comes_back_after_an_error(user):
+    """Rows 4-30 used to disappear when another field was wrong (review B3)."""
+    form = {**RECEIPT, "total": "NaN"}
+    for n in range(1, 31):
+        form.update({f"item_name_{n}": f"Line {n}", f"item_qty_{n}": "1", f"item_price_{n}": "1"})
+    page = user.post("/bills/new", data=form).get_data(as_text=True)
+    assert "Total: type a number" in page
+    for n in (4, 5, 30):
+        assert f'name="item_name_{n}"' in page and f'value="Line {n}"' in page
+    assert 'name="item_name_31"' not in page  # never more than 30
+
+
+def test_removing_every_row_removes_the_items(user, app):
+    user.post("/bills/new", data=RECEIPT)
+    bill_id = only_bill(app).id
+    user.post(f"/bills/{bill_id}/edit", data={"merchant": "Highlands", "currency": "VND", "item_rows": "1"})
+    assert only_bill(app).lines == []
+
+
+def test_numbers_that_dont_add_up_are_flagged_not_changed(user, app):
+    user.post("/bills/new", data={**RECEIPT, "total": "100000"})  # 90000 + 9000 is 99000
+    page = user.get("/bills/").get_data(as_text=True)
+    assert "Please check: Subtotal 90000.00 + tax 9000.00 = 99000.00, but the total says 100000.00." in page
+    assert only_bill(app).total == Decimal("100000.00")  # what the user typed is kept
+    [row] = json.loads(user.get("/bills/export.json").data)
+    assert row["checks"] and row["evidence"] is None
+
+
+def test_items_against_total_when_there_is_no_subtotal(user):
+    # Prices that already include tax: items = total, so nothing to flag.
+    user.post("/bills/new", data={**RECEIPT, "subtotal": "", "tax": "", "total": "90000"})
+    # Items + tax = total is fine too.
+    user.post("/bills/new", data={**RECEIPT, "subtotal": "", "tax": "9000", "total": "99000"})
+    rows = json.loads(user.get("/bills/export.json").data)
+    assert [row["checks"] for row in rows] == [[], []]
+    user.post("/bills/new", data={**RECEIPT, "subtotal": "", "tax": "", "total": "80000"})
+    assert "items add up to 90000.00" in json.loads(user.get("/bills/export.json").data)[-1]["checks"][0]

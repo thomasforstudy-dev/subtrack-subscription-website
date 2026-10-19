@@ -25,7 +25,6 @@ from app import db
 from app.documents import IMAGES, MIME_TYPES, UploadError, clean_name, file_path, inspect, read_upload, save_file
 from app.models import Bill, BillLine, Document
 from app.schedule import local_now
-from app.subscriptions import parse_amount
 from app.validation import escape_like
 
 bp = Blueprint("bills", __name__, url_prefix="/bills")
@@ -89,6 +88,7 @@ def list_bills():
         status=status, kind=kind, category=category, q=q,
         kinds=Bill.KINDS, categories=Bill.CATEGORIES,
         today=user_today(),
+        checks={bill.id: money_checks(bill) for bill in pages.items},
     )
 
 
@@ -137,7 +137,7 @@ def create():
         apply(bill, values, lines)
         db.session.add(bill)
         db.session.commit()
-        flash("Bill saved.")
+        flash_saved(bill, "Bill saved.")
         return redirect(url_for("bills.list_bills"))
     return render_form(None, document, {})
 
@@ -153,9 +153,15 @@ def edit(bill_id: int):
             return render_form(bill, bill.document, request.form)
         apply(bill, values, lines)
         db.session.commit()
-        flash("Bill updated.")
+        flash_saved(bill, "Bill updated.")
         return redirect(url_for("bills.list_bills"))
     return render_form(bill, bill.document, {})
+
+
+def flash_saved(bill: Bill, message: str) -> None:
+    flash(message)
+    for problem in money_checks(bill):
+        flash("Please check: " + problem)
 
 
 def attached_document(raw_id) -> Document | None:
@@ -172,16 +178,30 @@ def render_form(bill, document, form):
     # Never show a typed full card number back on the page.
     if "card_last4" in form and not re.fullmatch(r"\d{4}", str(form["card_last4"]).strip()):
         form["card_last4"] = ""
-    saved_lines = [
-        {"description": line.description, "quantity": quantity_text(line.quantity), "unit_price": line.unit_price}
-        for line in (bill.lines if bill else [])
-    ]
-    rows = len(saved_lines) + BLANK_LINES
+    sent_rows = submitted_rows(form)
+    if sent_rows:
+        # The form had an item table: show exactly what was typed, every row of it.
+        saved_lines, rows = [], sent_rows
+    else:
+        saved_lines = [
+            {"description": line.description, "quantity": quantity_text(line.quantity), "unit_price": line.unit_price}
+            for line in (bill.lines if bill else [])
+        ]
+        rows = len(saved_lines) + BLANK_LINES
     return render_template(
         "bills/form.html", item=bill, form=form, document=document,
         lines=saved_lines, rows=min(max(rows, BLANK_LINES), MAX_LINES),
-        kinds=Bill.KINDS, categories=Bill.CATEGORIES,
+        kinds=Bill.KINDS, categories=Bill.CATEGORIES, max_lines=MAX_LINES,
     )
+
+
+ITEM_FIELD = re.compile(r"item_(name|qty|price)_(\d{1,2})")
+
+
+def submitted_rows(form) -> int:
+    """The highest item row number the form sent (item_name_5 -> 5), at most MAX_LINES."""
+    numbers = [int(m.group(2)) for key in form if (m := ITEM_FIELD.fullmatch(key))]
+    return min(max(numbers, default=0), MAX_LINES)
 
 
 @bp.route("/<int:bill_id>/paid", methods=["POST"])
@@ -277,12 +297,9 @@ def read_form(form, bill: Bill | None = None) -> tuple[dict, list | None, str | 
         return {}, None, "Pick a time zone from the list, like Asia/Ho_Chi_Minh."
 
     for field in MONEY_FIELDS:
-        text = (raw[field] or "").strip()
-        values[field] = None  # empty = not on the bill
-        if text:
-            values[field] = parse_amount(text)
-            if values[field] is None:
-                return {}, None, f"{label(field)}: type a number like 9.99 (dot for decimals, at most 2)."
+        values[field], error = read_money(raw[field], values["currency"], label(field))
+        if error:
+            return {}, None, error
 
     digits = re.sub(r"[\s-]", "", raw["card_last4"] or "")
     if digits and not re.fullmatch(r"\d{4}", digits):
@@ -295,15 +312,47 @@ def read_form(form, bill: Bill | None = None) -> tuple[dict, list | None, str | 
     if start and end and end < start:
         return {}, None, "The statement can't end before it starts."
 
-    lines, error = read_lines(form)
+    lines, error = read_lines(form, values["currency"])
     if error:
         return {}, None, error
     return values, lines, None
 
 
-def read_lines(form) -> tuple[list | None, str | None]:
-    """item_name_1 / item_qty_1 / item_price_1, item_name_2 ... Rows without a name are skipped."""
-    if not any(key.startswith("item_name_") for key in form):
+# Money columns are DECIMAL(12,2): the biggest value SQL Server can store.
+MAX_BILL_AMOUNT = Decimal("9999999999.99")
+# Currencies with no cents (ISO 4217 "minor unit" 0): 45000.50 VND can't exist.
+WHOLE_NUMBER_CURRENCIES = {
+    "BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW",
+    "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF",
+}
+
+
+def read_money(raw, currency: str, what: str) -> tuple[Decimal | None, str | None]:
+    """An optional amount on a bill. Empty = not on the bill (None)."""
+    text = (raw or "").strip()
+    if not text:
+        return None, None
+    try:
+        amount = Decimal(text)
+    except InvalidOperation:
+        amount = None
+    if amount is None or not amount.is_finite() or amount < 0 or amount.as_tuple().exponent < -2:
+        return None, f"{what}: type a number like 9.99 (dot for decimals, at most 2)."
+    if amount > MAX_BILL_AMOUNT:
+        return None, f"{what} is too big (at most {MAX_BILL_AMOUNT:,})."
+    if currency in WHOLE_NUMBER_CURRENCIES and amount != amount.to_integral_value():
+        return None, f"{what}: {currency} has no decimals, so type a whole number."
+    return amount.quantize(Decimal("0.01")), None
+
+
+def read_lines(form, currency: str) -> tuple[list | None, str | None]:
+    """item_name_1 / item_qty_1 / item_price_1, item_name_2 ... Rows without a name are skipped.
+
+    Returns None when the form had no item table at all (editing then keeps the
+    saved items). The `item_rows` hidden field says "the table was there", so
+    removing every row really removes the items.
+    """
+    if "item_rows" not in form and not submitted_rows(form):
         return None, None
     lines = []
     for n in range(1, MAX_LINES + 1):
@@ -313,18 +362,37 @@ def read_lines(form) -> tuple[list | None, str | None]:
         if len(name) > 300:
             return None, f"Item {n}: the name can be up to 300 characters."
         qty_text = (form.get(f"item_qty_{n}") or "").strip()
-        price_text = (form.get(f"item_price_{n}") or "").strip()
         quantity = parse_quantity(qty_text) if qty_text else None
         if qty_text and quantity is None:
             return None, f"Item {n}: the quantity must be a number above 0, like 2 or 1.5."
-        price = parse_amount(price_text) if price_text else None
-        if price_text and price is None:
-            return None, f"Item {n}: type the price as a number like 9.99."
+        price, error = read_money(form.get(f"item_price_{n}"), currency, f"Item {n} price")
+        if error:
+            return None, error
         amount = None
         if price is not None:
             amount = (price * (quantity or 1)).quantize(Decimal("0.01"))
+            if amount > MAX_BILL_AMOUNT:  # 9999999 x 99999999.99 doesn't fit DECIMAL(12,2)
+                return None, f"Item {n}: quantity × price is too big (at most {MAX_BILL_AMOUNT:,})."
         lines.append({"description": name, "quantity": quantity, "unit_price": price, "amount": amount})
     return lines, None
+
+
+def money_checks(bill: Bill) -> list[str]:
+    """Numbers on the bill that don't add up. Shown so the user can look again;
+    the typed values are never changed. Discounts, tips or service charges can
+    explain a difference, so this is a "please check", not an error."""
+    problems = []
+    amounts = [line.amount for line in bill.lines]
+    lines_sum = sum(amounts, Decimal(0)) if amounts and None not in amounts else None
+    sub, tax, total = bill.subtotal, bill.tax, bill.total
+    if sub is not None and tax is not None and total is not None and sub + tax != total:
+        problems.append(f"Subtotal {sub} + tax {tax} = {sub + tax}, but the total says {total}.")
+    if lines_sum is not None and sub is not None and lines_sum != sub:
+        problems.append(f"The items add up to {lines_sum}, but the subtotal says {sub}.")
+    if lines_sum is not None and sub is None and total is not None:
+        if lines_sum != total and (tax is None or lines_sum + tax != total):
+            problems.append(f"The items add up to {lines_sum}, but the total says {total}.")
+    return problems
 
 
 def parse_quantity(text: str) -> Decimal | None:
@@ -464,6 +532,9 @@ def bill_json(bill: Bill) -> dict:
         "notes": bill.notes or None,
         "source": bill.source,  # "manual" = typed by the user, "upload" = typed from a file
         "review_status": "confirmed",  # only bills the user saved are exported
+        # Typed by a person: there is no OCR evidence to point to, so none is made up.
+        "evidence": None,
+        "checks": money_checks(bill),  # numbers that don't add up, for a second look
     }
 
 
@@ -490,7 +561,7 @@ def export(fmt: str):
         writer = csv.writer(out)
         writer.writerow(columns)
         for row in rows:
-            cells = [json.dumps(row[c], ensure_ascii=False) if c == "line_items" else row[c] for c in columns]
+            cells = [json.dumps(row[c], ensure_ascii=False) if isinstance(row[c], list) else row[c] for c in columns]
             writer.writerow([safe_cell(cell) for cell in cells])
         body, kind = "﻿" + out.getvalue(), "text/csv"  # ﻿: Excel then reads Vietnamese correctly
     elif fmt == "md":

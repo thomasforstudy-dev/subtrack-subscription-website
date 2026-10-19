@@ -273,7 +273,7 @@ Plain templates `bills/list.html` and `bills/form.html` for the UI lane to style
 | `GET/POST /bills/<id>/edit` | Edit. A field **not sent** keeps its saved value; sent but empty = cleared. No `item_name_*` fields at all = items kept |
 | `POST /bills/<id>/paid` | `paid=1` (paid today) or `paid=0` |
 | `POST /bills/<id>/archive`, `/restore` | Nothing is ever deleted |
-| `POST /bills/upload` | `multipart/form-data`, field **`file`**. PNG/JPG/WEBP/PDF/DOCX by content (not name), ≤ 10 MB, PDF ≤ 5 pages. Refused: old `.doc`, password-protected PDF/DOCX, zip bombs. Same file again = the saved one. Redirects to `/bills/new?document_id=…` (or that bill's edit page) with a flash |
+| `POST /bills/upload` | `multipart/form-data`, field **`file`**. PNG/JPG/WEBP/PDF/DOCX by content (not name), then really opened: photos fully decoded (≤ 12000 px a side, ≤ 30 MP, not animated), PDFs read by pypdf (1–5 pages, counted even when compressed). ≤ 10 MB. Refused with a flash: damaged/cut-off files, old `.doc`, password-protected PDF/DOCX, zip bombs. Same file again = the saved one. Redirects to `/bills/new?document_id=…` (or that bill's edit page) with a flash |
 | `GET /bills/files/<id>` | The owner's file only. Always a download, except photos with `?view=1` (for `<img>` next to the form). PDFs/DOCX are never shown inline |
 | `GET /bills/export.json` / `.csv` / `.md` | Saved (confirmed) bills. CSV is safe to open in Excel (formula cells are made plain text) |
 
@@ -288,11 +288,12 @@ Form fields (names match the demo where it had them):
 | `transaction_time` | Optional `HH:MM`. **Empty = the bill has no time** (never shown as 00:00) |
 | `timezone` | Optional IANA name (`Asia/Ho_Chi_Minh`) |
 | `currency` | Required, 3 letters |
-| `subtotal`, `tax`, `total` | Optional Decimal ≥ 0, dot for decimals, max 2 decimals |
+| `subtotal`, `tax`, `total` | Optional Decimal 0 – 9,999,999,999.99 (fits DECIMAL(12,2)), dot for decimals, max 2 decimals. **Whole numbers only** for currencies without cents (VND, JPY, KRW, …) |
 | `category` | `software`, `streaming`, `education`, `utilities`, `shopping`, `food`, `travel`, `other` |
 | `card_last4` | Optional, exactly 4 digits. A full card number is refused **and not shown back** |
 | `statement_start`, `statement_end`, `due_date` | Dates. `due_date` required for `card_bill`; end ≥ start |
-| `item_name_N`, `item_qty_N`, `item_price_N` | N = 1–30. Rows without a name are skipped. Qty > 0, ≤ 3 decimals; amount = qty × price |
+| `item_name_N`, `item_qty_N`, `item_price_N` | N = 1–30. Rows without a name are skipped. Qty > 0, ≤ 3 decimals; price like the totals; amount = qty × price must be ≤ 9,999,999,999.99 |
+| `item_rows` | Hidden, `1`: "this form has the item table". Send it so that removing every row really removes the items. Without it and without any `item_name_N`, editing keeps the saved items |
 | `notes` | ≤ 2000 |
 
 Export JSON (one object per bill): `id, document_id, kind, invoice_number, invoice_date,
@@ -301,7 +302,16 @@ merchant_branch, merchant_address, currency, subtotal, tax, total,
 line_items [{description, quantity, unit_price, amount}], category, card_last4,
 statement_start, statement_end, due_date, paid_at, notes, source ("manual"/"upload"),
 review_status ("confirmed")`. Money and quantities are strings, dates ISO, anything not on
-the bill is `null`. Per-field source page/text arrives with the OCR slice.
+the bill is `null`. `evidence` is `null` for typed-in bills (nothing is made up); per-field source page/text arrives with the OCR slice. `checks` lists numbers that don't add up (subtotal + tax ≠ total, items ≠ subtotal/total): shown for a second look, the typed values are **never changed**.
+
+**Item rows after an error (review B3):** the form is re-rendered with every row number
+the POST contained (up to 30), with the typed values. UI add/remove controls: add = a new
+row with the next free N (≤ 30); remove = empty that row's name (or drop its inputs) and
+keep sending `item_rows=1`. Row numbers don't need to be continuous.
+
+**Receipt vs card bill:** a `receipt` is one purchase (what was bought, when). A `card_bill`
+is a bank/card statement (statement window, due date, paid or not). Totals on `/bills/`
+count receipts only, so a card bill and the purchases on it are never counted twice.
 
 ## Admin
 
