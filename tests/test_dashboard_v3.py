@@ -92,3 +92,25 @@ def test_greeting_follows_the_users_time_zone(user, app, monkeypatch):
 def test_empty_dashboard_is_friendly(user):
     page = user.get("/dashboard").get_data(as_text=True)
     assert "Chưa có gói nào đang dùng" in page and "Thêm một gói để thấy biểu đồ" in page
+
+
+def test_spent_month_excludes_future_months_and_uses_transaction_date_first(user, app):
+    add_plan(user, "Monthly plan", "10.01", "USD", 2)
+    with app.test_request_context():
+        owner = User.query.one()
+        today = local_now(owner.timezone).date()
+        first, after = month_start(today), month_start(today, 1)
+        db.session.add_all([
+            Bill(user_id=owner.id, merchant="Current transaction", currency="USD", total=Decimal("0.10"),
+                 transaction_date=first),
+            Bill(user_id=owner.id, merchant="Invoice date fallback", currency="USD", total=Decimal("0.20"),
+                 invoice_date=first),
+            Bill(user_id=owner.id, merchant="Transaction takes priority", currency="USD", total=Decimal("7"),
+                 transaction_date=first - timedelta(days=1), invoice_date=first),
+            Bill(user_id=owner.id, merchant="Future month", currency="USD", total=Decimal("999"),
+                 transaction_date=after),
+            Bill(user_id=owner.id, merchant="Future invoice", currency="USD", total=Decimal("888"),
+                 invoice_date=after),
+        ])
+        db.session.commit()
+        assert overview(owner)["spent_month"] == Decimal("0.30")
