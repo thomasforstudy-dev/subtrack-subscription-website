@@ -36,3 +36,15 @@ def test_load_percentiles_are_measured_order_statistics():
     assert percentile([10, 1, 4, 2, 3], 0.5) == 3
     assert percentile([10, 1, 4, 2, 3], 0.95) == 10
     assert percentile([], 0.95) is None
+
+
+def test_repeated_web_checks_use_distinct_valid_generated_documents():
+    import io
+    from PIL import Image
+    first = sql_web_checks.synthetic_png("synthetic-first-run")
+    second = sql_web_checks.synthetic_png("synthetic-second-run")
+    assert first != second
+    for data in [first, second]:
+        with Image.open(io.BytesIO(data)) as image:
+            image.load()
+            assert image.format == "PNG" and image.size == (8, 8)

@@ -95,6 +95,16 @@ def follow_flash(client, response, text):
     require(text in page.text, "Expected validation message: " + text)
 
 
+def synthetic_png(marker):
+    """Keep repeated acceptance runs distinct without changing old documents."""
+    from PIL import Image, PngImagePlugin
+    metadata = PngImagePlugin.PngInfo()
+    metadata.add_text("Synthetic acceptance run", marker)
+    buffer = io.BytesIO()
+    Image.new("RGB", (8, 8), "white").save(buffer, "PNG", pnginfo=metadata)
+    return buffer.getvalue()
+
+
 def check_website():
     identity = health()
     details = access_details()
@@ -165,11 +175,8 @@ def check_website():
     require(any(row["id"] == bill_id for row in exports(a)), "Restored bill missing")
     checks.append("bill create/edit/lines/overflow rollback/archive/restore/CSRF/ownership")
 
-    from PIL import Image
     from pypdf import PdfWriter
-    buffer = io.BytesIO()
-    Image.new("RGB", (8, 8), "white").save(buffer, "PNG")
-    png = buffer.getvalue()
+    png = synthetic_png(marker)
     upload = a.post("/bills/upload", files={"file": ("synthetic.png", png, "image/png")})
     require(upload.status_code == 302, "Valid image upload failed")
     doc_id = int(parse_qs(urlsplit(upload.headers["Location"]).query)["document_id"][0])

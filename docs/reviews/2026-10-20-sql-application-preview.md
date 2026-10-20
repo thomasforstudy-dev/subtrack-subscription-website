@@ -169,6 +169,12 @@ private uploads before an authorised release. No SQL migration is automatic here
 
 ## Remaining limitations
 
+- Repeating the original web harness reused identical PNG bytes; the app's correct
+  duplicate-file redirect differed from the harness expectation. Generated files
+  now include a unique run marker, preserving prior files and checking fresh uploads.
+- A restricted runner attempt at 1b50dc6 had 415 passes and five local HTTP link
+  preview failures. It is not a passing acceptance result; see the final local
+  report for the authorised loopback rerun and actual results.
 - Investigate the intermittent SQL low-memory signal before larger/longer load.
 - No production release or hosted CI result is claimed for this new branch.
 - Real email, cloud AI, OAuth, scheduler delivery, microphones/speech services
