@@ -645,3 +645,113 @@ def test_a_got_ocr_server_error_fails_the_job_honestly(user, app, got):
     read(user, doc_id)
     assert process(app)["failed"] == 1  # through ocr_adapter(), the real configured path
     assert only(app, DocumentJob).error_code == "ocr-bad-reply"
+
+# ---------- Codex review 7ddcd8b: R1-R5 ---------------------------------------
+
+@pytest.mark.parametrize("number", ["4111 1111 1111 1234", "4111-1111-1111-1234", "4111111111111234"])
+def test_r1_ocr_text_is_masked_before_it_is_saved_or_shown(user, app, number):
+    doc_id = uploaded(app, user, photo(), "card.png")
+    read(user, doc_id)
+    assert process(app, ocr=FakeOcr({1: f"My Bank\r\nCard {number}\r\nTotal: 10.00 USD"}))["succeeded"] == 1
+    draft = only(app, BillDraft)
+    with app.app_context():
+        page = DocumentPage.query.one()
+        stored = [page.text, draft.values_json, draft.extracted_json] + [r.values_json for r in BillDraftRevision.query]
+    assert "\r" not in page.text and page.text.endswith("1234\nTotal: 10.00 USD")
+    assert all("4111" not in text for text in stored)
+    card = json.loads(draft.values_json)["card_last4"]
+    ev = card["evidence"][0]
+    assert card["value"] == "1234" and page.text[ev["start"]:ev["end"]] == "1234"  # positions in the masked text
+    assert "4111" not in user.get(f"/bills/drafts/{draft.id}").get_data(as_text=True)
+    user.post(f"/bills/drafts/{draft.id}", data={"revision": "1", "action": "accept", "merchant": "My Bank"})
+    assert "4111" not in user.get("/bills/export.json").get_data(as_text=True)
+
+
+@pytest.mark.parametrize("typed", ["4111 1111 1111 1234", "4111111111111234", "12345", "12a4"])
+def test_r2_a_draft_never_saves_more_than_the_last_4_digits(user, app, typed):
+    draft = ready_draft(app, user)
+    for action in ("save", "accept"):
+        page = user.post(f"/bills/drafts/{draft.id}", data={"revision": "1", "action": action,
+                                                           "card_last4": typed}).get_data(as_text=True)
+        assert "last 4 digits" in page
+        assert f'value="{typed}"' not in page and "4111" not in page  # not shown back
+    after = only(app, BillDraft)
+    assert (after.status, after.revision, after.values_json) == ("draft", 1, draft.values_json)
+    with app.app_context():
+        assert BillDraftRevision.query.count() == 1 and Bill.query.count() == 0
+
+
+def test_r2_four_digits_are_fine(user, app):
+    draft = ready_draft(app, user)
+    user.post(f"/bills/drafts/{draft.id}", data={"revision": "1", "action": "save", "card_last4": "1234"})
+    assert json.loads(only(app, BillDraft).values_json)["card_last4"]["value"] == "1234"
+    assert 'maxlength="4"' in user.get(f"/bills/drafts/{draft.id}").get_data(as_text=True)
+
+
+def test_r3_editing_a_bill_drops_evidence_for_what_changed(user, app):
+    import csv as csv_module
+
+    draft = ready_draft(app, user)
+    user.post(f"/bills/drafts/{draft.id}", data={"revision": "1", "action": "accept", "category": "food"})
+    bill_id = only(app, Bill).id
+    user.post(f"/bills/{bill_id}/edit", data={"total": "100000", "invoice_date": "2026-10-19"})
+    [row] = json.loads(user.get("/bills/export.json").data)
+    assert row["total"] == "100000.00"
+    assert "total" not in row["evidence"] and "invoice_date" not in row["evidence"]
+    assert row["evidence"]["merchant"][0]["text"] == "HIGHLANDS COFFEE"  # unchanged: still backed
+    assert row["evidence"]["subtotal"][0]["text"] == "90.000"
+    text = user.get("/bills/export.csv").get_data(as_text=True).lstrip("﻿")
+    [csv_row] = list(csv_module.DictReader(io.StringIO(text)))
+    assert "total" not in json.loads(csv_row["evidence"]) and "merchant" in json.loads(csv_row["evidence"])
+    # The draft and its history keep what the document said.
+    assert json.loads(only(app, BillDraft).extracted_json)["fields"]["total"]["value"] == "99000.00"
+
+
+@pytest.mark.parametrize("line", [
+    "Total: -12.50 USD", "Total: −12.50 USD", "Total: USD (12.50)", "Total: -$12.50",
+    "Total: - 12.50", "Total: 1,23,456 VND", "Total: 12.5.0",
+])
+def test_r4_refunds_and_broken_amounts_stay_empty(line):
+    pages = [{"page": 1, "text": line}]
+    assert check_extraction(extract(pages), pages)["total"]["value"] is None
+
+
+@pytest.mark.parametrize("line,value", [
+    ("Total: 12.50 USD", "12.50"), ("Total: $12.50", "12.50"), ("Tổng cộng: 1.234.567 đ", "1234567.00"),
+    ("Total: 99 000 VND", "99000.00"), ("VAT 10%: 9.000", None),
+])
+def test_r4_ordinary_amounts_still_work(line, value):
+    pages = [{"page": 1, "text": line}]
+    fields = check_extraction(extract(pages), pages)
+    name = "tax" if line.startswith("VAT") else "total"
+    assert fields[name]["value"] == (value or "9000.00")
+
+
+def evidence(text, token):
+    start = text.index(token)
+    return [{"page": 1, "start": start, "end": start + len(token)}]
+
+
+@pytest.mark.parametrize("name,good,bad,text,token", [
+    ("total", "99.00", "1.00", "Total: 99.00 USD", "99.00"),
+    ("invoice_date", "2026-10-18", "2026-01-01", "Date: 18/10/2026", "18/10/2026"),
+    ("transaction_time", "14:30", "09:00", "Time: 14:30", "14:30"),
+    ("currency", "USD", "EUR", "Total: 5 USD", "USD"),
+    ("card_last4", "1234", "9999", "Card **** 1234", "1234"),
+    ("merchant", "Highlands", "Evil Corp", "Seller: Highlands", "Highlands"),
+    ("kind", "card_bill", "receipt", "VPBank statement", "statement"),
+])
+def test_r5_evidence_must_really_show_the_value(name, good, bad, text, token):
+    pages = [{"page": 1, "text": text}]
+    ok = check_extraction({"fields": {name: {"value": good, "evidence": evidence(text, token)}}}, pages)
+    assert ok[name]["value"] == good
+    with pytest.raises(ExtractionError, match="doesn't show"):
+        check_extraction({"fields": {name: {"value": bad, "evidence": evidence(text, token)}}}, pages)
+
+
+def test_r5_a_contradicting_answer_makes_no_draft(user, app, monkeypatch):
+    doc_id = uploaded(app, user, docx(["Total: 99.00 USD"]), "short.docx")
+    read(user, doc_id)
+    fake = {"fields": {"total": {"value": "1.00", "evidence": [{"page": 1, "start": 7, "end": 12}]}}}
+    monkeypatch.setattr(bill_jobs, "extract", lambda pages: fake)
+    assert process(app)["failed"] == 1 and only(app, DocumentJob).error_code == "bad-extraction"
