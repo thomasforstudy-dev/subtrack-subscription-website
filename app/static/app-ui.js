@@ -654,6 +654,21 @@
         });
     }
 
+    // --- 10. Honest Offline / Online Status Banner ---
+    function initOfflineStatus() {
+        var banner = document.getElementById("offline-banner");
+        if (!banner) return;
+
+        function updateOnlineStatus() {
+            var offline = !navigator.onLine;
+            banner.hidden = !offline;
+        }
+
+        window.addEventListener("online", updateOnlineStatus);
+        window.addEventListener("offline", updateOnlineStatus);
+        updateOnlineStatus();
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         initPasswordToggles();
         initDialogs();
@@ -666,5 +681,6 @@
         initBillsSection();
         initSettingsControls();
         initLanguageToggle();
+        initOfflineStatus();
     });
 })();

@@ -122,14 +122,41 @@
       </div>
       <ul class="mini-list">
         {% for doc in waiting %}
-          <li>
-            <div>
-              <strong>{{ doc.original_name }}</strong>
-              <span class="muted">({{ doc.kind }}{% if doc.page_count %}, {{ doc.page_count }} page{{ 's' if doc.page_count != 1 }}{% endif %})</span>
+          {% set job = reading.get(doc.id) if (reading is defined and reading) else None %}
+          {% set doc_status = job.status if job else (doc.status or 'uploaded') %}
+          <li class="waiting-doc-row" data-waiting-doc="{{ doc.id }}" data-doc-state="{{ doc_status }}">
+            <div class="waiting-doc-info">
+              <div class="bill-merchant-row">
+                <strong>{{ doc.original_name }}</strong>
+                <span class="muted">({{ doc.kind }}{% if doc.page_count %}, {{ doc.page_count }} page{{ 's' if doc.page_count != 1 }}{% endif %})</span>
+                {% if doc_status == 'queued' %}
+                  <span class="pill sun-label" data-doc-status="queued" data-vi="⏳ Đang xếp hàng chờ đọc (Queued)" data-en="⏳ Queued for reading">⏳ Queued for reading</span>
+                {% elif doc_status in ('running', 'processing') %}
+                  <span class="pill sun-label" data-doc-status="processing" data-vi="⚙ Đang xử lý đọc tệp (Processing…)" data-en="⚙ Processing document…">⚙ Processing document…</span>
+                {% elif doc_status in ('succeeded', 'needs_review') %}
+                  <span class="pill mint" data-doc-status="needs_review" data-vi="✓ Đã có bản nháp chờ kiểm tra (Draft ready)" data-en="✓ Draft ready to review">✓ Draft ready to review</span>
+                {% elif doc_status == 'failed' %}
+                  <span class="pill hot-label" data-doc-status="failed" data-vi="⚠ Không đọc tự động được ({{ job.error_code if job and job.error_code else 'failed' }}) — Nhập tay sẵn sàng" data-en="⚠ Extraction failed ({{ job.error_code if job and job.error_code else 'failed' }}) — Manual entry ready">⚠ Extraction failed ({{ job.error_code if job and job.error_code else 'failed' }}) — Manual entry ready</span>
+                {% elif doc.kind in ('png', 'jpeg', 'webp') %}
+                  <span class="pill sun-label" data-doc-status="unavailable" data-vi="🔍 Đã tải lên · Cần OCR hoặc nhập đối chiếu thủ công" data-en="🔍 Uploaded · Needs OCR or manual side-by-side entry">🔍 Uploaded · Needs OCR or manual side-by-side entry</span>
+                {% else %}
+                  <span class="pill" data-doc-status="uploaded" data-vi="📄 Đã tải lên · Sẵn sàng đọc hoặc nhập đối chiếu" data-en="📄 Uploaded · Ready for review">📄 Uploaded · Ready for review</span>
+                {% endif %}
+              </div>
             </div>
             <div class="head-actions">
-              <a class="button secondary btn-sm" href="{{ url_for('bills.download', document_id=doc.id) }}" data-vi="⬇ Tải tệp gốc" data-en="Download file">⬇ Tải tệp gốc</a>
-              <a class="button btn-sm" href="{{ url_for('bills.create', document_id=doc.id) }}" data-vi="✏️ Nhập hóa đơn từ tệp này" data-en="type it in">type it in</a>
+              <a class="button secondary btn-sm" href="{{ url_for('bills.download', document_id=doc.id) }}" aria-label="Download {{ doc.original_name }}" data-vi="⬇ Tải tệp gốc" data-en="Download file">⬇ Tải tệp gốc</a>
+              <a class="button btn-sm" href="{{ url_for('bills.create', document_id=doc.id) }}" aria-label="Type bill in from {{ doc.original_name }}" data-vi="✏️ Nhập hóa đơn từ tệp này" data-en="type it in">type it in</a>
+              {% if reading is defined %}
+                {% if job %}
+                  <a class="button secondary btn-sm" href="{{ url_for('bill_review.job_page', job_id=job.id) }}" data-vi="Xem tiến trình đọc" data-en="Reading status">Xem tiến trình đọc</a>
+                {% else %}
+                  <form method="post" action="{{ url_for('bill_review.read_document', document_id=doc.id) }}" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button class="button secondary btn-sm" type="submit" data-vi="Đọc giúp tôi" data-en="Read it for me">Đọc giúp tôi</button>
+                  </form>
+                {% endif %}
+              {% endif %}
             </div>
           </li>
         {% endfor %}
@@ -229,14 +256,15 @@
 
     <div class="table-scroll">
       <table class="card">
+        <caption class="sr-only">Danh sách hóa đơn và sao kê thẻ đã lưu (Saved bills and credit card statements)</caption>
         <thead>
           <tr>
-            <th data-vi="Ngày" data-en="Date">Date</th>
-            <th data-vi="Đơn vị bán / Thẻ" data-en="Shop / card">Shop / card</th>
-            <th data-vi="Tổng tiền" data-en="Total">Total</th>
-            <th data-vi="Danh mục" data-en="Category">Category</th>
-            <th data-vi="Nguồn" data-en="Source">Source</th>
-            <th data-vi="Thao tác" data-en="Actions">Actions</th>
+            <th scope="col" data-vi="Ngày" data-en="Date">Date</th>
+            <th scope="col" data-vi="Đơn vị bán / Thẻ" data-en="Shop / card">Shop / card</th>
+            <th scope="col" data-vi="Tổng tiền" data-en="Total">Total</th>
+            <th scope="col" data-vi="Danh mục" data-en="Category">Category</th>
+            <th scope="col" data-vi="Nguồn" data-en="Source">Source</th>
+            <th scope="col" data-vi="Thao tác" data-en="Actions">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -246,6 +274,8 @@
                 <strong>{{ bill.transaction_date or bill.invoice_date or bill.due_date or '—' }}</strong>
                 {% if bill.transaction_time %}
                   <small class="block-small muted">{{ bill.transaction_time.strftime('%H:%M') }}{% if bill.timezone %} ({{ bill.timezone }}){% endif %}</small>
+                {% else %}
+                  <small class="block-small muted" data-vi="Giờ: trống (null)" data-en="Time: none (null)">Time: none (null)</small>
                 {% endif %}
               </td>
               <td>
@@ -274,7 +304,7 @@
                 {% endif %}
               </td>
               <td class="num-cell">
-                <strong>{{ bill.total if bill.total is not none else '—' }} {{ bill.currency }}</strong>
+                <strong>{{ bill.total if bill.total is not none else '—' }} <span class="currency-code">{{ bill.currency }}</span></strong>
               </td>
               <td><span class="pill">{{ bill.category }}</span></td>
               <td>
@@ -285,20 +315,20 @@
                 {% endif %}
               </td>
               <td class="actions-cell">
-                <a href="{{ url_for('bills.edit', bill_id=bill.id) }}" data-vi="Sửa (Edit)" data-en="Edit">Edit</a>
+                <a href="{{ url_for('bills.edit', bill_id=bill.id) }}" aria-label="Edit {{ bill.merchant }}" data-vi="Sửa (Edit)" data-en="Edit">Edit</a>
                 {% if bill.document_id %}
-                  · <a href="{{ url_for('bills.download', document_id=bill.document_id) }}" data-vi="Tệp gốc (File)" data-en="File">File</a>
+                  · <a href="{{ url_for('bills.download', document_id=bill.document_id) }}" aria-label="Download file for {{ bill.merchant }}" data-vi="Tệp gốc (File)" data-en="File">File</a>
                 {% endif %}
                 {% if bill.kind == 'card_bill' and bill.paid_at %}
                   <form method="post" action="{{ url_for('bills.mark_paid', bill_id=bill.id) }}" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <input type="hidden" name="paid" value="0" />
-                    <button class="button btn-sm secondary" type="submit" data-vi="Hoàn tác đã trả" data-en="Mark unpaid">Mark unpaid</button>
+                    <button class="button btn-sm secondary" type="submit" aria-label="Mark {{ bill.merchant }} unpaid" data-vi="Hoàn tác đã trả" data-en="Mark unpaid">Mark unpaid</button>
                   </form>
                 {% endif %}
                 <form method="post" action="{{ url_for('bills.restore' if status == 'archived' else 'bills.archive', bill_id=bill.id) }}" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                  <button class="button btn-sm secondary" type="submit">{{ 'Restore' if status == 'archived' else 'Archive' }}</button>
+                  <button class="button btn-sm secondary" type="submit" aria-label="{{ 'Restore' if status == 'archived' else 'Archive' }} {{ bill.merchant }}">{{ 'Restore' if status == 'archived' else 'Archive' }}</button>
                 </form>
               </td>
             </tr>

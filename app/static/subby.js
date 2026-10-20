@@ -187,11 +187,31 @@
     }
   }
 
+  let cachedVoices = [];
+  if ("speechSynthesis" in window && typeof window.speechSynthesis.getVoices === "function") {
+    try {
+      cachedVoices = window.speechSynthesis.getVoices() || [];
+      if ("onvoiceschanged" in window.speechSynthesis) {
+        window.speechSynthesis.addEventListener("voiceschanged", () => {
+          try {
+            cachedVoices = window.speechSynthesis.getVoices() || [];
+          } catch (e) {
+            // ignore
+          }
+        });
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   function pickPreferredVoice(langCode) {
     if (!("speechSynthesis" in window) || typeof window.speechSynthesis.getVoices !== "function") {
       return null;
     }
-    const voices = window.speechSynthesis.getVoices() || [];
+    const voices = (window.speechSynthesis.getVoices() || []).length
+      ? window.speechSynthesis.getVoices()
+      : cachedVoices;
     const prefix = langCode.slice(0, 2).toLowerCase();
     return (
       voices.find((v) => v.lang && v.lang.toLowerCase() === langCode.toLowerCase()) ||
@@ -208,10 +228,18 @@
     }
     stopSpeaking();
     const utter = new SpeechSynthesisUtterance(text);
-    const isVi = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
-    utter.lang = isVi ? "vi-VN" : "en-US";
+    const uiLang = String(
+      document.documentElement.getAttribute("data-ui-lang") || document.documentElement.lang || "vi"
+    ).toLowerCase();
+    const hasViChars = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
+    const hasEnWords = /\b(the|your|subscription|renewal|bill|remind|please|days|month|year|next)\b/i.test(text);
+    utter.lang = hasViChars ? "vi-VN" : hasEnWords || uiLang.startsWith("en") ? "en-US" : "vi-VN";
     const matchedVoice = pickPreferredVoice(utter.lang);
     if (matchedVoice) utter.voice = matchedVoice;
+    const voiceSourceNote =
+      matchedVoice && matchedVoice.localService === false
+        ? "🔊 Đang đọc (" + utter.lang + " · online voice)"
+        : "🔊 Đang đọc (" + utter.lang + ")";
 
     if (ttsStopBtn) ttsStopBtn.hidden = false;
     if (triggerBtn) {
@@ -221,6 +249,10 @@
       triggerBtn.setAttribute("aria-pressed", "true");
     }
     setVoiceStageState("speaking");
+    if (voiceSpeakPill) {
+      voiceSpeakPill.textContent = voiceSourceNote;
+      voiceSpeakPill.classList.add("is-speaking");
+    }
 
     utter.onend = () => {
       if (ttsStopBtn) ttsStopBtn.hidden = true;
@@ -591,6 +623,7 @@
   function ask(question) {
     question = (question || "").trim();
     if (!question) return;
+    stopSpeaking();
     if (voiceTranscriptEl) {
       voiceTranscriptEl.textContent = "“" + question + "”";
     }
@@ -611,6 +644,7 @@
     }
     if (!open) {
       stopVoiceRecognition(true);
+      stopSpeaking();
     }
   }
 
@@ -831,7 +865,12 @@
           ? "Could not recognize speech (" + code + "). You can try again or type your question below."
           : "Không nhận diện được giọng nói (" + code + "). Bạn có thể thử lại hoặc nhập văn bản.";
       }
+      const preservedTypedDraft = draftEdited ? input.value : "";
       stopVoiceRecognition(true);
+      if (preservedTypedDraft) {
+        input.value = preservedTypedDraft;
+        draftEdited = true;
+      }
       setVoiceStageState("idle", "⚠ " + reason);
       say("🎤 " + reason, "bot", { badge: isEn ? "Microphone status" : "Trạng thái Micro" });
       input.focus();
@@ -926,6 +965,13 @@
   window.addEventListener("pagehide", () => {
     stopVoiceRecognition(true);
     stopSpeaking();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopVoiceRecognition(true);
+      stopSpeaking();
+    }
   });
 
   // Keep chat panel comfortable when mobile virtual keyboard opens

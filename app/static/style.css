@@ -2760,6 +2760,13 @@ dialog::backdrop {
   border-color: var(--line);
 }
 
+.status-banner.offline-banner {
+  background: #fef3c7;
+  border-color: #fde68a;
+  border-left: 4px solid #f59e0b;
+  margin-top: 0.5rem;
+}
+
 .review-grid {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
