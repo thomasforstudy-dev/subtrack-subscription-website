@@ -28,6 +28,18 @@
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   {%- elif name == "code" -%}
     <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
+  {%- elif name == "sun" -%}
+    <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+  {%- elif name == "moon" -%}
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+  {%- elif name == "grid" -%}
+    <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>
+  {%- elif name == "upload" -%}
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/>
+  {%- elif name == "help" -%}
+    <circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>
+  {%- elif name == "arrow-up-right" -%}
+    <path d="M7 17L17 7M7 7h10v10"/>
   {%- endif -%}
 </svg>
 {%- endmacro %}

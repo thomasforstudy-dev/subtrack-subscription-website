@@ -59,9 +59,13 @@ LABELS = [  # checked in this order; the first label that fits a line wins
     ("merchant", label(r"seller|merchant|store|shop|vendor|đơn\s*vị\s*bán(?:\s*hàng)?|don\s*vi\s*ban(?:\s*hang)?|người\s*bán|nguoi\s*ban|cửa\s*hàng|cua\s*hang")),
 ]
 
+# A whole number token only: nothing number-like right before or after it, so
+# "1,23,456" (broken grouping) gives no amount instead of a "1,23" piece.
 AMOUNT = re.compile(
-    r"(?P<num>\d{1,3}(?:[.,\s]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!\s*%)(?![\d/])"
+    r"(?<![\d.,])(?P<num>\d{1,3}(?:[.,\s]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?![.,]?\d|/)(?!\s*%)"
 )
+# "-12.50", "−12.50" (Unicode minus), "(12.50)", "-$12.50": a refund/credit.
+NEGATIVE_BEFORE = re.compile(r"[-−(]\s*[$€£₫]?\s*$")
 CURRENCY = re.compile(r"(?<![A-Za-z])(usd|vnd|vnđ|eur|gbp|jpy|sgd|đồng|dong)(?![A-Za-z])|[$€£₫]|(?<=\d)\s?đ(?![A-Za-z])", re.I)
 CURRENCY_CODES = {"$": "USD", "€": "EUR", "£": "GBP", "₫": "VND", "đ": "VND", "vnđ": "VND", "đồng": "VND",
                   "dong": "VND", "usd": "USD", "vnd": "VND", "eur": "EUR", "gbp": "GBP", "jpy": "JPY", "sgd": "SGD"}
@@ -190,6 +194,10 @@ def read_line(fields: dict, page: int, start: int, line: str) -> None:
         elif name in MONEY_FIELDS:
             amounts = list(AMOUNT.finditer(rest))
             for hit in reversed(amounts):  # the amount is usually the last number on the line
+                if NEGATIVE_BEFORE.search(rest[:hit.start()]):
+                    # Bills hold amounts >= 0. Dropping the sign would turn a refund
+                    # into spending, so leave the field empty instead.
+                    break
                 value = to_amount(hit.group("num"))
                 if value and name not in fields:
                     fields[name] = found(value, [span(page, at + hit.start("num"), at + hit.end("num"))])
@@ -251,8 +259,34 @@ def check_extraction(answer: object, pages: list[dict]) -> dict:
             check_value(name, value)
             if not evidence:
                 raise ExtractionError(f"{name}: a value with no evidence in the document.")
-        result[name] = {"value": value, "method": method[:20], "evidence": [check_span(name, ev, texts) for ev in evidence]}
+        spans = [check_span(name, ev, texts) for ev in evidence]
+        if value is not None and not any(shows(name, value, ev["text"]) for ev in spans):
+            # A real span next to an invented value (total "1.00" citing "99.00").
+            raise ExtractionError(f"{name}: the evidence doesn't show this value.")
+        result[name] = {"value": value, "method": method[:20], "evidence": spans}
     return result
+
+
+def shows(name: str, value: str, text: str) -> bool:
+    """Does this piece of document text really say this value? Each kind of field
+    is read back from the text the same way the rules read it."""
+    text = text.strip()
+    if name in MONEY_FIELDS:
+        return to_amount(text) == value
+    if name in DATE_FIELDS:
+        hit = DATE.fullmatch(text)
+        return bool(hit) and to_date(hit) == value
+    if name == "transaction_time":
+        hit = TIME.fullmatch(text)
+        return bool(hit) and f"{int(hit['h']):02d}:{hit['mi']}" == value
+    if name == "currency":
+        return CURRENCY_CODES.get(text.lower()) == value or text.upper() == value
+    if name == "card_last4":
+        return text == value
+    if name == "kind":
+        # The one allowed translation: a statement word means "card bill".
+        return value == "card_bill" and STATEMENT_WORDS.fullmatch(text) is not None
+    return " ".join(text.split()) == " ".join(value.split())  # merchant, invoice number, ...
 
 
 def check_span(name: str, ev: object, texts: dict[int, str]) -> dict:

@@ -9,6 +9,7 @@ Every query filters by the logged-in user. Contract: docs/CONTRACT.md -> Reading
 """
 
 import json
+import re
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -99,6 +100,13 @@ def draft_page(draft_id: int):
         if request.form.get("revision") != str(draft.revision):
             flash("This draft changed in another tab. Here is the newest version; please check it again.")
             return redirect(url_for("bill_review.draft_page", draft_id=draft.id))
+        if not card_ok(request.form):
+            # Checked before saving anything: a full card number must never be stored
+            # in a draft or its history, nor shown back on the page.
+            flash("Card: type only the last 4 digits. Never the full card number.")
+            typed = request.form.to_dict()
+            typed["card_last4"] = ""
+            return show(draft, typed=typed)
         if request.form.get("action") == "accept":
             return accept(draft)
         return save(draft)
@@ -117,6 +125,13 @@ def show(draft: BillDraft, typed=None):
         pages=pages, revisions=revisions, fields=DRAFT_FIELDS, labels=LABELS, typed=typed or {},
         bill=db.session.get(Bill, draft.bill_id) if draft.bill_id else None,
     )
+
+
+def card_ok(form) -> bool:
+    """card_last4 is empty or exactly 4 digits. Not "fixed" by cutting it down:
+    the owner retypes it, so we never change what they meant."""
+    typed = (form.get("card_last4") or "").strip()
+    return not typed or re.fullmatch(r"\d{4}", typed) is not None
 
 
 def changes_from(form, values: dict) -> tuple[dict, list[str]]:

@@ -26,6 +26,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app import db
 from app.doc_text import TextError, read_text_bounded
+from app.doc_text import page as text_page
 from app.documents import UploadError, file_path
 from app.extract_fields import EXTRACTOR, ExtractionError, check_extraction, extract
 from app.models import BillDraft, BillDraftRevision, DocumentJob, DocumentPage, utcnow
@@ -196,8 +197,13 @@ def read_pages(read: list[dict], data: bytes, kind: str, ocr) -> tuple[list[dict
             if reader is None:
                 raise OcrUnavailable("not-set-up")
             result = reader.read(data, kind, missing)
-            saved += [{"page": p.number, "text": p.text, "truncated": p.truncated, "source": "ocr",
-                       "engine": result.engine} for p in result.pages]
+            for p in result.pages:
+                # The same clean-up as text read from files: card numbers masked to the
+                # last 4 digits, same line endings. Done BEFORE searching and saving, so
+                # evidence positions point into the masked text and no full number is kept.
+                clean = text_page(p.number, p.text)
+                saved.append({"page": p.number, "text": clean["text"], "truncated": p.truncated or clean["truncated"],
+                              "source": "ocr", "engine": result.engine})
         except OcrUnavailable:
             if not saved:
                 raise

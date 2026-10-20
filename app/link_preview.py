@@ -30,7 +30,7 @@ MAX_BYTES = 300_000          # read at most ~300 KB of the page
 TOTAL_SECONDS = 6            # give up after this long
 TIMEOUT = urllib3.Timeout(connect=3, read=4)
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; SubTrackLinkPreview/1.0)",
+    "User-Agent": "Mozilla/5.0 (compatible; AllOutFreeLinkPreview/1.0)",
     "Accept": "text/html,application/xhtml+xml",
     "Accept-Language": "en;q=0.9,vi;q=0.8",
 }

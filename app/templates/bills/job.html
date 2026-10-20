@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Reading your bill — SubTrack{% endblock %}
+{% block title %}Reading your bill — AllOutFree{% endblock %}
 {% block content %}
   {# Styled to DESIGN.md v2/v3 (docs/CONTRACT.md → Reading bills).
      Preserves all backend routes, CSRF tokens, and status messages. #}
@@ -66,10 +66,10 @@
     <p class="muted small-text compact-top">Tries so far: {{ job.attempts }}</p>
   </div>
 
-  <div class="card compact-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+  <div class="card compact-card manual-entry-row">
     <div>
       <strong data-vi="Bạn muốn tự nhập số liệu?" data-en="Prefer entering manually?">Bạn muốn tự nhập số liệu?</strong>
-      <p class="muted small-text" style="margin:0.2rem 0 0" data-vi="Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết." data-en="Open side-by-side view to enter fields yourself.">
+      <p class="muted small-text compact-top-tight" data-vi="Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết." data-en="Open side-by-side view to enter fields yourself.">
         Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết.
       </p>
     </div>

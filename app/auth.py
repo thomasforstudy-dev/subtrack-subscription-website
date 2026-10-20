@@ -110,9 +110,9 @@ def send_verification(user: User) -> bool:
     link = external_url("auth.verify_email", token=raw)
     return _send(Email(
         to=user.email,
-        subject="Confirm your SubTrack email",
+        subject="Confirm your AllOutFree email",
         text=(
-            f"Hi {user.username},\n\nPlease confirm your email so SubTrack can send "
+            f"Hi {user.username},\n\nPlease confirm your email so AllOutFree can send "
             f"your renewal reminders:\n\n{link}\n\nThe link works for 24 hours. "
             "If you didn't sign up, you can ignore this email."
         ),
@@ -125,10 +125,10 @@ def send_reset(user: User) -> bool:
     link = external_url("auth.reset_password", token=raw)
     return _send(Email(
         to=user.email,
-        subject="Reset your SubTrack password",
+        subject="Reset your AllOutFree password",
         text=(
             f"Hi {user.username},\n\nSomeone (hopefully you) asked to reset your "
-            f"SubTrack password. Choose a new one here:\n\n{link}\n\n"
+            f"AllOutFree password. Choose a new one here:\n\n{link}\n\n"
             f"The link works for {RESET_MINUTES} minutes and only once. "
             "If it wasn't you, ignore this email: your password stays the same."
         ),

@@ -1,298 +1,230 @@
 {% extends "base.html" %}
-{% block title %}Tổng quan (Dashboard) — SubTrack{% endblock %}
+{% from "_icons.html" import icon %}
+{% from "_mascot.html" import mascot %}
+{% block title %}Tổng quan — AllOutFree{% endblock %}
+{% block body_class %}dashboard-page{% endblock %}
 {% block content %}
-  <div class="v14-dashboard" id="dashboard-blocks" data-state="real">
-    {# 1. Greeting Section (Matching V14) #}
-    <div class="v14-greeting">
+  {# Dashboard v3, after the owner's "Dashboard V14" video (DESIGN.md §10).
+     Every number is the user's own data (app/dashboard.py → overview). Motion:
+     static/motion.js (numbers count up, bars grow); off with "reduce motion". #}
+  {% set c = currency %}
+  {% set kind_labels = {"receipt": ("Biên lai", "Receipt"), "card_bill": ("Sao kê thẻ", "Card bill"),
+                        "renewal": ("Gia hạn", "Renewal"), "new_plan": ("Gói mới", "New plan")} %}
+  {% set status_labels = {"saved": ("Đã lưu", "Saved"), "paid": ("Đã trả", "Paid"), "unpaid": ("Chưa trả", "Unpaid"),
+                          "expected": ("Dự kiến", "Expected"), "skipped": ("Không thu", "Not charged"),
+                          "active": ("Đang dùng", "Active"), "archived": ("Lưu trữ", "Archived")} %}
+  {% set greet = {"morning": ("Chào buổi sáng,", "Good morning,"), "afternoon": ("Chào buổi chiều,", "Good afternoon,"),
+                  "evening": ("Chào buổi tối,", "Good evening,")}[greeting] %}
+
+  <div class="dash" data-dash>
+    <header class="dash-hello">
       <div>
-        <h1 data-vi="Chào buổi sáng, {{ current_user.username or current_user.email.split('@')[0] }}" data-en="Good morning, {{ current_user.username or current_user.email.split('@')[0] }}">
-          Chào buổi sáng, {{ current_user.username or current_user.email.split('@')[0] }}
+        <h1 class="dash-greeting">
+          <span class="reveal" style="--i: 0" data-vi="{{ greet[0] }}" data-en="{{ greet[1] }}">{{ greet[0] }}</span>
+          <span class="reveal dash-name" style="--i: 1">{{ current_user.username or current_user.email }}</span>
         </h1>
-        <p data-vi="Theo dõi gói đăng ký, kiểm soát chi tiêu hàng tháng và quản lý gia hạn." data-en="Stay on top of your renewals, monitor monthly spending, and track status.">
-          Theo dõi gói đăng ký, kiểm soát chi tiêu hàng tháng và quản lý gia hạn.
-        </p>
+        <p class="muted" data-vi="Những gì sắp gia hạn, những gì bạn đã chi, và việc cần bạn xem lại." data-en="What renews soon, what you've spent, and what needs a look.">Những gì sắp gia hạn, những gì bạn đã chi, và việc cần bạn xem lại.</p>
       </div>
-      <div class="v14-greeting-meta">
-        <span class="pill sun-label" data-vi="Hôm nay: {{ today.strftime('%d/%m/%Y') }}" data-en="Today: {{ today.strftime('%b %d, %Y') }}">
-          Hôm nay: {{ today.strftime('%d/%m/%Y') }}
-        </span>
-        <a class="button btn-sm" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói mới" data-en="+ Add plan">+ Thêm gói mới</a>
+      <div class="dash-hello-actions">
+        <a class="button secondary" href="{{ url_for('bills.list_bills') }}">{{ icon("upload", 16) }}<span data-vi="Tải hóa đơn" data-en="Upload a bill">Tải hóa đơn</span></a>
       </div>
-    </div>
+    </header>
 
-    {# 2. Top Row (3 Columns: Balance/Wallets Card | 4-Metric Grid | Spending Trends Chart) #}
-    <div class="v14-top-grid">
-      {# Cột 1: Dark Total Balance & Wallets Card #}
-      <article class="v14-balance-card" aria-label="Chi phí dự kiến hàng tháng">
+    {% if not active_count %}
+      {# No plans yet: the mascot says hi and shows where to start #}
+      <article class="tile mascot-box dash-welcome" style="--i: 0">
+        {{ mascot("hi", 104) }}
         <div>
-          <div class="v14-card-head">
-            <span class="v14-label" data-vi="Chi dự kiến hàng tháng" data-en="Monthly Projected Cost">Chi dự kiến hàng tháng</span>
-            <span class="currency-code">
-              {{ totals[0].currency if totals else 'USD' }}
-            </span>
-          </div>
-
-          <div class="v14-balance-val">
-            {% if totals %}
-              {{ totals[0].monthly }} <small style="font-size:1.1rem;font-weight:700">{{ totals[0].currency }}</small>
-            {% else %}
-              0.00 <small style="font-size:1.1rem;font-weight:700">USD</small>
-            {% endif %}
-          </div>
-
-          <div class="v14-badge-row">
-            <span class="v14-pill-green" data-vi="✓ Toàn tài khoản (Decimal)" data-en="✓ Full account (Decimal)">
-              ✓ Toàn tài khoản (Decimal)
-            </span>
-            <span style="font-size:0.75rem;color:#8c85ae" data-vi="Không làm tròn số" data-en="Exact money">Không làm tròn số</span>
-          </div>
-        </div>
-
-        <div>
-          <div class="v14-actions-row">
-            <a class="v14-btn-transfer" href="{{ url_for('subscriptions.create') }}">
-              <span>+</span> <span data-vi="Thêm gói" data-en="Add plan">Thêm gói</span>
-            </a>
-            <a class="v14-btn-request" href="{{ url_for('subscriptions.list_subscriptions') }}">
-              <span>⇄</span> <span data-vi="Quản lý gói" data-en="Manage">Quản lý gói</span>
-            </a>
-          </div>
-
-          <div class="v14-wallets-section">
-            <div class="v14-wallets-title" data-vi="Tiền tệ tách biệt (Wallets)" data-en="Currencies (Wallets)">
-              Tiền tệ tách biệt (Wallets)
-            </div>
-            <div class="v14-wallets-scroll">
-              {% if totals %}
-                {% for row in totals %}
-                  <div class="v14-wallet-chip">
-                    <div class="v14-wallet-chip-cur">{{ row.currency }}</div>
-                    <div class="v14-wallet-chip-val">{{ row.monthly }}</div>
-                    <div class="v14-wallet-chip-stat">{{ row.count }} gói (Active)</div>
-                  </div>
-                {% endfor %}
-              {% else %}
-                <div class="v14-wallet-chip">
-                  <div class="v14-wallet-chip-cur">USD</div>
-                  <div class="v14-wallet-chip-val">0.00</div>
-                  <div class="v14-wallet-chip-stat">0 gói (Active)</div>
-                </div>
-              {% endif %}
-            </div>
-          </div>
+          <h2 data-vi="Chào mừng bạn đến AllOutFree!" data-en="Welcome to AllOutFree!">Chào mừng bạn đến AllOutFree!</h2>
+          <p class="muted" data-vi="Thêm gói đầu tiên, AllOutFree sẽ nhắc bạn trước ngày gia hạn để kịp giữ hoặc hủy." data-en="Add your first plan and AllOutFree will remind you before it renews, so you can keep it or cancel in time.">Thêm gói đầu tiên, AllOutFree sẽ nhắc bạn trước ngày gia hạn để kịp giữ hoặc hủy.</p>
+          <p><a class="button" href="{{ url_for('subscriptions.create') }}">{{ icon("plus", 16) }}<span data-vi="Thêm gói đầu tiên" data-en="Add your first plan">Thêm gói đầu tiên</span></a></p>
         </div>
       </article>
+    {% endif %}
 
-      {# Cột 2: 4-Metric Grid (2x2) #}
-      <div class="v14-stats-grid">
-        <div class="v14-stat-card coral">
-          <div>
-            <span class="v14-stat-lbl" data-vi="Gói đang chạy" data-en="Active plans">Gói đang chạy</span>
-            <div class="v14-stat-num">{{ totals | sum(attribute='count') if totals else 0 }}</div>
-          </div>
-          <span class="v14-stat-sub" data-vi="Theo dõi tự động" data-en="Auto tracked">Theo dõi tự động</span>
-        </div>
-
-        <div class="v14-stat-card">
-          <div>
-            <span class="v14-stat-lbl" data-vi="Sắp gia hạn" data-en="Upcoming">Sắp gia hạn</span>
-            <div class="v14-stat-num">{{ upcoming|length if upcoming else 0 }}</div>
-          </div>
-          <span class="v14-stat-sub" data-vi="Trong 30 ngày tới" data-en="Next 30 days">Trong 30 ngày tới</span>
-        </div>
-
-        <div class="v14-stat-card">
-          <div>
-            <span class="v14-stat-lbl" data-vi="Cần kiểm tra" data-en="Expected">Cần kiểm tra</span>
-            <div class="v14-stat-num">{{ expected|length if expected else 0 }}</div>
-          </div>
-          <span class="v14-stat-sub" data-vi="Khoản đến hạn 60 ngày" data-en="Last 60 days">Khoản đến hạn 60 ngày</span>
-        </div>
-
-        <div class="v14-stat-card">
-          <div>
-            <span class="v14-stat-lbl" data-vi="Chứng từ & Hóa đơn" data-en="Bills & Cards">Chứng từ &amp; Hóa đơn</span>
-            <div class="v14-stat-num" style="font-size:1.35rem">Biên lai</div>
-          </div>
-          <span class="v14-stat-sub">
-            <a href="{{ url_for('bills.list_bills') }}" style="color:var(--violet);font-weight:700" data-vi="Mở danh sách →" data-en="Open bills →">Mở danh sách →</a>
-          </span>
-        </div>
-      </div>
-
-      {# Cột 3: Visual Spending Trend & Chart Card #}
-      <article class="v14-chart-card">
-        <div class="v14-chart-header">
-          <h2 class="v14-chart-title" data-vi="Xu hướng & Biến động chi phí" data-en="Spending Trends">Xu hướng &amp; Biến động chi phí</h2>
-          <p class="v14-chart-desc" data-vi="Tỷ trọng chi dự kiến theo chu kỳ gia hạn" data-en="Projected cost breakdown by cycle">Tỷ trọng chi dự kiến theo chu kỳ gia hạn</p>
-        </div>
-
-        <div class="v14-chart-legend">
-          <span class="v14-legend-item"><span class="v14-legend-dot violet"></span> <span data-vi="Gia hạn tháng (Monthly)" data-en="Monthly">Hàng tháng</span></span>
-          <span class="v14-legend-item"><span class="v14-legend-dot coral"></span> <span data-vi="Gia hạn năm (Yearly)" data-en="Yearly">Hàng năm</span></span>
-        </div>
-
-        <div class="v14-barchart" aria-label="Biểu đồ chi tiêu theo tháng">
-          {% set months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8'] %}
-          {% set heights = [45, 65, 80, 50, 95, 75, 85, 60] %}
-          {% for m in months %}
-            {% set h = heights[loop.index0] %}
-            <div class="v14-bar-col">
-              <div class="v14-bar-group" style="height: {{ h }}%;">
-                <div class="v14-bar-fill violet" style="height: 60%;"></div>
-                <div class="v14-bar-fill coral" style="height: 40%;"></div>
-              </div>
-              <span class="v14-bar-label">{{ m }}</span>
-            </div>
-          {% endfor %}
-        </div>
-      </article>
-    </div>
-
-    {# 3. Bottom Row (2 Columns: Credit Card Mockup & Limit | Recent Activities / Expected Charges) #}
-    <div class="v14-bottom-grid">
-      {# Cột trái: Mockup thẻ & Hạn mức chi tiêu #}
-      <div class="v14-card-preview-box" id="credit-cards">
-        <div class="dash-card-head">
-          <span class="dash-label" data-vi="Thẻ thanh toán & Hạn mức" data-en="Card & Spending Limit">Thẻ thanh toán &amp; Hạn mức</span>
-          <a class="small-link" href="{{ url_for('bills.list_bills', kind='card_bill') }}" data-vi="Sao kê thẻ →" data-en="Card bills →">Sao kê thẻ →</a>
-        </div>
-
-        <div class="v14-credit-card-mockup">
-          <div class="v14-cc-top-row">
-            <div class="v14-cc-chip"></div>
-            <span style="font-size:0.75rem;font-weight:800;letter-spacing:0.05em;color:#e4e4e7">SUBTRACK CARD</span>
-          </div>
-          <div class="v14-cc-num">•••• •••• •••• 4108</div>
-          <div class="v14-cc-bottom-row">
-            <span>{{ current_user.username or 'CARDHOLDER' }}</span>
-            <span>EXP 12/28</span>
-          </div>
-        </div>
-
-        <div class="v14-progress-wrap">
-          <div class="v14-progress-head">
-            <span data-vi="Tiến độ chi tiêu dự kiến tháng này" data-en="Monthly spending progress">Tiến độ chi tiêu dự kiến tháng này</span>
-            <span>{% if totals %}{{ totals[0].monthly }} {{ totals[0].currency }}{% else %}0.00{% endif %}</span>
-          </div>
-          <div class="v14-progress-track">
-            <div class="v14-progress-bar" style="width: {% if totals %}72%{% else %}10%{% endif %}"></div>
-          </div>
-          <p class="muted small-text compact-top" data-vi="Quản lý ngày chốt sao kê và hạn thanh toán thẻ trực tiếp trong mục Hóa đơn." data-en="Manage statement closing dates and payment due dates in Bills.">
-            Quản lý ngày chốt sao kê và hạn thanh toán thẻ trực tiếp trong <a href="{{ url_for('bills.list_bills', kind='card_bill') }}"><strong>Hóa đơn</strong></a>.
+    <div class="dash-grid">
+      {# 1. Monthly cost of plans, in the main currency; other currencies below (never added together) #}
+      <article class="tile tile-balance" style="--i: 0">
+        <header class="tile-head">
+          <span class="tile-label" data-vi="Chi phí gói mỗi tháng" data-en="Plans per month">Chi phí gói mỗi tháng</span>
+          {% if c %}<span class="chip">{{ c }}</span>{% endif %}
+        </header>
+        {% if main_total %}
+          <p class="tile-big"><span data-count="{{ main_total.monthly }}" data-currency="{{ c }}">{{ main_total.monthly | money(c) }}</span> <small>{{ c }}</small></p>
+          <p class="tile-sub">
+            <span class="trend">{{ icon("arrow-up-right", 14) }} {{ main_total.yearly | money(c) }} {{ c }}</span>
+            <span data-vi="mỗi năm, {{ main_total.count }} gói" data-en="a year, {{ main_total.count }} plans">mỗi năm, {{ main_total.count }} gói</span>
           </p>
+        {% else %}
+          <p class="tile-big">0</p>
+          <p class="tile-sub" data-vi="Chưa có gói nào đang dùng." data-en="No active plans yet.">Chưa có gói nào đang dùng.</p>
+        {% endif %}
+        <div class="tile-actions">
+          <a class="button dark-button btn-sm" href="{{ url_for('subscriptions.create') }}">{{ icon("plus", 15) }}<span data-vi="Thêm gói" data-en="Add">Thêm gói</span></a>
+          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions') }}">{{ icon("repeat", 15) }}<span data-vi="Xem tất cả" data-en="See all">Xem tất cả</span></a>
         </div>
+        {% if other_totals %}
+          <div class="wallets">
+            <span class="tile-label" data-vi="Tiền tệ khác" data-en="Other currencies">Tiền tệ khác</span>
+            <div class="wallet-row">
+              {% for row in other_totals %}
+                <div class="wallet">
+                  <span class="chip">{{ row.currency }}</span>
+                  <strong>{{ row.monthly | money(row.currency) }}</strong>
+                  <small data-vi="{{ row.count }} gói / tháng" data-en="{{ row.count }} plans / month">{{ row.count }} gói / tháng</small>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </article>
+
+      {# 2. The orange card + three small figures #}
+      <div class="tile-quad">
+        <a class="tile tile-hero" style="--i: 1" href="{{ url_for('subscriptions.list_subscriptions') }}">
+          <span class="tile-label" data-vi="Gia hạn trong 7 ngày" data-en="Renewing in 7 days">Gia hạn trong 7 ngày</span>
+          <p class="tile-big"><span data-count="{{ week | length }}">{{ week | length }}</span></p>
+          <p class="tile-sub">
+            {% if week and c %}{{ week_total | money(c) }} {{ c }}{% else %}<span data-vi="Không có gì gấp" data-en="Nothing urgent">Không có gì gấp</span>{% endif %}
+          </p>
+        </a>
+        <article class="tile tile-mini" style="--i: 2">
+          <span class="tile-label" data-vi="Gói đang dùng" data-en="Active plans">Gói đang dùng</span>
+          <p class="tile-num"><span data-count="{{ active_count }}">{{ active_count }}</span></p>
+          <small class="muted" data-vi="{{ links_count }} link đã lưu" data-en="{{ links_count }} saved links">{{ links_count }} link đã lưu</small>
+        </article>
+        <article class="tile tile-mini" style="--i: 3">
+          <span class="tile-label" data-vi="Đã chi tháng này" data-en="Spent this month">Đã chi tháng này</span>
+          <p class="tile-num">{% if c %}<span data-count="{{ spent_month }}" data-currency="{{ c }}">{{ spent_month | money(c) }}</span>{% else %}0{% endif %}</p>
+          <small class="muted" data-vi="biên lai đã xác nhận{% if c %}, {{ c }}{% endif %}" data-en="confirmed receipts{% if c %}, {{ c }}{% endif %}">biên lai đã xác nhận{% if c %}, {{ c }}{% endif %}</small>
+        </article>
+        <a class="tile tile-mini" style="--i: 4" href="{{ url_for('bills.list_bills', kind='card_bill') }}">
+          <span class="tile-label" data-vi="Sao kê thẻ chưa trả" data-en="Card bills to pay">Sao kê thẻ chưa trả</span>
+          <p class="tile-num{% if unpaid_cards %} is-hot{% endif %}"><span data-count="{{ unpaid_cards }}">{{ unpaid_cards }}</span></p>
+          <small class="muted" data-vi="mở Hóa đơn" data-en="open Bills">mở Hóa đơn</small>
+        </a>
       </div>
 
-      {# Cột phải: Recent Activities (Khoản đến hạn cần kiểm tra) #}
-      <div class="v14-activities-card">
-        <div class="v14-activities-head">
-          <h2 class="v14-activities-title" data-vi="Khoản đến hạn cần kiểm tra (60 ngày qua)" data-en="Expected Charges (Last 60 Days)">
-            Khoản đến hạn cần kiểm tra (60 ngày qua)
-          </h2>
-          <span class="pill {% if expected %}hot-label{% endif %}">{{ expected|length if expected else 0 }}</span>
-        </div>
+      {# 3. Chart: renewals (orange) and confirmed receipt spending (dark), per month #}
+      <article class="tile tile-chart" style="--i: 5">
+        <header class="tile-head">
+          <span class="tile-label" data-vi="Gia hạn & chi tiêu theo tháng" data-en="Renewals & spending by month">Gia hạn & chi tiêu theo tháng</span>
+          <span class="legend"><i class="dot dot-accent"></i><span data-vi="Gia hạn" data-en="Renewals">Gia hạn</span>
+            <i class="dot dot-ink"></i><span data-vi="Đã chi" data-en="Spent">Đã chi</span></span>
+        </header>
+        {% if bars %}
+          <div class="bars" role="img" aria-label="Biểu đồ gia hạn và chi tiêu 6 tháng ({{ c }})">
+            {% for b in bars %}
+              <div class="bar-col{% if b.this_month %} is-now{% endif %}" title="{{ b.month.strftime('%m/%Y') }}: {{ b.renewals | money(c) }} / {{ b.spent | money(c) }} {{ c }}">
+                <div class="bar-pair">
+                  <span class="bar bar-accent" style="--h: {{ b.renewals_pct }}%; --i: {{ loop.index0 }}"></span>
+                  <span class="bar bar-ink" style="--h: {{ b.spent_pct }}%; --i: {{ loop.index0 }}"></span>
+                </div>
+                <small data-vi="T{{ b.month.month }}" data-en="{{ b.month.strftime('%b') }}">T{{ b.month.month }}</small>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="muted small-text" data-vi="Tính bằng {{ c }}. Tháng tới là dự kiến theo lịch gia hạn." data-en="In {{ c }}. Coming months are expected from your renewal dates.">Tính bằng {{ c }}. Tháng tới là dự kiến theo lịch gia hạn.</p>
+        {% else %}
+          <p class="muted" data-vi="Thêm một gói để thấy biểu đồ." data-en="Add a plan to see the chart.">Thêm một gói để thấy biểu đồ.</p>
+        {% endif %}
+      </article>
+    </div>
 
-        <p class="muted small-text" style="margin-top:-0.5rem;margin-bottom:0.85rem" data-vi="Các ngày gia hạn đã qua. SubTrack không tự kết nối ngân hàng nên đây là khoản dự kiến cho tới khi bạn xác nhận Đã trả (Paid) hoặc Không thu (Not charged)." data-en="Renewal dates that have passed. Not proven payments: they stay 'expected' until you mark them paid or skipped.">
-          Các ngày gia hạn đã qua. SubTrack không tự kết nối ngân hàng nên đây là khoản dự kiến cho tới khi bạn xác nhận <strong>Đã trả (Paid)</strong> hoặc <strong>Không thu (Not charged)</strong>.
-        </p>
+    <div class="dash-grid-2">
+      {# 4. What renews in the next 30 days #}
+      <article class="tile" style="--i: 6">
+        <header class="tile-head">
+          <span class="tile-label" data-vi="Sắp gia hạn (30 ngày)" data-en="Renewing soon (30 days)">Sắp gia hạn (30 ngày)</span>
+          <span class="chip">{{ upcoming | length }}</span>
+        </header>
+        {% if upcoming %}
+          <ul class="soon-list">
+            {% for sub in upcoming[:6] %}
+              {% set days = (sub.next_renewal_at - today).days %}
+              <li>
+                <a href="{{ url_for('subscriptions.edit', item_id=sub.id) }}">
+                  <span class="soon-mark">{{ sub.name[:1] | upper }}</span>
+                  <span class="soon-text"><strong>{{ sub.name }}</strong>
+                    <small>{{ sub.next_renewal_at.strftime('%d/%m') }}, {% if days <= 0 %}<span data-vi="hôm nay" data-en="today">hôm nay</span>{% else %}<span data-vi="còn {{ days }} ngày" data-en="in {{ days }} days">còn {{ days }} ngày</span>{% endif %}</small></span>
+                  <strong class="soon-amount">{{ sub.amount | money(sub.currency) }} {{ sub.currency }}</strong>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted" data-vi="Không có gì gia hạn trong 30 ngày tới." data-en="Nothing renews in the next 30 days.">Không có gì gia hạn trong 30 ngày tới.</p>
+        {% endif %}
+      </article>
 
-        {% if expected %}
+      {# 5. Recent activity, with a quick search (filters this list only) #}
+      <article class="tile tile-activity" style="--i: 7">
+        <header class="tile-head">
+          <span class="tile-label" data-vi="Hoạt động gần đây" data-en="Recent activity">Hoạt động gần đây</span>
+          <input class="mini-search" type="search" data-activity-search placeholder="Tìm…" aria-label="Tìm trong hoạt động gần đây" />
+        </header>
+        {% if activity %}
           <div class="table-scroll">
-            <table class="v14-table">
-              <thead>
-                <tr>
-                  <th data-vi="Ngày" data-en="Date">Ngày</th>
-                  <th data-vi="Gói dịch vụ" data-en="Subscription">Gói dịch vụ</th>
-                  <th data-vi="Số tiền" data-en="Amount">Số tiền</th>
-                  <th data-vi="Trạng thái" data-en="Status">Trạng thái</th>
-                  <th data-vi="Xác nhận" data-en="Action">Xác nhận</th>
-                </tr>
-              </thead>
+            <table class="activity-table">
+              <thead><tr>
+                <th data-vi="Mục" data-en="Item">Mục</th><th data-vi="Loại" data-en="Type">Loại</th>
+                <th data-vi="Số tiền" data-en="Amount">Số tiền</th><th data-vi="Trạng thái" data-en="Status">Trạng thái</th>
+                <th data-vi="Ngày" data-en="Date">Ngày</th>
+              </tr></thead>
               <tbody>
-                {% for row in expected %}
-                  <tr>
-                    <td>{{ row.due_date }}</td>
-                    <td><strong>{{ names.get(row.subscription_id, '—') }}</strong></td>
-                    <td><strong class="currency-value" style="font-size:0.92rem">{{ row.amount }} {{ row.currency }}</strong></td>
-                    <td>
-                      <span class="pill {% if row.status == 'paid' %}mint{% elif row.status == 'skipped' %}{% else %}sun-label{% endif %}">
-                        {{ row.status }}
-                      </span>
-                    </td>
-                    <td>
-                      {% for value, label_vi, label_en in [('paid', 'Đã trả', 'Paid'), ('skipped', 'Bỏ qua', 'Skipped')] if row.status != value %}
-                        <form class="inline" method="post" action="{{ url_for('subscriptions.mark_renewal', renewal_id=row.id) }}">
-                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                          <input type="hidden" name="status" value="{{ value }}" />
-                          <button type="submit" class="btn-sm" data-vi="{{ label_vi }}" data-en="{{ label_en }}">{{ label_vi }}</button>
-                        </form>
-                      {% endfor %}
-                    </td>
+                {% for item in activity %}
+                  {% set st = status_labels.get(item.status, (item.status, item.status)) %}
+                  <tr data-activity-row>
+                    <td><a href="{{ item.url }}">{{ item.title }}</a></td>
+                    <td><span data-vi="{{ kind_labels[item.kind][0] }}" data-en="{{ kind_labels[item.kind][1] }}">{{ kind_labels[item.kind][0] }}</span></td>
+                    <td>{% if item.amount is not none %}{{ item.amount | money(item.currency) }} {{ item.currency }}{% else %}—{% endif %}</td>
+                    <td><span class="status status-{{ item.status }}" data-vi="{{ st[0] }}" data-en="{{ st[1] }}">{{ st[0] }}</span></td>
+                    <td>{{ item.when.strftime('%d/%m/%Y') }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
+          <p class="muted small-text" data-activity-empty hidden data-vi="Không có mục nào khớp." data-en="Nothing matches.">Không có mục nào khớp.</p>
         {% else %}
-          <div class="dash-empty compact-top">
-            <strong data-vi="Chưa có khoản quá hạn nào cần xác nhận" data-en="None yet.">Chưa có khoản quá hạn nào cần xác nhận</strong>
-            <p class="muted small-text" data-vi="Mọi gia hạn trong 60 ngày qua đã được xác nhận hoặc chưa đến hạn." data-en="All renewals in the last 60 days are up to date.">
-              Mọi gia hạn trong 60 ngày qua đã được xác nhận hoặc chưa đến hạn.
-            </p>
-          </div>
+          <p class="muted" data-vi="Chưa có hoạt động nào. Thêm một gói hoặc tải một hóa đơn để bắt đầu." data-en="Nothing yet. Add a plan or upload a bill to start.">Chưa có hoạt động nào. Thêm một gói hoặc tải một hóa đơn để bắt đầu.</p>
         {% endif %}
-      </div>
+      </article>
     </div>
 
-    {# 4. Upcoming Renewals Section (30 days) #}
-    <div class="card v14-upcoming-section">
-      <div class="card-head-row">
-        <div>
-          <h2 class="card-title" data-vi="Sắp gia hạn trong 30 ngày tới" data-en="Renewing in the next 30 days">Sắp gia hạn trong 30 ngày tới</h2>
-          <p class="muted small-text" data-vi="Các gói đăng ký sắp đến kỳ thanh toán tiếp theo." data-en="Subscriptions due for renewal soon.">
-            Các gói đăng ký sắp đến kỳ thanh toán tiếp theo.
-          </p>
+    {# 6. Renewal dates that passed: say if they were really charged #}
+    {% if expected %}
+      <article class="tile" style="--i: 8">
+        <header class="tile-head">
+          <span class="tile-label" data-vi="Đã đến hạn: bạn có bị trừ tiền không?" data-en="Passed renewals: were you charged?">Đã đến hạn: bạn có bị trừ tiền không?</span>
+          <span class="chip">{{ expected | length }}</span>
+        </header>
+        <p class="muted small-text" data-vi="AllOutFree không xem được ngân hàng của bạn: đây là khoản dự kiến cho tới khi bạn xác nhận." data-en="AllOutFree can't see your bank: these are expected until you confirm.">AllOutFree không xem được ngân hàng của bạn: đây là khoản dự kiến cho tới khi bạn xác nhận.</p>
+        <div class="table-scroll">
+          <table class="activity-table">
+            <tbody>
+              {% for row in expected %}
+                {% set st = status_labels.get(row.status, (row.status, row.status)) %}
+                <tr>
+                  <td><strong>{{ names.get(row.subscription_id, '—') }}</strong></td>
+                  <td>{{ row.due_date.strftime('%d/%m/%Y') }}</td>
+                  <td>{{ row.amount | money(row.currency) }} {{ row.currency }}</td>
+                  <td><span class="status status-{{ row.status }}" data-vi="{{ st[0] }}" data-en="{{ st[1] }}">{{ st[0] }}</span></td>
+                  <td class="row-actions">
+                    {% for value, label_vi, label_en in [('paid', 'Đã trả', 'Paid'), ('skipped', 'Không thu', 'Not charged')] if row.status != value %}
+                      <form class="inline" method="post" action="{{ url_for('subscriptions.mark_renewal', renewal_id=row.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="status" value="{{ value }}" />
+                        <button type="submit" class="btn-sm{% if value == 'skipped' %} secondary{% endif %}" data-vi="{{ label_vi }}" data-en="{{ label_en }}">{{ label_vi }}</button>
+                      </form>
+                    {% endfor %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        <span class="pill">{{ upcoming|length if upcoming else 0 }}</span>
-      </div>
-
-      {% if upcoming %}
-        <ul class="mini-list upcoming">
-          {% for sub in upcoming %}
-            {% set days = (sub.next_renewal_at - today).days %}
-            <li>
-              <div>
-                <strong>{{ sub.name }}</strong>
-                {% if sub.manage_url %}
-                  <a class="small-link" href="{{ sub.manage_url }}" rel="noopener noreferrer nofollow" target="_blank" data-vi="quản lý / hủy ↗" data-en="manage ↗">quản lý / hủy ↗</a>
-                {% endif %}
-                <small class="muted block-small">
-                  {{ sub.next_renewal_at }} ·
-                  {% if days <= 0 %}
-                    <b class="hot" data-vi="hôm nay" data-en="today">hôm nay</b>
-                  {% elif days == 1 %}
-                    <b class="hot" data-vi="ngày mai" data-en="tomorrow">ngày mai</b>
-                  {% else %}
-                    <span data-vi="còn {{ days }} ngày" data-en="in {{ days }} days">còn {{ days }} ngày</span>
-                  {% endif %}
-                </small>
-              </div>
-              <strong class="currency-value" style="font-size:0.95rem">{{ sub.amount }} {{ sub.currency }}</strong>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <div class="dash-empty">
-          <strong data-vi="Không có gói nào gia hạn trong 30 ngày tới" data-en="Nothing renews in the next 30 days.">Không có gói nào gia hạn trong 30 ngày tới</strong>
-          <p class="muted small-text" data-vi="Lịch gia hạn 30 ngày tới của bạn đang trống." data-en="Nothing renews in the next 30 days.">
-            Lịch gia hạn 30 ngày tới của bạn đang trống.
-          </p>
-        </div>
-      {% endif %}
-    </div>
+      </article>
+    {% endif %}
   </div>
-
-  {# Khu vực Hóa đơn: kết nối tải tệp thật & xuất thật tới /bills/, giữ phần OCR AI ở chế độ Demo #}
-  {% include "subscriptions/_bills_section.html" %}
 {% endblock %}

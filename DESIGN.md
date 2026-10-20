@@ -142,3 +142,39 @@ Previews: `docs/design/shell-v3-*.png`, `docs/design/logo-v1.png`.
   browsers keep CSS/JS for 4 hours: without it an update showed new pages with old CSS.
 
 - Only one `<a data-nav-target>` per page (the header link): tests rely on it.
+
+## 10. AllOutFree v3: the "Dashboard V14" look (20 Oct 2026)
+
+The site is now called **AllOutFree** (internal names stay: `app/`, the `SubTrack` database,
+Windows tasks, storage keys, reminder idempotency keys, calendar event UIDs). The owner asked
+to copy the dashboard, motion and UI/UX of his reference video (`UI-UX idea\Dashboard_IDea.mp4`).
+Previews: `docs/design/v3-dashboard-{light,dark}-{desktop,phone}.png`. This section replaces
+the violet/lilac palette of §2 (the CSS names `--violet`/`--lilac` remain, as aliases).
+
+- **Colours** (`style.css` `:root`): page `#f1f1f3`, tiles `#ffffff`, text/active `#121216`,
+  muted `#6e6e78`, lines `#e6e6ea`, one orange accent `#f2602d` (gradient `#ff8c55 → #e0441b`)
+  used for the main button, the hero tile and renewal bars. Status tints amber/green/red are
+  tokens (`--tint-*`) so they work in both themes.
+- **Dark theme**: `:root[data-theme="dark"]` swaps the tokens (page `#0d0d10`, tiles `#17171b`,
+  the active pill turns light). Switched by the sun/moon in the left rail (or the moon in the
+  header on smaller screens), remembered per browser (`alloutfree_theme`), applied before the
+  page draws.
+- **Layout**: top pill menu (unchanged) + a **left icon rail** on screens ≥ 1100 px (theme,
+  tools, Subby, log out; the current page gets a dark circle). Tiles: 20 px corners, 1 px line,
+  soft shadow.
+- **Dashboard**: greeting by time of day; monthly plan cost in the main currency (other
+  currencies listed beside it, never added); the orange "renewing in 7 days" tile; three small
+  figures; a 6-month chart (orange = renewals, dark = confirmed receipts); renewing soon;
+  recent activity with a quick search; passed renewals to confirm. All real data.
+- **Motion** (one load moment + answers to clicks): tiles replace grey placeholders one after
+  another, the greeting words blur into focus, numbers count up, bars grow; page titles blur
+  in when a page opens; the dark theme spreads from the moon button in a growing circle (View
+  Transitions; other browsers switch instantly). All off with `prefers-reduced-motion`; the
+  numbers are always the server's, also without JavaScript.
+- **Mascot** (`templates/_mascot.html`): the logo itself with a face: two eyes in the card's
+  dark stripe (like a mask) and a small mouth. Moods: `hi` (welcome, nothing here yet), `look`
+  (nothing matches a search), `lost` (404, with a "?"). It floats and blinks; nothing else moves
+  on its own. Use it only where a page is empty or lost, never as decoration on full pages.
+- **Site icon**: the plain logo (no face: it would be noise at 16 px). `favicon.svg`, `favicon.ico`
+  (Safari, `/favicon.ico`), `apple-touch-icon.png` (iPhone), `icon-192/512.png` and
+  `icon-maskable-512.png` (installed app). Redraw the PNGs from the SVGs if the logo changes.

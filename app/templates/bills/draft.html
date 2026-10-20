@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Check the draft — SubTrack{% endblock %}
+{% from "_mascot.html" import mascot %}
+{% block title %}Check the draft — AllOutFree{% endblock %}
 {% block content %}
   {# Styled 2-column side-by-side document & draft review (docs/CONTRACT.md → Reading bills).
      Every field shows where its value came from. Document text is shown as text, never as HTML. #}
@@ -60,7 +61,7 @@
           <img
             src="{{ url_for('bills.download', document_id=draft.document_id, view=1) }}"
             alt="Uploaded bill {{ draft.document.original_name }}"
-            style="max-width:100%;height:auto;border-radius:12px"
+            class="source-image"
             loading="lazy"
             referrerpolicy="no-referrer"
           />
@@ -78,7 +79,16 @@
                 <span class="pill sun-label">Demo / Fake OCR</span>
               {% endif %}
             </h2>
-            <pre style="white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; max-width: 100%; margin: 0.35rem 0 0; font-size: 0.82rem">{{ page.text }}</pre>
+            <pre class="source-text">{{ page.text }}</pre>
+          </div>
+        {% else %}
+          {# New empty state: no page gave us any text (DESIGN.md §10 → mascot "hi"). #}
+          <div class="empty-state-box mascot-box compact-top">
+            {{ mascot("hi", 80) }}
+            <div>
+              <p><strong data-vi="Chưa đọc được chữ nào từ tệp này." data-en="We couldn't read any text from this file.">We couldn't read any text from this file.</strong></p>
+              <p class="muted small-text" data-vi="Hãy mở tệp gốc và tự điền các ô bên cạnh nếu hóa đơn có ghi." data-en="Open the file and fill in the boxes yourself where the bill shows them.">Open the file and fill in the boxes yourself where the bill shows them.</p>
+            </div>
           </div>
         {% endfor %}
       </details>
@@ -120,6 +130,7 @@
             {% else %}
               <input id="draft-{{ name }}" name="{{ name }}" value="{{ shown }}"
                      {% if name in ("invoice_date", "transaction_date", "statement_start", "statement_end", "due_date") %}type="date"{% endif %}
+                     {% if name == "card_last4" %}maxlength="4" pattern="[0-9]{4}" inputmode="numeric" autocomplete="off"{% endif %}
                      {% if draft.status != "draft" %}disabled{% endif %} />
             {% endif %}
             <small class="muted">
