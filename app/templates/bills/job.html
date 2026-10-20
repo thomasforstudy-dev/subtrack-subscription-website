@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Reading your bill — SubTrack{% endblock %}
+{% block content %}
+  {# Plain page from the backend lane; the UI lane styles it (docs/CONTRACT.md → Reading bills). #}
+  <h1>Reading {{ job.document.original_name }}</h1>
+
+  <div class="card">
+    {% if job.status == "queued" %}
+      <p><strong>Waiting to be read.</strong> Reading starts the next time the reader runs.
+        {% if job.error_code %}The last try didn't work: {{ message }}{% endif %}</p>
+    {% elif job.status == "running" %}
+      <p><strong>Reading now…</strong> This page doesn't update by itself: reload it in a moment.</p>
+    {% elif job.status == "succeeded" %}
+      <p><strong>Done.</strong> We found what we could. Nothing is saved as a bill until you check it.</p>
+      {% if draft %}
+        <p><a class="button" href="{{ url_for('bill_review.draft_page', draft_id=draft.id) }}">Check the draft</a></p>
+      {% endif %}
+    {% else %}
+      <p><strong>Couldn't read this file.</strong> {{ message }}</p>
+      <form method="post" action="{{ url_for('bill_review.retry_job', job_id=job.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button class="button secondary" type="submit">Try again</button>
+      </form>
+    {% endif %}
+    <p class="muted">Tries so far: {{ job.attempts }}</p>
+  </div>
+
+  <p><a href="{{ url_for('bills.create', document_id=job.document_id) }}">Type this bill in yourself instead</a></p>
+  <p><a href="{{ url_for('bills.list_bills') }}">Back to bills</a></p>
+{% endblock %}

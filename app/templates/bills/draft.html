@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Check the draft — SubTrack{% endblock %}
+{% block content %}
+  {# Plain page from the backend lane; the UI lane styles it (docs/CONTRACT.md → Reading bills).
+     Every field shows where its value came from. Document text is shown as text, never as HTML. #}
+  {% set f = typed or {} %}
+  <h1>Check the draft from {{ draft.document.original_name }}</h1>
+
+  {% if draft.status == "accepted" %}
+    <p class="card">Accepted.
+      {% if bill %}<a href="{{ url_for('bills.edit', bill_id=bill.id) }}">Open the bill</a>{% endif %}</p>
+  {% elif draft.status == "discarded" %}
+    <p class="card">Put aside. <a href="{{ url_for('bills.create', document_id=draft.document_id) }}">Type the bill in yourself</a></p>
+  {% else %}
+    <p class="muted">Nothing here is saved as a bill until you press Accept. Empty means we didn't
+      find it on the bill: fill it in only if the bill shows it.</p>
+  {% endif %}
+  {% if unread_pages %}
+    <p class="card">Pages {{ unread_pages | join(", ") }} couldn't be read (they need OCR, which isn't
+      available). Check them in the file yourself.</p>
+  {% endif %}
+
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="revision" value="{{ draft.revision }}" />
+    {% for name in fields %}
+      {% set v = values[name] %}
+      {% set doc = found[name] %}
+      {% set shown = f.get(name, v.value if v.value is not none else "") %}
+      <div class="field-group">
+        <label for="draft-{{ name }}">{{ labels[name] }}</label>
+        {% if name == "kind" %}
+          <select id="draft-{{ name }}" name="kind" {% if draft.status != "draft" %}disabled{% endif %}>
+            <option value="receipt" {% if shown != "card_bill" %}selected{% endif %}>Receipt / invoice</option>
+            <option value="card_bill" {% if shown == "card_bill" %}selected{% endif %}>Credit card bill</option>
+          </select>
+        {% else %}
+          <input id="draft-{{ name }}" name="{{ name }}" value="{{ shown }}"
+                 {% if name in ("invoice_date", "transaction_date", "statement_start", "statement_end", "due_date") %}type="date"{% endif %}
+                 {% if draft.status != "draft" %}disabled{% endif %} />
+        {% endif %}
+        <small class="muted">
+          {% if v.origin == "document" %}
+            From the document{% if v.method == "first-line" %} (the first line of the bill: check it's the shop){% endif %}:
+            {% for ev in v.evidence %}page {{ ev.page }}, “{{ ev.text }}”{% if not loop.last %}; {% endif %}{% endfor %}
+          {% elif v.origin == "you" %}
+            You changed this.{% if doc.value is not none %} The document said “{{ doc.value }}”
+            (page {{ doc.evidence[0].page }}, “{{ doc.evidence[0].text }}”).{% endif %}
+          {% else %}
+            Not found on the bill.
+          {% endif %}
+        </small>
+      </div>
+    {% endfor %}
+    {% if draft.status == "draft" %}
+      <button class="button secondary" type="submit" name="action" value="save">Save changes</button>
+      <button class="button" type="submit" name="action" value="accept">Accept and save as a bill</button>
+    {% endif %}
+  </form>
+
+  {% if draft.status == "draft" %}
+    <form method="post" action="{{ url_for('bill_review.discard', draft_id=draft.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button class="link" type="submit">Put this draft aside and type the bill in myself</button>
+    </form>
+  {% endif %}
+
+  <details class="card">
+    <summary>The text we read ({{ pages | length }} page{{ "s" if pages | length != 1 }})</summary>
+    {% for page in pages %}
+      <h2>Page {{ page.page_number }} <small class="muted">({{ "OCR: " ~ page.engine if page.source == "ocr" else "text inside the file" }}{% if page.truncated %}, cut short{% endif %})</small></h2>
+      <pre style="white-space: pre-wrap">{{ page.text }}</pre>
+    {% endfor %}
+  </details>
+
+  <details class="card">
+    <summary>History ({{ revisions | length }})</summary>
+    <ol>
+      {% for rev in revisions %}
+        <li>{{ rev.created_at.strftime("%Y-%m-%d %H:%M") }} UTC: {{ rev.action }}{% if rev.changed %} ({{ rev.changed }}){% endif %}</li>
+      {% endfor %}
+    </ol>
+  </details>
+{% endblock %}

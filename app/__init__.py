@@ -88,6 +88,8 @@ def create_app() -> Flask:
 
     from app.admin import bp as admin_bp
     from app.auth import bp as auth_bp
+    from app.bill_jobs import process_documents_command
+    from app.bill_review import bp as bill_review_bp
     from app.bills import bp as bills_bp
     from app.calendar import bp as calendar_bp
     from app.dashboard import bp as dashboard_bp
@@ -110,7 +112,9 @@ def create_app() -> Flask:
     app.register_blueprint(oauth_bp)
     app.register_blueprint(subby_bp)
     app.register_blueprint(bills_bp)
+    app.register_blueprint(bill_review_bp)
     app.cli.add_command(send_reminders_command)
+    app.cli.add_command(process_documents_command)
 
     @app.url_defaults
     def version_static_files(endpoint, values):

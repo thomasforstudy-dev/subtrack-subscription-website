@@ -346,3 +346,115 @@ class BillLine(db.Model):
     quantity = db.Column(db.Numeric(10, 3))
     unit_price = db.Column(db.Numeric(12, 2))
     amount = db.Column(db.Numeric(12, 2))
+
+
+# ---------- Reading uploaded bills (app/bill_jobs.py) --------------------------
+
+class DocumentJob(db.Model):
+    """"Read this bill for me": one job per uploaded file.
+
+    status: queued -> running -> succeeded, or -> failed (error_code says why).
+    Like reminders, a worker takes the job with a conditional UPDATE and a
+    claim_token, so two workers can't both run it, and a worker that crashed
+    leaves a "running" job that is picked up again after STALE_AFTER.
+    """
+
+    __tablename__ = "document_jobs"
+    __table_args__ = (
+        db.UniqueConstraint("document_id", name="UQ_document_jobs_document"),
+        db.Index("IX_document_jobs_status", "status", "next_try_at"),
+    )
+
+    STATUSES = ("queued", "running", "succeeded", "failed")
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    document_id = db.Column(db.Integer, db.ForeignKey("documents.id"), nullable=False)
+    status = db.Column(db.Unicode(20), default="queued", nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
+    next_try_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    claim_token = db.Column(db.Unicode(32))
+    claimed_at = db.Column(db.DateTime)
+    finished_at = db.Column(db.DateTime)
+    error_code = db.Column(db.Unicode(40), default="", nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    document = db.relationship("Document")
+
+
+class DocumentPage(db.Model):
+    """The text read from one page of an uploaded file, exactly as read.
+
+    Evidence in a draft points into this text (page + character positions),
+    so it is stored once and never edited. A Word file is one "page".
+    """
+
+    __tablename__ = "document_pages"
+    __table_args__ = (
+        db.UniqueConstraint("document_id", "page_number", name="UQ_document_pages_once"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey("documents.id"), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)  # copy of the owner, for simple filtering
+    page_number = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.UnicodeText, default="", nullable=False)
+    source = db.Column(db.Unicode(20), nullable=False)  # pdf-text / docx / ocr
+    engine = db.Column(db.Unicode(80), default="", nullable=False)  # OCR model + revision
+    truncated = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
+class BillDraft(db.Model):
+    """What was found on an uploaded bill, waiting for the owner to check it.
+
+    Nothing here is a confirmed bill. extracted_json is what the reader found
+    (never changed); values_json is the current form: for every field the value,
+    where it came from ("document", "you" or "empty") and its evidence.
+    Accepting creates a real Bill and links it in bill_id.
+    """
+
+    __tablename__ = "bill_drafts"
+    __table_args__ = (db.UniqueConstraint("job_id", name="UQ_bill_drafts_job"),)
+
+    STATUSES = ("draft", "accepted", "discarded")
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    document_id = db.Column(db.Integer, db.ForeignKey("documents.id"), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey("document_jobs.id"), nullable=False)
+    status = db.Column(db.Unicode(20), default="draft", nullable=False)
+    extractor = db.Column(db.Unicode(80), nullable=False)  # how the fields were found
+    extracted_json = db.Column(db.UnicodeText, nullable=False)
+    values_json = db.Column(db.UnicodeText, nullable=False)
+    revision = db.Column(db.Integer, default=1, nullable=False)
+    bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"))
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    document = db.relationship("Document")
+    job = db.relationship("DocumentJob")
+
+
+class BillDraftRevision(db.Model):
+    """One saved step of a draft: extracted, edited or accepted (the history)."""
+
+    __tablename__ = "bill_draft_revisions"
+    __table_args__ = (
+        db.UniqueConstraint("draft_id", "number", name="UQ_bill_draft_revisions_number"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    draft_id = db.Column(
+        db.Integer, db.ForeignKey("bill_drafts.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id = db.Column(db.Integer, nullable=False)
+    number = db.Column(db.Integer, nullable=False)
+    action = db.Column(db.Unicode(20), nullable=False)  # extracted / edited / accepted
+    changed = db.Column(db.Unicode(400), default="", nullable=False)  # "total, merchant"
+    values_json = db.Column(db.UnicodeText, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)

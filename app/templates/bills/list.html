@@ -130,6 +130,16 @@
             <div class="head-actions">
               <a class="button secondary btn-sm" href="{{ url_for('bills.download', document_id=doc.id) }}" data-vi="⬇ Tải tệp gốc" data-en="Download file">⬇ Tải tệp gốc</a>
               <a class="button btn-sm" href="{{ url_for('bills.create', document_id=doc.id) }}" data-vi="✏️ Nhập hóa đơn từ tệp này" data-en="type it in">type it in</a>
+              {# Reading jobs (backend lane, plain; UI lane may restyle): docs/CONTRACT.md → Reading bills #}
+              {% set job = reading.get(doc.id) %}
+              {% if job %}
+                <a class="button secondary btn-sm" href="{{ url_for('bill_review.job_page', job_id=job.id) }}" data-vi="Xem tiến trình đọc" data-en="Reading status">Xem tiến trình đọc</a>
+              {% else %}
+                <form method="post" action="{{ url_for('bill_review.read_document', document_id=doc.id) }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button class="button secondary btn-sm" type="submit" data-vi="Đọc giúp tôi" data-en="Read it for me">Đọc giúp tôi</button>
+                </form>
+              {% endif %}
             </div>
           </li>
         {% endfor %}
