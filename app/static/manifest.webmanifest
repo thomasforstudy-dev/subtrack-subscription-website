@@ -1,6 +1,6 @@
 {
-  "name": "SubTrack — Quản lý gói đăng ký & nhắc hạn",
-  "short_name": "SubTrack",
+  "name": "AllOutFree — Quản lý gói đăng ký & nhắc hạn",
+  "short_name": "AllOutFree",
   "description": "Theo dõi gói đăng ký, hạn thẻ tín dụng, lưu link và kiểm tra hóa đơn trước khi gia hạn.",
   "start_url": "/",
   "scope": "/",

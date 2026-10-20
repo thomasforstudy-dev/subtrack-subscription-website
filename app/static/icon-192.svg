@@ -1,24 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SubTrack">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AllOutFree">
   <!-- App icon for phones ("maskable"): the background fills the whole square and the
        drawing sits in the middle 80%, because phones cut icons into circles or squircles. -->
   <defs>
     <linearGradient id="st-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8b6dff"/>
-      <stop offset="1" stop-color="#4b2fd6"/>
+      <stop offset="0" stop-color="#ff8c55"/>
+      <stop offset="1" stop-color="#e0441b"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" fill="url(#st-bg)"/>
   <g transform="translate(6.4 6.4) scale(0.8)">
     <g transform="rotate(-12 28 26)">
       <rect x="8" y="13" width="40" height="26" rx="6" fill="#ffffff"/>
-      <rect x="8" y="19" width="40" height="5.5" fill="#2a2350"/>
+      <rect x="8" y="19" width="40" height="5.5" fill="#121216"/>
       <rect x="13" y="29" width="7.5" height="5.5" rx="1.6" fill="#ffc83d"/>
     </g>
     <g transform="rotate(-45 39 42)" fill="none">
-      <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#4b2fd6" stroke-width="7.5"/>
-      <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#16c79a" stroke-width="3.6"/>
-      <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#4b2fd6" stroke-width="7.5"/>
-      <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#16c79a" stroke-width="3.6"/>
+      <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#e0441b" stroke-width="7.5"/>
+      <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#121216" stroke-width="3.6"/>
+      <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#e0441b" stroke-width="7.5"/>
+      <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#121216" stroke-width="3.6"/>
     </g>
   </g>
 </svg>

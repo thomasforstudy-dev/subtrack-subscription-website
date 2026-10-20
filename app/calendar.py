@@ -59,8 +59,8 @@ def fold_line(line):
 
 
 def calendar_bytes(items, user_id, zone):
-    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SubTrack//Renewals//EN",
-             "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:SubTrack renewals",
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//AllOutFree//Renewals//EN",
+             "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:AllOutFree renewals",
              "X-WR-TIMEZONE:" + escape_text(zone)]
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     for item in items:
@@ -73,7 +73,7 @@ def calendar_bytes(items, user_id, zone):
             "SUMMARY:" + escape_text(f"Renewal: {item.name}"),
             "DESCRIPTION:" + escape_text(
                 f"Expected renewal date; not proof of payment. Check or cancel with the provider. "
-                f"All-day date from your SubTrack settings ({zone}). This is a one-time snapshot; "
+                f"All-day date from your AllOutFree settings ({zone}). This is a one-time snapshot; "
                 "choose notifications in your calendar and export again after changes."
             ),
             "TRANSP:TRANSPARENT", "END:VEVENT",
@@ -85,7 +85,7 @@ def calendar_bytes(items, user_id, zone):
 def download(items):
     zone = user_zone(current_user.timezone).key
     response = Response(calendar_bytes(items, current_user.id, zone), content_type="text/calendar; charset=utf-8")
-    response.headers["Content-Disposition"] = 'attachment; filename="subtrack-renewals.ics"'
+    response.headers["Content-Disposition"] = 'attachment; filename="alloutfree-renewals.ics"'
     response.headers["Cache-Control"] = "no-store, private"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Content-Type-Options"] = "nosniff"

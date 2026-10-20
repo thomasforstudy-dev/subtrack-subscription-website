@@ -12,7 +12,7 @@ def test_visitors_get_login_links_and_a_footer_but_no_app_menus(client):
 def test_logged_in_header_marks_the_current_page(user):
     page = user.get("/bills/").get_data(as_text=True)
     assert 'aria-current="page" data-nav-target="bills"' in page
-    assert page.count('aria-current="page"') == 2  # the header link and the phone tab
+    assert page.count('aria-current="page"') == 3  # the header link, the left rail and the phone tab
 
 
 def test_account_menu_logs_out_with_a_csrf_form(user):

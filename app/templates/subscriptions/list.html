@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Gói đăng ký (Subscriptions) — SubTrack{% endblock %}
+{% block title %}Gói đăng ký (Subscriptions) — AllOutFree{% endblock %}
 {% block content %}
   {% set has_server_pager = (pages is defined) %}
 
@@ -245,8 +245,8 @@
   {% else %}
     <div class="card empty-state-box">
       <p>
-        <strong data-vi="Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để SubTrack nhắc trước hạn." data-en="None yet. Add your first subscription to get reminded in time.">
-          Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để SubTrack nhắc trước hạn.
+        <strong data-vi="Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn." data-en="None yet. Add your first subscription to get reminded in time.">
+          Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn.
         </strong>
         <span class="sr-only">None yet.</span>
       </p>
@@ -266,8 +266,8 @@
           <span data-vi="Bạn có chắc muốn lưu trữ gói" data-en="Are you sure you want to archive">Bạn có chắc muốn lưu trữ gói</span>
           <strong id="archive-target-name"></strong>?
         </p>
-        <p class="muted small-text" data-vi="Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (Archived) trên SubTrack, KHÔNG tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài." data-en="Note: This stops reminders and moves the plan to Archived on SubTrack; it does NOT cancel your subscription with the external provider.">
-          Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (<code>Archived</code>) trên SubTrack, <strong>KHÔNG</strong> tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài.
+        <p class="muted small-text" data-vi="Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (Archived) trên AllOutFree, KHÔNG tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài." data-en="Note: This stops reminders and moves the plan to Archived on AllOutFree; it does NOT cancel your subscription with the external provider.">
+          Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (<code>Archived</code>) trên AllOutFree, <strong>KHÔNG</strong> tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài.
         </p>
         <div class="form-actions compact-top">
           <button type="button" class="button" id="confirm-archive-btn" data-vi="Đồng ý lưu trữ" data-en="Yes, archive">Đồng ý lưu trữ</button>

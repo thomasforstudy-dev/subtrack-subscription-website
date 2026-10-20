@@ -339,7 +339,7 @@ def test_csv_export_is_safe_for_spreadsheets(user):
 def test_markdown_export_escapes_table_breaks(user):
     user.post("/bills/new", data={**RECEIPT, "item_name_1": "a | b"})
     text = user.get("/bills/export.md").get_data(as_text=True)
-    assert "a \\| b" in text and "# SubTrack bills" in text
+    assert "a \\| b" in text and "# AllOutFree bills" in text
 
 
 def test_unknown_export_format(user):

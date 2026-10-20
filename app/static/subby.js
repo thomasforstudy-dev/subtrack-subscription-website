@@ -73,8 +73,8 @@
     },
     {
       words: ["cancel", "unsubscribe", "stop a subscription", "hủy", "tự hủy"],
-      fun: "Mình không tự bấm nút hủy thay bạn (vì SubTrack không bao giờ giữ mật khẩu Netflix hay thẻ ngân hàng của bạn). Thay vào đó, mình giữ sẵn đường dẫn hủy đã ghim để bạn tự hủy ngay khi nhận lời nhắc!",
-      plain: "SubTrack không đăng nhập vào tài khoản dịch vụ của bạn. Bạn hãy lưu URL hủy vào mục Link đã lưu hoặc ô đường dẫn quản lý để mở nhanh khi cần.",
+      fun: "Mình không tự bấm nút hủy thay bạn (vì AllOutFree không bao giờ giữ mật khẩu Netflix hay thẻ ngân hàng của bạn). Thay vào đó, mình giữ sẵn đường dẫn hủy đã ghim để bạn tự hủy ngay khi nhận lời nhắc!",
+      plain: "AllOutFree không đăng nhập vào tài khoản dịch vụ của bạn. Bạn hãy lưu URL hủy vào mục Link đã lưu hoặc ô đường dẫn quản lý để mở nhanh khi cần.",
     },
     {
       words: ["bill", "bills", "ocr", "receipt", "statement", "hóa đơn", "sao kê", "chứng từ"],
