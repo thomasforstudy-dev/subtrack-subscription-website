@@ -95,7 +95,12 @@
     </header>
 
     {% block main %}
-      <main id="main-content">
+      <main id="main-content" tabindex="-1">
+        <div id="offline-banner" class="status-banner warn offline-banner" role="status" aria-live="polite" hidden>
+          <span data-vi="Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến." data-en="You are currently offline. To protect your personal data, bills and account records are not cached offline.">
+            Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến.
+          </span>
+        </div>
         {% include "_flashes.html" %}
         {% if signed_in and (current_user.email_verified is defined and not current_user.email_verified) %}
           <form class="verify-banner" method="post" action="{{ url_for('auth.resend_verification') }}">

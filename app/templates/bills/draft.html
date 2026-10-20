@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Check the draft — SubTrack{% endblock %}
+{% block content %}
+  {# Styled 2-column side-by-side document & draft review (docs/CONTRACT.md → Reading bills).
+     Every field shows where its value came from. Document text is shown as text, never as HTML. #}
+  {% set f = typed or {} %}
+  <div class="section-head">
+    <div>
+      <div class="section-badges">
+        {% if draft.status == "accepted" %}
+          <span class="pill mint" data-vi="✓ Đã xác nhận & tạo hóa đơn (Accepted)" data-en="✓ Accepted">✓ Accepted</span>
+        {% elif draft.status == "discarded" %}
+          <span class="pill sun-label" data-vi="Đã bỏ qua bản nháp (Put aside)" data-en="Put aside">Put aside</span>
+        {% else %}
+          <span class="pill sun-label" data-vi="Bản nháp chờ bạn kiểm tra (Draft — Needs review)" data-en="Draft — Needs your review">Draft — Needs your review</span>
+        {% endif %}
+        <span class="pill" data-vi="Bằng chứng trích xuất (Extractor: {{ draft.extractor }})" data-en="Extractor: {{ draft.extractor }}">Extractor: {{ draft.extractor }}</span>
+        {% if 'fake' in (draft.extractor or '')|lower %}
+          <span class="pill sun-label" data-vi="🧪 Trình đọc giả lập kiểm thử (Test/Fake reader)" data-en="🧪 Test / Fake reader">🧪 Test / Fake reader</span>
+        {% endif %}
+      </div>
+      <h1>Check the draft from {{ draft.document.original_name }}</h1>
+      {% if draft.status == "accepted" %}
+        <p class="card compact-card">Accepted.
+          {% if bill %}<a class="button btn-sm" href="{{ url_for('bills.edit', bill_id=bill.id) }}">Open the bill</a>{% endif %}</p>
+      {% elif draft.status == "discarded" %}
+        <p class="card compact-card">Put aside. <a class="button secondary btn-sm" href="{{ url_for('bills.create', document_id=draft.document_id) }}">Type the bill in yourself</a></p>
+      {% else %}
+        <p class="muted">Nothing here is saved as a bill until you press Accept. Empty means we didn't
+          find it on the bill: fill it in only if the bill shows it.</p>
+      {% endif %}
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('bills.list_bills') }}">← Back to bills</a>
+    </div>
+  </div>
+
+  {% if unread_pages %}
+    <div class="ocr-warning-banner" role="status">
+      <span class="ocr-warn-icon" aria-hidden="true">⚠</span>
+      <p>Pages {{ unread_pages | join(", ") }} couldn't be read (they need OCR, which isn't
+        available). Check them in the file yourself.</p>
+    </div>
+  {% endif %}
+
+  <div class="review-grid">
+    <aside class="card review-col source-col" aria-label="Uploaded document and extracted page text">
+      <div class="source-toolbar">
+        <div>
+          <span class="pill mint">{{ draft.document.kind|upper }}{% if draft.document.page_count %} · {{ draft.document.page_count }} page{{ 's' if draft.document.page_count != 1 }}{% endif %}</span>
+          <p class="compact-top">
+            Source file: <strong>{{ draft.document.original_name }}</strong>
+            (<a href="{{ url_for('bills.download', document_id=draft.document_id) }}">download</a>)
+          </p>
+        </div>
+      </div>
+
+      {% if draft.document.kind in ('png', 'jpeg', 'webp') %}
+        <div class="source-viewport compact-top">
+          <img
+            src="{{ url_for('bills.download', document_id=draft.document_id, view=1) }}"
+            alt="Uploaded bill {{ draft.document.original_name }}"
+            style="max-width:100%;height:auto;border-radius:12px"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          />
+        </div>
+      {% endif %}
+
+      <details class="card compact-card compact-top" open>
+        <summary><strong>The text we read ({{ pages | length }} page{{ "s" if pages | length != 1 }})</strong></summary>
+        {% for page in pages %}
+          <div class="source-block compact-top">
+            <h2 class="small-text">
+              Page {{ page.page_number }}
+              <small class="muted">({{ "OCR: " ~ page.engine if page.source == "ocr" else "text inside the file" }}{% if page.truncated %}, cut short{% endif %})</small>
+              {% if page.source == "ocr" and "fake" in (page.engine or "")|lower %}
+                <span class="pill sun-label">Demo / Fake OCR</span>
+              {% endif %}
+            </h2>
+            <pre style="white-space: pre-wrap; margin: 0.35rem 0 0; font-size: 0.82rem">{{ page.text }}</pre>
+          </div>
+        {% endfor %}
+      </details>
+
+      <details class="card compact-card compact-top">
+        <summary><strong>History ({{ revisions | length }})</strong></summary>
+        <ol class="small-text compact-top">
+          {% for rev in revisions %}
+            <li>{{ rev.created_at.strftime("%Y-%m-%d %H:%M") }} UTC: {{ rev.action }}{% if rev.changed %} ({{ rev.changed }}){% endif %}</li>
+          {% endfor %}
+        </ol>
+      </details>
+    </aside>
+
+    <div class="review-col fields-col">
+      <form method="post" class="card stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="revision" value="{{ draft.revision }}" />
+        {% for name in fields %}
+          {% set v = values[name] %}
+          {% set doc = found[name] %}
+          {% set shown = f.get(name, v.value if v.value is not none else "") %}
+          <div class="field-group">
+            <label for="draft-{{ name }}">
+              <span>{{ labels[name] }}</span>
+              {% if v.origin == "document" %}
+                <span class="pill mint">Evidence</span>
+              {% elif v.origin == "you" %}
+                <span class="pill sun-label">Edited by you</span>
+              {% else %}
+                <span class="missing-badge">Unknown (null)</span>
+              {% endif %}
+            </label>
+            {% if name == "kind" %}
+              <select id="draft-{{ name }}" name="kind" {% if draft.status != "draft" %}disabled{% endif %}>
+                <option value="receipt" {% if shown != "card_bill" %}selected{% endif %}>Receipt / invoice</option>
+                <option value="card_bill" {% if shown == "card_bill" %}selected{% endif %}>Credit card bill</option>
+              </select>
+            {% else %}
+              <input id="draft-{{ name }}" name="{{ name }}" value="{{ shown }}"
+                     {% if name in ("invoice_date", "transaction_date", "statement_start", "statement_end", "due_date") %}type="date"{% endif %}
+                     {% if draft.status != "draft" %}disabled{% endif %} />
+            {% endif %}
+            <small class="muted">
+              {% if v.origin == "document" %}
+                From the document{% if v.method == "first-line" %} (the first line of the bill: check it's the shop){% endif %}:
+                {% for ev in v.evidence %}page {{ ev.page }}, “{{ ev.text }}”{% if not loop.last %}; {% endif %}{% endfor %}
+              {% elif v.origin == "you" %}
+                You changed this.{% if doc.value is not none %} The document said “{{ doc.value }}”
+                (page {{ doc.evidence[0].page }}, “{{ doc.evidence[0].text }}”).{% endif %}
+              {% else %}
+                Not found on the bill.
+              {% endif %}
+            </small>
+          </div>
+        {% endfor %}
+        {% if draft.status == "draft" %}
+          <div class="honest-status-box compact-top" role="region" aria-label="Confirmation before accepting draft">
+            <p class="small-text"><strong>Explicit confirmation required:</strong> Pressing <em>Save changes</em> keeps this as a draft (revision {{ draft.revision + 1 }}). Pressing <em>Accept and save as a bill</em> confirms the values above and creates a saved Bill.</p>
+          </div>
+          <div class="form-actions compact-top">
+            <button class="button secondary" type="submit" name="action" value="save">Save changes</button>
+            <button class="button" type="submit" name="action" value="accept">Accept and save as a bill</button>
+          </div>
+        {% endif %}
+      </form>
+
+      {% if draft.status == "draft" %}
+        <form method="post" action="{{ url_for('bill_review.discard', draft_id=draft.id) }}" class="compact-top">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="link" type="submit">Put this draft aside and type the bill in myself</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
