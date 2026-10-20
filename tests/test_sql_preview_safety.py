@@ -20,6 +20,12 @@ def test_preview_connection_is_explicit_sql_with_windows_authentication():
     assert "SubTrackCodexSQLPreview" in value
 
 
+def test_main_preview_cookies_are_distinct_from_live_and_previous_previews():
+    assert sql_preview.SESSION_COOKIE_NAME not in {"session", "subtrack_sql_preview_session"}
+    assert sql_preview.REMEMBER_COOKIE_NAME not in {"remember_token", "subtrack_sql_preview_remember"}
+    assert sql_preview.SESSION_COOKIE_NAME != sql_preview.REMEMBER_COOKIE_NAME
+
+
 def test_preview_health_rejects_sqlite(monkeypatch):
     class Response:
         status_code = 200

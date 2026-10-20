@@ -37,6 +37,9 @@ Windows services and existing previews were not controlled by these checks.
 The original SQL preview remains at 8773 in its original worktree/database;
 SQLite preview 8772 and the live service on 8000 are separate. Fixed names/port
 in this validation branch deliberately identify the new preview, not the old one.
+The new preview also uses distinct session/remember cookie names: browser cookies
+are shared across ports on a host, so another port alone would not preserve the
+older preview's login. HTTP checks verify the new session cookie is actually issued.
 
 ## Confirmed bug and isolated repair
 

@@ -14,7 +14,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.sql_preview import DATABASE, INSTANCE, PORT, access_details
+from scripts.sql_preview import DATABASE, INSTANCE, PORT, SESSION_COOKIE_NAME, access_details
 
 BASE = f"http://127.0.0.1:{PORT}"
 
@@ -71,6 +71,7 @@ class Client:
         self.csrf()
         result = self.post("/login", {"identifier": self.account["username"], "password": self.account["password"]})
         require(result.status_code == 302, "Synthetic account login failed")
+        require(SESSION_COOKIE_NAME in self.session.cookies.get_dict(), "Wrong preview session cookie")
         self.csrf("/subscriptions/")  # login intentionally rotates the session
         return self
 

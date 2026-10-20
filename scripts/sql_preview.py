@@ -27,6 +27,8 @@ ACCESS = INSTANCE / "sql-preview-access.json"
 DATABASE = "SubTrack_CodexMainPreview_20261020"
 RESTORE_DATABASE = "SubTrack_CodexMainRestore_20261020"
 PORT = 8774
+SESSION_COOKIE_NAME = "subtrack_sql_main_preview_session"
+REMEMBER_COOKIE_NAME = "subtrack_sql_main_preview_remember"
 
 
 def dsn(database=DATABASE):
@@ -94,8 +96,8 @@ def build_app(database=DATABASE, uploads=None):
     with patch("dotenv.load_dotenv", return_value=False):
         from app import create_app, db
         app = create_app()
-    app.config.update(SESSION_COOKIE_NAME="subtrack_sql_preview_session",
-                      REMEMBER_COOKIE_NAME="subtrack_sql_preview_remember")
+    app.config.update(SESSION_COOKIE_NAME=SESSION_COOKIE_NAME,
+                      REMEMBER_COOKIE_NAME=REMEMBER_COOKIE_NAME)
     from sqlalchemy import event, text
     from app.schema import schema_issues
     from app import links
