@@ -321,6 +321,54 @@ The browser may use an external speech service; real microphone/TTS remains unve
 is a bank/card statement (statement window, due date, paid or not). Totals on `/bills/`
 count receipts only, so a card bill and the purchases on it are never counted twice.
 
+## Reading bills (since 20 Oct: jobs, drafts with evidence, review)
+
+Nothing is read until the owner presses the button, and nothing becomes a bill until the
+owner accepts a draft. Plain templates `bills/job.html`, `bills/draft.html` for the UI lane
+to style. **New routes only; no existing route or field name changed.** Every POST needs
+`csrf_token`; every route is the owner's only (someone else → 404).
+
+| Route | What |
+|---|---|
+| `POST /bills/files/<document_id>/read` | "Read it for me". One job per file: pressing it again returns the same job. Redirects to the job page |
+| `GET /bills/jobs/<job_id>` | Job page: status, honest message, Try again (when failed), link to the draft, "type it in yourself" |
+| `GET /bills/jobs/<job_id>.json` | `{status, attempts, error_code, message, draft_url}` for polling (null when absent) |
+| `POST /bills/jobs/<job_id>/retry` | Only a `failed` job goes back to `queued` |
+| `GET /bills/drafts/<draft_id>` | Review page (template gets `draft`, `values`, `found`, `unread_pages`, `pages`, `revisions`, `fields`, `labels`, `typed`, `bill`) |
+| `POST /bills/drafts/<draft_id>` | Fields with the bill form's names (`merchant`, `total`, `invoice_date`, …) + hidden `revision` + `action=save` (new revision) or `action=accept` (same checks as `/bills/new`; makes one Bill, then redirects to its edit page). A stale `revision` (other tab) is refused, nothing saved |
+| `POST /bills/drafts/<draft_id>/discard` | Draft kept as `discarded`; redirects to `/bills/new?document_id=…` |
+
+`/bills/` template also gets `reading` = `{document_id: job}` (the list shows "Read it for me"
+or "Reading status" next to each waiting file).
+
+**Job status**: `queued` → `running` → `succeeded` | `failed`. `error_code` (message for each in
+`app/bill_jobs.py` → `MESSAGES`): `ocr-not-set-up`, `ocr-offline`, `ocr-busy`, `ocr-bad-reply`,
+`timeout`, `reader-crashed`, `bad-document`, `too-big`, `bad-extraction`, `file-missing`, `gave-up`.
+Temporary ones (`ocr-offline`, `ocr-busy`, `timeout`, `reader-crashed`) go back to `queued` with
+5, then 10 minutes' wait, at most 3 tries. Jobs run only when `flask process-documents` runs
+(no scheduler is switched on).
+
+**Draft values** (`values`, one entry per field name of the bill form):
+`{"value": "99000.00" | null, "origin": "document" | "you" | "empty", "method": "label" |
+"first-line" | "keyword" | "", "evidence": [{"page": 1, "start": 87, "end": 93, "text": "99.000"}]}`.
+`found` is the same shape for what the reader found (never changed). `method: "first-line"`
+= the merchant is the bill's first line (a guess: ask the owner to check). Evidence = page +
+character positions in the stored page text; there are no image coordinates or confidence
+scores (we don't have real ones). Show document text as text (never `|safe`).
+
+**Dates stay apart**: `invoice_date` = printed on the bill (label "Invoice date / Ngày …" or a
+generic "Date / Ngày"), `transaction_date`/`transaction_time` = only from a payment label
+("Paid on / Ngày thanh toán"), `due_date` = card payment due ("Due date / Hạn thanh toán").
+Category and time zone are never read from the bill: the owner picks them.
+
+**Export**: a bill made from an accepted draft has `"source": "upload"` and `evidence` =
+`{field: [spans]}` for the values that still came from the document; typed-in bills keep
+`"evidence": null`.
+
+**OCR**: `.env` `OCR_PROVIDER` empty = none (photos/scans fail with `ocr-not-set-up`; PDFs and
+Word files with text still work); `got` = GOT-OCR on the owner's PC at `OCR_BASE_URL` with
+`OCR_API_KEY`. Its reply must be `{"model", "revision", "pages": [{"page", "text", "truncated"}]}`.
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:
