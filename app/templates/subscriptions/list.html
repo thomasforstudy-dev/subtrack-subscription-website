@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_mascot.html" import mascot %}
 {% block title %}Gói đăng ký (Subscriptions) — AllOutFree{% endblock %}
 {% block content %}
   {% set has_server_pager = (pages is defined) %}
@@ -233,24 +234,30 @@
     </div>
 
   {% elif (q is defined and q) or (status is defined and status != 'active') %}
-    <div class="card empty-state-box">
-      <p>
-        <strong data-vi="Không có gói đăng ký nào khớp với điều kiện lọc." data-en="Nothing matches.">Không có gói đăng ký nào khớp với điều kiện lọc.</strong>
-        <span class="sr-only">Nothing matches.</span>
-      </p>
-      <p class="muted">
-        <a href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Hiển thị toàn bộ gói đang hoạt động (Show all active)" data-en="Show all active">Hiển thị toàn bộ gói đang hoạt động (Show all active)</a>
-      </p>
+    <div class="card empty-state-box mascot-box">
+      {{ mascot("look", 96) }}
+      <div>
+        <p>
+          <strong data-vi="Không có gói đăng ký nào khớp với điều kiện lọc." data-en="Nothing matches.">Không có gói đăng ký nào khớp với điều kiện lọc.</strong>
+          <span class="sr-only">Nothing matches.</span>
+        </p>
+        <p class="muted">
+          <a href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Hiển thị toàn bộ gói đang hoạt động (Show all active)" data-en="Show all active">Hiển thị toàn bộ gói đang hoạt động (Show all active)</a>
+        </p>
+      </div>
     </div>
   {% else %}
-    <div class="card empty-state-box">
-      <p>
-        <strong data-vi="Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn." data-en="None yet. Add your first subscription to get reminded in time.">
-          Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn.
-        </strong>
-        <span class="sr-only">None yet.</span>
-      </p>
-      <p><a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký đầu tiên" data-en="Add subscription">+ Thêm gói đăng ký đầu tiên</a></p>
+    <div class="card empty-state-box mascot-box">
+      {{ mascot("hi", 96) }}
+      <div>
+        <p>
+          <strong data-vi="Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn." data-en="None yet. Add your first subscription to get reminded in time.">
+            Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn.
+          </strong>
+          <span class="sr-only">None yet.</span>
+        </p>
+        <p><a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký đầu tiên" data-en="Add subscription">+ Thêm gói đăng ký đầu tiên</a></p>
+      </div>
     </div>
   {% endif %}
 

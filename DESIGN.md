@@ -142,6 +142,7 @@ Previews: `docs/design/shell-v3-*.png`, `docs/design/logo-v1.png`.
   browsers keep CSS/JS for 4 hours: without it an update showed new pages with old CSS.
 
 - Only one `<a data-nav-target>` per page (the header link): tests rely on it.
+
 ## 10. AllOutFree v3: the "Dashboard V14" look (20 Oct 2026)
 
 The site is now called **AllOutFree** (internal names stay: `app/`, the `SubTrack` database,
@@ -170,3 +171,10 @@ the violet/lilac palette of §2 (the CSS names `--violet`/`--lilac` remain, as a
   in when a page opens; the dark theme spreads from the moon button in a growing circle (View
   Transitions; other browsers switch instantly). All off with `prefers-reduced-motion`; the
   numbers are always the server's, also without JavaScript.
+- **Mascot** (`templates/_mascot.html`): the logo itself with a face: two eyes in the card's
+  dark stripe (like a mask) and a small mouth. Moods: `hi` (welcome, nothing here yet), `look`
+  (nothing matches a search), `lost` (404, with a "?"). It floats and blinks; nothing else moves
+  on its own. Use it only where a page is empty or lost, never as decoration on full pages.
+- **Site icon**: the plain logo (no face: it would be noise at 16 px). `favicon.svg`, `favicon.ico`
+  (Safari, `/favicon.ico`), `apple-touch-icon.png` (iPhone), `icon-192/512.png` and
+  `icon-maskable-512.png` (installed app). Redraw the PNGs from the SVGs if the logo changes.
