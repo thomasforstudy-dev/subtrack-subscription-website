@@ -40,3 +40,21 @@ def test_incomplete_schema_fails_readiness(app, monkeypatch, defect):
     expected = {"tables": "missing table: bills", "column": "bills.document_id",
                 "index": "bill_lines(bill_id, position)", "unique": "documents(user_id, sha256)"}
     assert expected[defect] in result.output
+
+
+def test_sqlserver_unique_indexes_work_without_unique_reflection(app, monkeypatch):
+    with app.app_context():
+        real = schema.inspect(db.engine)
+
+    class SqlServerLike:
+        get_table_names = real.get_table_names
+        get_columns = real.get_columns
+
+        def get_indexes(self, table):
+            return real.get_indexes(table) + [dict(item, unique=True) for item in real.get_unique_constraints(table)]
+
+        def get_unique_constraints(self, table):
+            raise NotImplementedError
+
+    monkeypatch.setattr(schema, "inspect", lambda engine: SqlServerLike())
+    assert app.test_cli_runner().invoke(args=["check-db"]).exit_code == 0

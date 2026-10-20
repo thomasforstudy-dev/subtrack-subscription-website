@@ -3221,6 +3221,12 @@ main {
   padding: 0.25rem 0;
 }
 
+.subby-voice-stage .voice-privacy-note {
+  color: #e4e0f5;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .voice-orb-wrap {
   position: relative;
   display: inline-flex;

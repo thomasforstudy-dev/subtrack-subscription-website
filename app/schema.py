@@ -23,7 +23,14 @@ def schema_issues(engine):
         for name in sorted(set(model.__table__.columns.keys()) - columns):
             problems.append(f"missing column: {table}.{name}")
         # Names differ between SQLAlchemy's SQLite schema and numbered T-SQL.
-        indexes = inspector.get_indexes(table) + inspector.get_unique_constraints(table)
+        indexes = inspector.get_indexes(table)
+        # SQLAlchemy's SQL Server dialect exposes unique constraints as indexes;
+        # get_unique_constraints itself raises NotImplementedError there.
+        try:
+            uniques = inspector.get_unique_constraints(table)
+        except NotImplementedError:
+            uniques = []
+        indexes += uniques
         indexed = {tuple(item["column_names"]) for item in indexes}
         required = {
             "documents": [("stored_name",), ("user_id", "sha256")],
@@ -33,7 +40,6 @@ def schema_issues(engine):
         for names in required[table]:
             exists = names in indexed
             if table == "documents":
-                uniques = inspector.get_unique_constraints(table)
                 unique_columns = {tuple(item["column_names"]) for item in uniques}
                 unique_columns.update(tuple(item["column_names"]) for item in indexes if item.get("unique"))
                 exists = names in unique_columns

@@ -22,7 +22,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.documents import IMAGES, MIME_TYPES, UploadError, clean_name, file_path, inspect, read_upload, save_file
+from app.documents import IMAGES, MIME_TYPES, UploadError, clean_name, file_path, inspect_bounded as inspect, read_upload, save_file
 from app.models import Bill, BillLine, Document
 from app.schedule import local_now
 from app.validation import escape_like

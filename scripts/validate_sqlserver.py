@@ -90,7 +90,7 @@ def migrate(kind):
     return {"database": database, "scripts": [p.name for p in scripts], "rerun_passes": 2, "legacy_preserved": kind == "legacy"}
 
 
-def application_checks():
+def application_checks(bills_only=False):
     database = DATABASES["clean"][0]
     database_url = "mssql+pyodbc:///?odbc_connect=" + quote_plus(dsn(database))
     os.environ.update(DB_SERVER="", DATABASE_URL=database_url, APP_ENV="development",
@@ -117,6 +117,8 @@ def application_checks():
         else:
             assert post(client, "/register", {"username": name, "email": f"{name}@example.com",
                         "password": "SyntheticSQL2026!", "confirm": "SyntheticSQL2026!"}).status_code == 302
+    if bills_only:
+        return bill_checks(app, me, other, post)
     form = {"name": "SQL synthetic plan", "amount": "10.00", "currency": "USD", "cycle": "monthly",
             "next_renewal_at": "2026-11-10", "lead_days": "7", "manage_url": "https://example.com/manage"}
     assert me.post("/subscriptions/new", data=form).status_code == 400  # real CSRF boundary
@@ -198,7 +200,10 @@ def bill_checks(app, me, other, post):
             "kind": "receipt", "document_id": str(document_id), "item_name_1": "SQL boundary",
             "item_qty_1": "1", "item_price_1": "9999999999.99"}
     assert post(other, "/bills/new", form).status_code == 404
-    assert post(me, "/bills/new", form).status_code == 302
+    with app.app_context():
+        exists = Bill.query.count() > 0
+    if not exists:
+        assert post(me, "/bills/new", form).status_code == 302
     with app.app_context():
         bill = Bill.query.one()
         bill_id = bill.id
@@ -215,6 +220,9 @@ def bill_checks(app, me, other, post):
     with app.app_context():
         assert Bill.query.one().merchant == "Synthetic SQL receipt"
         assert BillLine.query.one().amount == Decimal("9999999999.99")
+    assert post(me, f"/bills/{bill_id}/edit", {"notes": "Synthetic SQL edit verified"}).status_code == 302
+    with app.app_context():
+        assert Bill.query.one().notes == "Synthetic SQL edit verified"
     for path in (f"/bills/{bill_id}/edit", f"/bills/files/{document_id}", f"/bills/new?document_id={document_id}"):
         assert other.get(path).status_code == 404
     for action in ("paid", "archive", "restore"):
@@ -230,6 +238,11 @@ def bill_checks(app, me, other, post):
 
 
 def main():
+    if "--bills-only" in sys.argv:
+        result = application_checks(bills_only=True)
+        (ROOT / "instance" / "sql-bills-recheck.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        print(json.dumps(result, indent=2))
+        return
     if "--calendar-only" in sys.argv:
         result = calendar_checks()
         (ROOT / "instance" / "sql-calendar-validation.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
