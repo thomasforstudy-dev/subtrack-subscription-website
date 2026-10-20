@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Calendar / Lịch gia hạn — SubTrack{% endblock %}
+{% from "_mascot.html" import mascot %}
+{% block title %}Calendar / Lịch gia hạn — AllOutFree{% endblock %}
 {% block content %}
   <div class="section-head">
     <div>
@@ -58,7 +59,7 @@
     </div>
   {% else %}
     <div class="card empty-state-card">
-      <span class="empty-state-icon" aria-hidden="true">📅</span>
+      {{ mascot("hi", 104) }}
       <p><strong>No active subscriptions to export.</strong></p>
       <p class="muted small-text" data-vi="Bạn chưa có gói đăng ký nào đang hoạt động để xuất ra lịch." data-en="Add an active subscription first to export renewal dates.">
         Bạn chưa có gói đăng ký nào đang hoạt động để xuất ra lịch.

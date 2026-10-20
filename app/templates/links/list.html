@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Link đã lưu (Pinned links) — SubTrack{% endblock %}
+{% from "_mascot.html" import mascot %}
+{% block title %}Link đã lưu (Pinned links) — AllOutFree{% endblock %}
 {% block content %}
   <div class="page-head">
     <div>
       <h1 data-vi="Link đã lưu (Pinned links)" data-en="Pinned links">Link đã lưu (Pinned links)</h1>
-      <p class="muted" data-vi="Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, SubTrack sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích." data-en="Save cancel pages, billing portals, or study links. Paste a URL below and SubTrack will automatically fetch the page title and show its domain.">
-        Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, SubTrack sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích.
+      <p class="muted" data-vi="Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, AllOutFree sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích." data-en="Save cancel pages, billing portals, or study links. Paste a URL below and AllOutFree will automatically fetch the page title and show its domain.">
+        Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, AllOutFree sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích.
       </p>
     </div>
     <p><a class="button secondary" href="{{ url_for('links.create') }}" data-vi="+ Thêm đầy đủ (có ghi chú)" data-en="+ Full form (with notes)">+ Thêm đầy đủ (có ghi chú)</a></p>
@@ -132,19 +133,25 @@
       {% endfor %}
     </ul>
   {% elif q or tag %}
-    <div class="card empty-state-box">
-      <p>
-        <strong data-vi="Không tìm thấy link nào khớp với bộ lọc." data-en="No links match.">Không tìm thấy link nào khớp với bộ lọc.</strong>
-        <span class="sr-only">No links match.</span>
-      </p>
-      <p class="muted"><a href="{{ url_for('links.list_links') }}" data-vi="Hiển thị toàn bộ link đã lưu" data-en="Show all">Hiển thị toàn bộ link đã lưu</a></p>
+    <div class="card empty-state-box mascot-box">
+      {{ mascot("look", 96) }}
+      <div>
+        <p>
+          <strong data-vi="Không tìm thấy link nào khớp với bộ lọc." data-en="No links match.">Không tìm thấy link nào khớp với bộ lọc.</strong>
+          <span class="sr-only">No links match.</span>
+        </p>
+        <p class="muted"><a href="{{ url_for('links.list_links') }}" data-vi="Hiển thị toàn bộ link đã lưu" data-en="Show all">Hiển thị toàn bộ link đã lưu</a></p>
+      </div>
     </div>
   {% else %}
-    <div class="card empty-state-box">
-      <p><strong data-vi="Chưa có đường dẫn nào được lưu" data-en="No links yet.">Chưa có đường dẫn nào được lưu</strong></p>
-      <p class="muted" data-vi="Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại." data-en="Paste one above — cancel pages, billing portals, course pages, or tools you want to keep.">
-        Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại.
-      </p>
+    <div class="card empty-state-box mascot-box">
+      {{ mascot("hi", 96) }}
+      <div>
+        <p><strong data-vi="Chưa có đường dẫn nào được lưu" data-en="No links yet.">Chưa có đường dẫn nào được lưu</strong></p>
+        <p class="muted" data-vi="Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại." data-en="Paste one above — cancel pages, billing portals, course pages, or tools you want to keep.">
+          Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại.
+        </p>
+      </div>
     </div>
   {% endif %}
 

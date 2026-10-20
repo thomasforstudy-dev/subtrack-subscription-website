@@ -542,20 +542,41 @@ def bill_json(bill: Bill, evidence: dict | None = None) -> dict:
     }
 
 
-def accepted_evidence(user_id: int) -> dict[int, dict]:
-    """{bill_id: {field: [evidence]}} for bills made from accepted drafts. Only
-    fields whose final value still came from the document (not ones you changed)."""
+def accepted_evidence(user_id: int, bills: dict[int, Bill]) -> dict[int, dict]:
+    """{bill_id: {field: [evidence]}} for bills made from accepted drafts.
+
+    A field keeps its evidence only while the bill's CURRENT value is still the one
+    the document showed. Edit the total in the bill editor afterwards, and the
+    total loses its document evidence (the draft and its history stay as they were).
+    """
     found = {}
     for draft in BillDraft.query.filter_by(user_id=user_id, status="accepted"):
+        bill = bills.get(draft.bill_id)
+        if bill is None:
+            continue
         values = json.loads(draft.values_json)
-        found[draft.bill_id] = {name: v["evidence"] for name, v in values.items()
-                                if v["origin"] == "document" and v["evidence"]}
+        found[bill.id] = {name: v["evidence"] for name, v in values.items()
+                          if v["origin"] == "document" and v["evidence"] and current_text(bill, name) == v["value"]}
     return found
+
+
+def current_text(bill: Bill, name: str) -> str | None:
+    """A bill field written the way drafts write it ("99000.00", "2026-10-18", "14:30")."""
+    value = getattr(bill, name, None)
+    if value is None or value == "":
+        return None
+    if isinstance(value, Decimal):
+        return f"{value:.2f}"
+    if isinstance(value, time):
+        return value.strftime("%H:%M")
+    if isinstance(value, date):
+        return value.isoformat()
+    return str(value)
 
 
 def export_rows() -> list[dict]:
     bills = Bill.query.filter_by(user_id=current_user.id, status="confirmed").order_by(Bill.id).all()
-    evidence = accepted_evidence(current_user.id)
+    evidence = accepted_evidence(current_user.id, {bill.id: bill for bill in bills})
     return [bill_json(bill, evidence.get(bill.id)) for bill in bills]
 
 
@@ -586,7 +607,7 @@ def export(fmt: str):
     else:
         return "Unknown format.", 404
     response = Response(body, content_type=f"{kind}; charset=utf-8")
-    response.headers["Content-Disposition"] = f'attachment; filename="subtrack-bills.{fmt}"'
+    response.headers["Content-Disposition"] = f'attachment; filename="alloutfree-bills.{fmt}"'
     response.headers["Cache-Control"] = "no-store, private"
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
@@ -598,7 +619,7 @@ def md_text(value) -> str:
 
 
 def markdown(rows: list[dict]) -> str:
-    parts = ["# SubTrack bills", ""]
+    parts = ["# AllOutFree bills", ""]
     for row in rows:
         parts.append(f"## {md_text(row['merchant_name'])} — {md_text(row['transaction_datetime'] or row['invoice_date'] or row['due_date'] or 'no date')}")
         parts.append("")

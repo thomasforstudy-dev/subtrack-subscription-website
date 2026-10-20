@@ -363,7 +363,19 @@ Category and time zone are never read from the bill: the owner picks them.
 
 **Export**: a bill made from an accepted draft has `"source": "upload"` and `evidence` =
 `{field: [spans]}` for the values that still came from the document; typed-in bills keep
-`"evidence": null`.
+`"evidence": null`. A field loses its evidence as soon as the bill's current value differs
+from what the document showed (for example after editing the total in `/bills/<id>/edit`).
+
+**Card numbers** (Codex review R1/R2): text from files *and* OCR is masked to the last 4
+digits before it is searched, saved or shown. In a draft, `card_last4` must be empty or
+exactly 4 digits on both Save and Accept; anything else is refused, not stored, not shown
+back (`maxlength="4"` on the input is only a helper).
+
+**Amounts** (R4): bills hold amounts ≥ 0, so a refund/credit (`-12.50`, `−12.50`, `(12.50)`)
+or a broken number (`1,23,456`) leaves the field empty instead of losing its sign.
+**Evidence must show the value** (R5): every value is read back from its cited text
+(amount, date, time, currency symbol, last 4 digits, exact text); a contradiction makes the
+job fail with `bad-extraction`. The one allowed translation: a statement word → `card_bill`.
 
 **OCR**: `.env` `OCR_PROVIDER` empty = none (photos/scans fail with `ocr-not-set-up`; PDFs and
 Word files with text still work); `got` = GOT-OCR on the owner's PC at `OCR_BASE_URL` with

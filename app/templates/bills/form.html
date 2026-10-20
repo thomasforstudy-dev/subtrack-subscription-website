@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Edit bill' if item else 'Add a bill' }} — SubTrack{% endblock %}
+{% block title %}{{ 'Edit bill' if item else 'Add a bill' }} — AllOutFree{% endblock %}
 {% block content %}
   {# Styled to DESIGN.md v2 (docs/CONTRACT.md → Bills).
      Every value comes from `form` first, so nothing typed is lost after an error. #}
@@ -64,7 +64,7 @@
         {% else %}
           <div class="empty-state-box compact-top">
             <p><strong data-vi="Tệp {{ document.kind|upper }} được bảo vệ ở chế độ chỉ tải xuống" data-en="{{ document.kind|upper }} file is protected as download-only">{{ document.kind|upper }} file is protected as download-only</strong></p>
-            <p class="muted small-text" data-vi="Vì lý do an toàn bảo mật (chống mã độc nhúng trong PDF/DOCX), SubTrack không nhúng trực tiếp PDF/Word vào trang. Hãy bấm nút tải xuống bên dưới để mở xem đối chiếu." data-en="For security, PDFs and Word documents are never opened inline in the browser. Download your private copy below to view while typing.">
+            <p class="muted small-text" data-vi="Vì lý do an toàn bảo mật (chống mã độc nhúng trong PDF/DOCX), AllOutFree không nhúng trực tiếp PDF/Word vào trang. Hãy bấm nút tải xuống bên dưới để mở xem đối chiếu." data-en="For security, PDFs and Word documents are never opened inline in the browser. Download your private copy below to view while typing.">
               Vì lý do an toàn bảo mật, PDF và Word không mở trực tiếp trong trình duyệt. Hãy tải tệp riêng tư của bạn xuống để mở xem đối chiếu bên cạnh biểu mẫu.
             </p>
             <p class="compact-top">

@@ -24,7 +24,7 @@ MAX_HISTORY = 6  # earlier messages sent along, so follow-up questions make sens
 LIMIT_PER_HOUR = 30  # questions per visitor, to protect the free model quota
 
 FACTS = """
-SubTrack is a website that tracks your subscriptions so you can renew or
+AllOutFree is a website that tracks your subscriptions so you can renew or
 cancel in time. Reminder emails before each renewal are being built and are
 not being sent yet.
 - Sign up with a username, email + password, or with Google or GitHub. Signing
@@ -39,7 +39,7 @@ not being sent yet.
 - Pinned links: save any http/https link, the page title fills in by itself,
   add tags and notes, search them, and pin important ones to the top.
   Good for cancel pages, billing pages and support chats.
-- SubTrack cannot cancel subscriptions for you, cannot see your bank, cannot
+- AllOutFree cannot cancel subscriptions for you, cannot see your bank, cannot
   give refunds, and never asks for card numbers or passwords.
 - Coming soon: reminder emails, a dashboard, Google Calendar buttons, a Chrome
   extension, voice chat.
@@ -55,7 +55,7 @@ def system_prompt(fun: bool, logged_in: bool = False) -> str:
         if fun
         else "Personality: friendly, calm and plain. No jokes."
     )
-    return f"""You are Subby, the help bot on the SubTrack website.
+    return f"""You are Subby, the help bot on the AllOutFree website.
 {style}
 Rules:
 - Answer only from the facts below. Never invent features, prices or policies.

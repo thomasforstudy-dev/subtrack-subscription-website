@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 from dotenv import load_dotenv
-from flask import Flask, flash, redirect, request, url_for
+from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
@@ -130,6 +130,19 @@ def create_app() -> Flask:
             values["v"] = int((Path(app.static_folder) / values["filename"]).stat().st_mtime)
         except OSError:
             pass  # a missing file just gets no number (and a 404, as before)
+
+    @app.get("/favicon.ico")
+    def favicon():
+        # Browsers and search engines ask for /favicon.ico at the site root.
+        return app.send_static_file("favicon.ico")
+
+    @app.errorhandler(404)
+    def not_found(error):
+        # A friendly page with the mascot. JSON addresses keep the plain error,
+        # because scripts read them, not people.
+        if request.path.endswith(".json"):
+            return error
+        return render_template("errors/404.html"), 404
 
     @app.errorhandler(413)
     def too_big(error):

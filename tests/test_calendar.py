@@ -37,7 +37,7 @@ def test_download_uses_all_day_leap_date_and_exclusive_end(user, app):
     assert "DTEND;VALUE=DATE:20280301\r\n" in text
     assert "DTSTART;TZID=" not in text  # RFC DATE values have no TZID parameter
     assert response.mimetype == "text/calendar"
-    assert response.headers["Content-Disposition"] == 'attachment; filename="subtrack-renewals.ics"'
+    assert response.headers["Content-Disposition"] == 'attachment; filename="alloutfree-renewals.ics"'
     assert "no-store" in response.headers["Cache-Control"]
     assert response.headers["Referrer-Policy"] == "no-referrer"
     assert response.data.endswith(b"END:VCALENDAR\r\n")
