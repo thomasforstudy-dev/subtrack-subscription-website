@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_mascot.html" import mascot %}
 {% block title %}Bills / Hóa đơn & Chứng từ — AllOutFree{% endblock %}
 {% block content %}
   <div class="section-head">
@@ -329,11 +330,14 @@
       </nav>
     {% endif %}
   {% else %}
-    <div class="card empty-state-box">
-      <p><strong>No bills here yet.</strong></p>
-      <p class="muted small-text" data-vi="Chưa có hóa đơn hoặc sao kê thẻ nào khớp điều kiện. Hãy tải tệp lên ở khung phía trên hoặc bấm '+ Nhập hóa đơn thủ công'." data-en="Upload a receipt image/PDF/DOCX above or click 'Type a bill in without a file' to add your first bill.">
-        Chưa có hóa đơn hoặc sao kê thẻ nào khớp điều kiện. Hãy tải tệp lên ở khung phía trên hoặc bấm <strong>+ Nhập hóa đơn thủ công</strong>.
-      </p>
+    <div class="card empty-state-box mascot-box">
+      {{ mascot("hi", 96) }}
+      <div>
+        <p><strong>No bills here yet.</strong></p>
+        <p class="muted small-text" data-vi="Chưa có hóa đơn hoặc sao kê thẻ nào khớp điều kiện. Hãy tải tệp lên ở khung phía trên hoặc bấm '+ Nhập hóa đơn thủ công'." data-en="Upload a receipt image/PDF/DOCX above or click 'Type a bill in without a file' to add your first bill.">
+          Chưa có hóa đơn hoặc sao kê thẻ nào khớp điều kiện. Hãy tải tệp lên ở khung phía trên hoặc bấm <strong>+ Nhập hóa đơn thủ công</strong>.
+        </p>
+      </div>
     </div>
   {% endif %}
 

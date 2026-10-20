@@ -1,0 +1,51 @@
+{# The AllOutFree mascot: our logo (the card + chain link on the orange tile, same
+   shapes as static/favicon.svg) given a face. The card's dark stripe is its mask,
+   with two eyes in it. Moods:
+     "hi"   welcome / nothing here yet (smiles and blinks)
+     "look" nothing matches your search (looks left and right)
+     "lost" page not found (wavy mouth, a "?" above)
+   Motion lives in style.css ("Mascot") and is off with "reduce motion".
+   Use: {% from "_mascot.html" import mascot %} ... {{ mascot("hi") }} #}
+{% macro mascot(mood="hi", size=112) -%}
+<svg class="mascot mascot-{{ mood }}" viewBox="0 0 80 84" width="{{ size }}" height="{{ (size * 84 / 80) | round | int }}" aria-hidden="true" focusable="false">
+  <defs>
+    {# one gradient id per mood: two mascots on a page never share a mood #}
+    <linearGradient id="mascot-bg-{{ mood }}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8c55"/>
+      <stop offset="1" stop-color="#e0441b"/>
+    </linearGradient>
+  </defs>
+  <ellipse class="mascot-shadow" cx="40" cy="80" rx="21" ry="2.6"/>
+  <g class="mascot-body">
+    <g transform="translate(8 6)">
+      <rect width="64" height="64" rx="16" fill="url(#mascot-bg-{{ mood }})"/>
+      <g transform="rotate(-12 28 26)">
+        <rect x="8" y="13" width="40" height="26" rx="6" fill="#ffffff"/>
+        <rect x="8" y="18" width="40" height="8" fill="#121216"/>
+        <g class="mascot-eyes" fill="#ffffff">
+          <ellipse cx="{{ 30.5 if mood == 'lost' else 29 }}" cy="{{ 21.4 if mood == 'lost' else 22 }}" rx="1.8" ry="2.3"/>
+          <ellipse cx="{{ 39 if mood == 'lost' else 37.5 }}" cy="{{ 21.4 if mood == 'lost' else 22 }}" rx="1.8" ry="2.3"/>
+        </g>
+        <rect x="13" y="29" width="7.5" height="5.5" rx="1.6" fill="#ffc83d"/>
+        <circle cx="26" cy="29.6" r="1.6" fill="#ff8c55" opacity=".5"/>
+        {% if mood == "look" %}
+          <ellipse cx="33.2" cy="31" rx="1.4" ry="1.7" fill="#121216"/>
+        {% elif mood == "lost" %}
+          <path d="M29.4 31 q1.4 -1.5 2.8 0 t2.8 0 t2.8 0" fill="none" stroke="#121216" stroke-width="1.4" stroke-linecap="round"/>
+        {% else %}
+          <path d="M30 29.4 q3.3 3.3 6.6 0" fill="none" stroke="#121216" stroke-width="1.5" stroke-linecap="round"/>
+        {% endif %}
+      </g>
+      <g transform="rotate(-45 39 42)" fill="none">
+        <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#e0441b" stroke-width="7.5"/>
+        <rect x="22" y="36.5" width="22" height="11" rx="5.5" stroke="#121216" stroke-width="3.6"/>
+        <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#e0441b" stroke-width="7.5"/>
+        <rect x="34" y="36.5" width="22" height="11" rx="5.5" stroke="#121216" stroke-width="3.6"/>
+      </g>
+      {% if mood == "lost" %}
+        <text class="mascot-q" x="56" y="22" text-anchor="middle" font-size="15" font-weight="800" fill="#ffffff" font-family="Plus Jakarta Sans, system-ui, sans-serif">?</text>
+      {% endif %}
+    </g>
+  </g>
+</svg>
+{%- endmacro %}

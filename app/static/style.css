@@ -5088,3 +5088,142 @@ a.tile:hover {
 .legend {
   white-space: nowrap;
 }
+
+/* ===== Mascot (templates/_mascot.html): the logo with a face =====
+   Used on empty pages and the 404 page. It floats and blinks; when nothing
+   matches a search it looks left and right; on the 404 page its "?" wobbles. */
+.mascot {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.mascot-shadow {
+  fill: #000;
+  opacity: 0.12;
+}
+
+:root[data-theme="dark"] .mascot-shadow {
+  opacity: 0.45;
+}
+
+/* The mascot beside its words; stacked and centred on phones. */
+.mascot-box {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.mascot-box > div > :first-child {
+  margin-top: 0;
+}
+
+.mascot-box > div > :last-child {
+  margin-bottom: 0;
+}
+
+.dash-welcome {
+  margin-bottom: 1rem; /* same gap as between the tiles below */
+}
+
+.dash-welcome h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+}
+
+.empty-state-card .mascot,
+.not-found .mascot {
+  margin: 0 auto 0.75rem;
+}
+
+.not-found {
+  max-width: 34rem;
+  margin: 2.5rem auto;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .mascot-box {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mascot-body,
+  .mascot-shadow,
+  .mascot-eyes,
+  .mascot-eyes ellipse,
+  .mascot-q {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .mascot-body {
+    animation: mascot-float 3.2s ease-in-out infinite alternate;
+  }
+
+  .mascot-shadow {
+    animation: mascot-shadow 3.2s ease-in-out infinite alternate;
+  }
+
+  .mascot-eyes ellipse {
+    animation: mascot-blink 4.8s infinite;
+  }
+
+  .mascot-look .mascot-eyes {
+    animation: mascot-look 4s ease-in-out infinite;
+  }
+
+  .mascot-q {
+    transform-origin: 50% 100%;
+    animation: mascot-wonder 1.6s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes mascot-float {
+  to {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes mascot-shadow {
+  to {
+    transform: scaleX(0.82);
+  }
+}
+
+@keyframes mascot-blink {
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  94% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes mascot-look {
+  0%,
+  30%,
+  100% {
+    transform: translateX(-1.3px);
+  }
+
+  45%,
+  80% {
+    transform: translateX(1.3px);
+  }
+}
+
+@keyframes mascot-wonder {
+  from {
+    transform: rotate(-10deg);
+  }
+
+  to {
+    transform: rotate(10deg) translateY(-1px);
+  }
+}

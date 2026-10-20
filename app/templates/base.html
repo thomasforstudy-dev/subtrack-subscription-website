@@ -11,8 +11,11 @@
        page never flashes white first (static/motion.js saves it). #}
     <script>try { if (localStorage.getItem("alloutfree_theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}</script>
     <title>{% block title %}AllOutFree — Quản lý gói đăng ký, link & hóa đơn{% endblock %}</title>
+    {# The logo as the tab icon: SVG for modern browsers, .ico for the rest (Safari),
+       a square PNG for iPhone home screens (iOS ignores SVG icons). #}
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.svg') }}" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}" />
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

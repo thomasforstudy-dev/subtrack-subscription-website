@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
+{% from "_mascot.html" import mascot %}
 {% block title %}Tổng quan — AllOutFree{% endblock %}
 {% block body_class %}dashboard-page{% endblock %}
 {% block content %}
@@ -28,6 +29,18 @@
         <a class="button secondary" href="{{ url_for('bills.list_bills') }}">{{ icon("upload", 16) }}<span data-vi="Tải hóa đơn" data-en="Upload a bill">Tải hóa đơn</span></a>
       </div>
     </header>
+
+    {% if not active_count %}
+      {# No plans yet: the mascot says hi and shows where to start #}
+      <article class="tile mascot-box dash-welcome" style="--i: 0">
+        {{ mascot("hi", 104) }}
+        <div>
+          <h2 data-vi="Chào mừng bạn đến AllOutFree!" data-en="Welcome to AllOutFree!">Chào mừng bạn đến AllOutFree!</h2>
+          <p class="muted" data-vi="Thêm gói đầu tiên, AllOutFree sẽ nhắc bạn trước ngày gia hạn để kịp giữ hoặc hủy." data-en="Add your first plan and AllOutFree will remind you before it renews, so you can keep it or cancel in time.">Thêm gói đầu tiên, AllOutFree sẽ nhắc bạn trước ngày gia hạn để kịp giữ hoặc hủy.</p>
+          <p><a class="button" href="{{ url_for('subscriptions.create') }}">{{ icon("plus", 16) }}<span data-vi="Thêm gói đầu tiên" data-en="Add your first plan">Thêm gói đầu tiên</span></a></p>
+        </div>
+      </article>
+    {% endif %}
 
     <div class="dash-grid">
       {# 1. Monthly cost of plans, in the main currency; other currencies below (never added together) #}

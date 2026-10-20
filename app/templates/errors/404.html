@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_mascot.html" import mascot %}
+{% block title %}Không tìm thấy trang — AllOutFree{% endblock %}
+{% block content %}
+  {# Shown for every missing page, including someone else's item (we never say which). #}
+  <section class="not-found">
+    {{ mascot("lost", 150) }}
+    <h1 data-vi="Không tìm thấy trang này" data-en="Page not found">Không tìm thấy trang này</h1>
+    <p class="muted" data-vi="Đường dẫn có thể đã cũ, hoặc mục này không có trong tài khoản của bạn." data-en="The link may be old, or this item isn't in your account.">Đường dẫn có thể đã cũ, hoặc mục này không có trong tài khoản của bạn.</p>
+    <p>
+      {% if current_user.is_authenticated %}
+        <a class="button" href="{{ url_for('dashboard.show') }}" data-vi="Về trang tổng quan" data-en="Back to the dashboard">Về trang tổng quan</a>
+      {% else %}
+        <a class="button" href="{{ url_for('main.index') }}" data-vi="Về trang chủ" data-en="Back to the home page">Về trang chủ</a>
+      {% endif %}
+    </p>
+  </section>
+{% endblock %}
