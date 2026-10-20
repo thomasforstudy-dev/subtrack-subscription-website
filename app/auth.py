@@ -13,7 +13,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app import db, tokens
+from app import api_tokens, db, tokens
 from app.mailer import Email, MailError, MailNotReady, external_url, mail_ready, send_email
 from app.models import User, utcnow
 from app.schedule import user_zone
@@ -305,6 +305,7 @@ def reset_password(token: str):
         flash("That reset link has expired or was already used. Please ask for a new one.")
         return redirect(url_for("auth.forgot_password"))
     user.set_password(password)  # also logs out every other browser (see User.session_key)
+    api_tokens.revoke_all(user)  # and disconnects every extension: recovery means a clean slate
     # The link reached their inbox, so the email address is theirs.
     user.email_verified_at = user.email_verified_at or utcnow()
     db.session.commit()

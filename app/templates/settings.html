@@ -151,5 +151,12 @@
         <button type="button" class="link small-text" data-dismiss-pwa data-vi="Ẩn hướng dẫn" data-en="Dismiss">Ẩn hướng dẫn</button>
       </div>
     </div>
+
+    {# 3. Tokens for the Chrome extension (app/api_tokens.py) #}
+    <div class="card" id="extension-tokens">
+      <h2 class="card-title" data-vi="3. Kết nối tiện ích Chrome" data-en="3. Chrome extension tokens">3. Kết nối tiện ích Chrome</h2>
+      <p class="muted small-text" data-vi="Tạo một mã riêng cho tiện ích: nó chỉ xem được các gói sắp gia hạn, và bạn thu hồi được bất cứ lúc nào." data-en="Make a separate token for the extension: it can only see plans that renew soon, and you can revoke it any time.">Tạo một mã riêng cho tiện ích: nó chỉ xem được các gói sắp gia hạn, và bạn thu hồi được bất cứ lúc nào.</p>
+      <p><a class="button secondary btn-sm" href="{{ url_for('api_tokens.list_tokens') }}" data-vi="Quản lý mã tiện ích" data-en="Manage extension tokens">Quản lý mã tiện ích</a></p>
+    </div>
   </div>
 {% endblock %}

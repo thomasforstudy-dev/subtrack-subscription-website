@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 from dotenv import load_dotenv
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
@@ -87,6 +87,8 @@ def create_app() -> Flask:
     app.jinja_env.globals["csrf_token"] = csrf_token
 
     from app.admin import bp as admin_bp
+    from app.api import bp as api_bp
+    from app.api_tokens import bp as api_tokens_bp
     from app.auth import bp as auth_bp
     from app.bill_jobs import process_documents_command
     from app.bill_review import bp as bill_review_bp
@@ -113,6 +115,8 @@ def create_app() -> Flask:
     app.register_blueprint(subby_bp)
     app.register_blueprint(bills_bp)
     app.register_blueprint(bill_review_bp)
+    app.register_blueprint(api_tokens_bp)
+    app.register_blueprint(api_bp)
     app.cli.add_command(send_reminders_command)
     app.cli.add_command(process_documents_command)
 
@@ -139,7 +143,9 @@ def create_app() -> Flask:
     @app.errorhandler(404)
     def not_found(error):
         # A friendly page with the mascot. JSON addresses keep the plain error,
-        # because scripts read them, not people.
+        # because scripts read them, not people; the extension API answers in JSON.
+        if request.path.startswith("/api/"):
+            return jsonify(error="not-found"), 404
         if request.path.endswith(".json"):
             return error
         return render_template("errors/404.html"), 404

@@ -7,6 +7,7 @@
 """
 
 import ipaddress
+import math
 import os
 import secrets
 import threading
@@ -112,6 +113,16 @@ class RateLimiter:
                 return False
             self._hits[key] = recent + [now]
             return True
+
+    def retry_after(self, key: str) -> int:
+        """Seconds until `key` may try again (for the Retry-After header); 0 = now."""
+        with self._lock:
+            now = time.monotonic()
+            recent = self._recent(key, now)
+            if len(recent) < self.limit:
+                return 0
+            # The oldest event leaves the window first; then there is room again.
+            return max(1, math.ceil(self.window - (now - recent[0])))
 
     def reset(self, key: str) -> None:
         with self._lock:
