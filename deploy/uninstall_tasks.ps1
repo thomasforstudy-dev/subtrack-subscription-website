@@ -19,7 +19,7 @@ Write-Host "============================================================" -Foreg
 Write-Host "  SubTrack - Uninstall Auto-Start on Boot Tasks" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 
-foreach ($taskName in @("SubTrack-Tunnel", "SubTrack-Server")) {
+foreach ($taskName in @("SubTrack-Tunnel", "SubTrack-Server", "SubTrack-Reminders")) {
     $existing = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
     if ($existing) {
         Write-Host "Stopping task: $taskName..." -ForegroundColor Yellow
