@@ -309,6 +309,14 @@ the POST contained (up to 30), with the typed values. UI add/remove controls: ad
 row with the next free N (≤ 30); remove = empty that row's name (or drop its inputs) and
 keep sending `item_rows=1`. Row numbers don't need to be continuous.
 
+Integration validation: the actual form offers keyboard-accessible Add/Remove controls
+through row 30. Image/PDF/DOCX inspection runs in a separate parser process with an
+8-second deadline; timeout rejects the upload before storing a document or file.
+Images are decoded with side/pixel limits and PDFs require a readable 1–5-page tree.
+Mocked browser speech uses the reviewed input as the submitted question, retains
+final results after normal Stop, and aborts/invalidates cancelled or closed sessions.
+The browser may use an external speech service; real microphone/TTS remains unverified.
+
 **Receipt vs card bill:** a `receipt` is one purchase (what was bought, when). A `card_bill`
 is a bank/card statement (statement window, due date, paid or not). Totals on `/bills/`
 count receipts only, so a card bill and the purchases on it are never counted twice.
