@@ -6,6 +6,8 @@ from sqlalchemy import inspect
 EXPECTED_TABLES = {
     "users", "subscriptions", "reminder_logs", "links", "auth_tokens", "renewals", "reminders",
     "documents", "bills", "bill_lines",
+    # 07_bill_jobs.sql: reading uploaded bills
+    "document_jobs", "document_pages", "bill_drafts", "bill_draft_revisions",
 }
 
 

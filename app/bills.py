@@ -23,7 +23,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app import db
 from app.documents import IMAGES, MIME_TYPES, UploadError, clean_name, file_path, inspect_bounded as inspect, read_upload, save_file
-from app.models import Bill, BillLine, Document
+from app.models import Bill, BillDraft, BillLine, Document, DocumentJob
 from app.schedule import local_now
 from app.validation import escape_like
 
@@ -85,6 +85,8 @@ def list_bills():
         totals=receipt_totals(),
         unpaid=unpaid_card_bills(),
         waiting=waiting_documents(),
+        # "Read it for me" jobs of the waiting files: {document_id: job}
+        reading={job.document_id: job for job in DocumentJob.query.filter_by(user_id=current_user.id)},
         status=status, kind=kind, category=category, q=q,
         kinds=Bill.KINDS, categories=Bill.CATEGORIES,
         today=user_today(),
@@ -495,9 +497,10 @@ def quantity_text(value) -> str | None:
     return None if value is None else format(value.normalize(), "f")
 
 
-def bill_json(bill: Bill) -> dict:
+def bill_json(bill: Bill, evidence: dict | None = None) -> dict:
     """The standard bill format (docs/CONTRACT.md). Money is a string, dates are
-    ISO, and anything not on the bill is null, never guessed."""
+    ISO, and anything not on the bill is null, never guessed.
+    evidence: for a bill made from a checked draft, {field: [page/text spans]}."""
     when = None
     if bill.transaction_date:
         when = bill.transaction_date.isoformat()
@@ -532,15 +535,28 @@ def bill_json(bill: Bill) -> dict:
         "notes": bill.notes or None,
         "source": bill.source,  # "manual" = typed by the user, "upload" = typed from a file
         "review_status": "confirmed",  # only bills the user saved are exported
-        # Typed by a person: there is no OCR evidence to point to, so none is made up.
-        "evidence": None,
+        # Typed by a person: no evidence, so none is made up (null). Made from a
+        # checked draft: where in the document each kept value was found.
+        "evidence": evidence or None,
         "checks": money_checks(bill),  # numbers that don't add up, for a second look
     }
 
 
+def accepted_evidence(user_id: int) -> dict[int, dict]:
+    """{bill_id: {field: [evidence]}} for bills made from accepted drafts. Only
+    fields whose final value still came from the document (not ones you changed)."""
+    found = {}
+    for draft in BillDraft.query.filter_by(user_id=user_id, status="accepted"):
+        values = json.loads(draft.values_json)
+        found[draft.bill_id] = {name: v["evidence"] for name, v in values.items()
+                                if v["origin"] == "document" and v["evidence"]}
+    return found
+
+
 def export_rows() -> list[dict]:
     bills = Bill.query.filter_by(user_id=current_user.id, status="confirmed").order_by(Bill.id).all()
-    return [bill_json(bill) for bill in bills]
+    evidence = accepted_evidence(current_user.id)
+    return [bill_json(bill, evidence.get(bill.id)) for bill in bills]
 
 
 def safe_cell(value) -> str:
@@ -561,7 +577,8 @@ def export(fmt: str):
         writer = csv.writer(out)
         writer.writerow(columns)
         for row in rows:
-            cells = [json.dumps(row[c], ensure_ascii=False) if isinstance(row[c], list) else row[c] for c in columns]
+            cells = [json.dumps(row[c], ensure_ascii=False) if isinstance(row[c], (list, dict)) else row[c]
+                     for c in columns]
             writer.writerow([safe_cell(cell) for cell in cells])
         body, kind = "﻿" + out.getvalue(), "text/csv"  # ﻿: Excel then reads Vietnamese correctly
     elif fmt == "md":
