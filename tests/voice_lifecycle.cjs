@@ -22,12 +22,15 @@ class Speech {
   abort() {}
 }
 const sent = [];
+const spokenLog = [];
+let currentUiLang = 'en';
 const context = { ...buttons, window: { SpeechRecognition: Speech },
-  document: { documentElement: { lang: 'en', getAttribute() { return 'en'; } },
+  document: { documentElement: { lang: 'en', getAttribute() { return currentUiLang; } },
     addEventListener(name, cb) { this[name] = cb; } },
   input: { value: '', focus() {}, addEventListener(name, cb) { this[name] = cb; } }, voiceBar: {}, voiceStage: { hidden: false },
   voiceState: {}, voicePreview: {}, voiceTranscriptEl: {}, voiceTranscriptActions: {},
-  setVoiceModeOpen() {}, setVoiceStageState() {}, stopSpeaking() {}, say() {},
+  setVoiceModeOpen() {}, setVoiceStageState() {}, stopSpeaking() {},
+  say(text) { spokenLog.push(text); },
   root: { classList: { toggle() {} } }, voiceModeToggleBtn: null, panel: { hidden: false },
   openBtn: { setAttribute() {}, focus() {} }, teaser: null, log: { children: [1] },
   ask(text) { sent.push(text); } };
@@ -35,6 +38,7 @@ vm.runInNewContext(modeFunctions + section + escapeHandler, context);
 assert.equal(starts, 0, 'opening page must not request microphone');
 const result = text => active.onresult({ results: [[{ transcript: text }]] });
 buttons.micBtn.click();
+assert.equal(active.lang, 'en-US', 'English UI should select en-US recognition');
 result('original recognized question');
 assert.equal(sent.length, 0, 'speech must be reviewed before submission');
 buttons.voiceStopBtn.click();
@@ -61,6 +65,21 @@ buttons.voiceClearDraftBtn.click();
 assert.equal(context.input.value, '');
 buttons.micBtn.click();
 active.onerror({ error: 'not-allowed' });
+assert.ok(spokenLog.at(-1).includes('not-allowed') && spokenLog.at(-1).includes('permission'), 'denied permission message');
+buttons.micBtn.click();
+active.onerror({ error: 'no-speech' });
+assert.ok(spokenLog.at(-1).includes('no-speech') && spokenLog.at(-1).includes('No speech'), 'no-speech message');
+buttons.micBtn.click();
+active.onerror({ error: 'network' });
+assert.ok(spokenLog.at(-1).includes('network') && spokenLog.at(-1).includes('Network'), 'network error message');
+currentUiLang = 'vi';
+buttons.micBtn.click();
+assert.equal(active.lang, 'vi-VN', 'Vietnamese UI should select vi-VN recognition');
+active.onerror({ error: 'no-speech' });
+assert.ok(spokenLog.at(-1).includes('Chưa nghe thấy giọng nói'), 'Vietnamese no-speech message');
+buttons.micBtn.click();
+active.onerror({ error: 'network' });
+assert.ok(spokenLog.at(-1).includes('Lỗi kết nối mạng'), 'Vietnamese network message');
 context.input.value = 'keyboard after permission refusal';
 buttons.voiceSendNowBtn.click();
 assert.equal(sent.at(-1), 'keyboard after permission refusal');

@@ -46,7 +46,7 @@
 
     {# Màn hình Voice Mode theo thiết kế Stitch (docs/design/subby-voice-phone.png) #}
     <div class="subby-voice-stage" data-voice-stage data-stage-state="idle" hidden role="region" aria-label="Chế độ trò chuyện bằng giọng nói">
-      <p class="voice-privacy-note small-text" data-vi="Chỉ bật mic khi bạn chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài. SubTrack không lưu âm thanh; hãy kiểm tra chữ trước khi gửi." data-en="Mic starts only when you choose. Your browser may send speech to an external recognition service. SubTrack does not store audio; review the text before sending.">Chỉ bật mic khi bạn chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài. SubTrack không lưu âm thanh; hãy kiểm tra chữ trước khi gửi.</p>
+      <p class="voice-privacy-note muted small-text" data-voice-privacy-note data-vi="🔒 Chỉ bật mic khi bạn bấm chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài (external speech service). SubTrack không lưu âm thanh; hãy kiểm tra chữ trước khi gửi." data-en="🔒 Mic starts only when you click. Your browser may send speech to an external recognition service. SubTrack does not store audio; review the text before sending.">🔒 Chỉ bật mic khi bạn bấm chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài (external speech service). SubTrack không lưu âm thanh; hãy kiểm tra chữ trước khi gửi.</p>
       <div class="voice-stage-center">
         <div class="voice-orb-wrap">
           <span class="voice-orb-ring ring-1" aria-hidden="true"></span>
@@ -126,8 +126,8 @@
       </div>
       <div class="voice-info">
         <strong data-voice-state data-vi="Đang nghe qua micro…" data-en="Listening via microphone…">Đang nghe qua micro…</strong>
-        <small class="muted" data-voice-preview data-vi="Nói câu hỏi của bạn, sau đó kiểm tra văn bản trước khi gửi." data-en="Speak your question, then review the transcript before sending.">
-          Nói câu hỏi của bạn, sau đó kiểm tra văn bản trước khi gửi.
+        <small class="muted" data-voice-preview data-vi="Trình duyệt có thể dùng dịch vụ nhận diện bên ngoài (SubTrack không lưu âm thanh). Kiểm tra chữ trước khi gửi." data-en="Browser speech recognition may use an external service (SubTrack does not store audio). Review text before sending.">
+          Trình duyệt có thể dùng dịch vụ nhận diện bên ngoài (SubTrack không lưu âm thanh). Kiểm tra chữ trước khi gửi.
         </small>
       </div>
       <div class="voice-actions">

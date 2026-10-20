@@ -729,16 +729,23 @@
     }
     stopSpeaking();
 
+    const uiLang = String(
+      document.documentElement.getAttribute("data-ui-lang") || document.documentElement.lang || "vi"
+    ).toLowerCase();
+    const isEn = uiLang.startsWith("en");
+
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
-      setVoiceStageState(
-        "idle",
-        "🔇 Trình duyệt này chưa hỗ trợ Web Speech API — Hãy nhập câu hỏi bằng bàn phím bên dưới"
-      );
+      const unsupportedMsg = isEn
+        ? "🔇 This browser does not support Web Speech API — please type your question in the box below."
+        : "🔇 Trình duyệt này chưa hỗ trợ Web Speech API — Hãy nhập câu hỏi bằng bàn phím bên dưới";
+      setVoiceStageState("idle", unsupportedMsg);
       say(
-        "🎤 Trình duyệt hiện tại chưa hỗ trợ nhận diện giọng nói (Web Speech API). Bạn hãy nhập câu hỏi bằng bàn phím vào ô bên dưới nhé!",
+        isEn
+          ? "🎤 Speech recognition (Web Speech API) is not supported in this browser. Please type your question below!"
+          : "🎤 Trình duyệt hiện tại chưa hỗ trợ nhận diện giọng nói (Web Speech API). Bạn hãy nhập câu hỏi bằng bàn phím vào ô bên dưới nhé!",
         "bot",
-        { badge: "Thông báo trình duyệt" }
+        { badge: isEn ? "Browser notice" : "Thông báo trình duyệt" }
       );
       input.focus();
       return;
@@ -749,8 +756,7 @@
     input.value = "";
     recognition = new SpeechRec();
     const active = recognition;
-    const uiLang = document.documentElement.getAttribute("data-ui-lang") || document.documentElement.lang || "vi";
-    recognition.lang = uiLang === "en" ? "en-US" : "vi-VN";
+    recognition.lang = isEn ? "en-US" : "vi-VN";
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -760,13 +766,19 @@
       voiceBar.hidden = false;
     }
     if (voiceState) {
-      voiceState.textContent = "🎤 Đang nghe… (Bấm Dừng để xem lại chữ trước khi gửi)";
+      voiceState.textContent = isEn
+        ? "🎤 Listening… (Click Stop to review text before sending)"
+        : "🎤 Đang nghe… (Bấm Dừng để xem lại chữ trước khi gửi)";
     }
     if (voicePreview) {
-      voicePreview.textContent = "Hãy nói câu hỏi của bạn…";
+      voicePreview.textContent = isEn
+        ? "Speak your question… (Browser speech recognition may use an external service)"
+        : "Hãy nói câu hỏi của bạn… (Trình duyệt có thể dùng dịch vụ nhận diện bên ngoài)";
     }
     if (voiceTranscriptEl) {
-      voiceTranscriptEl.textContent = "“Đang lắng nghe giọng nói của bạn…”";
+      voiceTranscriptEl.textContent = isEn
+        ? "“Listening to your voice…”"
+        : "“Đang lắng nghe giọng nói của bạn…”";
     }
     if (voiceTranscriptActions) {
       voiceTranscriptActions.hidden = true;
@@ -782,8 +794,9 @@
       if (!draftEdited) input.value = text;
       const trimmed = input.value.trim();
       if (voicePreview) {
-        voicePreview.textContent =
-          'Bản nháp: "' + trimmed + '" (Bấm Dừng & Xem chữ để chỉnh sửa trước khi gửi)';
+        voicePreview.textContent = isEn
+          ? 'Draft: "' + trimmed + '" (Click Stop & Review to edit before sending)'
+          : 'Bản nháp: "' + trimmed + '" (Bấm Dừng & Xem chữ để chỉnh sửa trước khi gửi)';
       }
       if (voiceTranscriptEl) {
         voiceTranscriptEl.textContent = "“" + trimmed + "”";
@@ -795,13 +808,32 @@
 
     recognition.onerror = (event) => {
       if (recognition !== active) return;
-      const reason =
-        event.error === "not-allowed"
-          ? "Bạn đã từ chối quyền micro hoặc trình duyệt chặn micro. Hãy nhập câu hỏi bằng bàn phím nhé."
-          : "Không nhận diện được giọng nói (" + event.error + "). Bạn có thể thử lại hoặc nhập văn bản.";
+      const code = event && event.error ? String(event.error) : "unknown";
+      let reason = "";
+      if (code === "not-allowed" || code === "service-not-allowed") {
+        reason = isEn
+          ? "Microphone permission was denied or blocked (not-allowed). Please allow microphone access or type your question below."
+          : "Bạn đã từ chối quyền micro hoặc trình duyệt chặn micro (not-allowed). Hãy cấp quyền hoặc nhập câu hỏi bằng bàn phím nhé.";
+      } else if (code === "no-speech") {
+        reason = isEn
+          ? "No speech was detected (no-speech). Tap the microphone to try again or type your question below."
+          : "Chưa nghe thấy giọng nói nào (no-speech). Bạn hãy nhấn Mic thử lại hoặc nhập câu hỏi bằng bàn phím nhé.";
+      } else if (code === "network") {
+        reason = isEn
+          ? "Network problem reaching the browser's speech recognition service (network). Please check your connection or type your question below."
+          : "Lỗi kết nối mạng tới dịch vụ nhận diện giọng nói của trình duyệt (network). Vui lòng kiểm tra mạng hoặc nhập câu hỏi bằng bàn phím nhé.";
+      } else if (code === "audio-capture") {
+        reason = isEn
+          ? "No working microphone was found (audio-capture). Please check your microphone device or type your question below."
+          : "Không tìm thấy thiết bị thu âm (audio-capture). Vui lòng kiểm tra micro hoặc nhập câu hỏi bằng bàn phím nhé.";
+      } else {
+        reason = isEn
+          ? "Could not recognize speech (" + code + "). You can try again or type your question below."
+          : "Không nhận diện được giọng nói (" + code + "). Bạn có thể thử lại hoặc nhập văn bản.";
+      }
       stopVoiceRecognition(true);
       setVoiceStageState("idle", "⚠ " + reason);
-      say("🎤 " + reason, "bot", { badge: "Trạng thái Micro" });
+      say("🎤 " + reason, "bot", { badge: isEn ? "Microphone status" : "Trạng thái Micro" });
       input.focus();
     };
 
