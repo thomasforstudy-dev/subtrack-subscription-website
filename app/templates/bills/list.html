@@ -23,7 +23,7 @@
     <article class="card dash-card">
       <header class="dash-card-head">
         <h2 class="card-title" data-vi="Tải lên tệp hóa đơn (Upload a bill)" data-en="Upload a bill">Tải lên tệp hóa đơn (Upload a bill)</h2>
-        <span class="pill mint" data-vi="Kiểm tra chữ ký tệp (Magic bytes)" data-en="Magic-byte verified">Kiểm tra chữ ký tệp (Magic bytes)</span>
+        <span class="pill mint" data-vi="Kiểm tra tệp trước khi lưu" data-en="Files checked before saving">Kiểm tra tệp trước khi lưu</span>
       </header>
       <form method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data" class="stack-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

@@ -18,6 +18,9 @@ rename virus.exe to bill.pdf. The type comes from the file's first bytes
 
 import hashlib
 import io
+import json
+import subprocess
+import sys
 import re
 import secrets
 import warnings
@@ -34,6 +37,8 @@ MAX_PAGES = 5
 MAX_SIDE = 12_000  # pixels, the longest side of a photo
 MAX_PIXELS = 30_000_000  # about a 30-megapixel photo: enough for any phone
 MAX_NAME = 255
+PARSE_SECONDS = 8
+PARSER_SCRIPT = Path(__file__).resolve()
 # A .docx: at most this many files inside, and this much once unpacked.
 ZIP_MAX_FILES = 1000
 ZIP_MAX_UNPACKED = 50 * 1024 * 1024
@@ -168,6 +173,25 @@ def inspect(data: bytes) -> dict:
     return {"kind": kind, "page_count": pages, "sha256": hashlib.sha256(data).hexdigest(), "size_bytes": len(data)}
 
 
+def inspect_bounded(data: bytes) -> dict:
+    """Keep malformed document parsing out of the web worker, with a hard timeout.
+
+    The child receives bytes on stdin, never a private filename or credential.
+    subprocess.run kills and waits for its child if the deadline expires.
+    """
+    try:
+        result = subprocess.run([sys.executable, "-I", str(PARSER_SCRIPT)], input=data,
+                                capture_output=True, timeout=PARSE_SECONDS)
+    except subprocess.TimeoutExpired:
+        raise UploadError("This file took too long to check. Please upload a simpler copy.") from None
+    if result.returncode:
+        raise RuntimeError("Document parser failed unexpectedly; no file was saved.")
+    response = json.loads(result.stdout)
+    if "error" in response:
+        raise UploadError(response["error"])
+    return response["document"]
+
+
 def upload_folder() -> Path:
     folder = Path(current_app.instance_path) / "uploads"
     folder.mkdir(parents=True, exist_ok=True)
@@ -187,3 +211,13 @@ def file_path(stored_name: str) -> Path:
     if not STORED_NAME.fullmatch(stored_name or ""):
         raise UploadError("File not found.")
     return upload_folder() / stored_name
+
+
+if __name__ == "__main__":
+    # Executed as a standalone file: no app factory, .env, DB, or provider load.
+    try:
+        document = inspect(read_upload(sys.stdin.buffer))
+        output = {"document": document}
+    except UploadError as error:
+        output = {"error": str(error)}
+    sys.stdout.write(json.dumps(output))
