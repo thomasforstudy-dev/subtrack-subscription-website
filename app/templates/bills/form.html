@@ -69,13 +69,16 @@
       <div class="form-row-2">
         <div class="field-group">
           <label for="bill-kind-select" data-vi="Loại chứng từ (Kind)" data-en="Kind">Kind</label>
-          <select id="bill-kind-select" name="kind">
+          <select id="bill-kind-select" name="kind" aria-describedby="bill-kind-help">
             {% for k in kinds %}
               <option value="{{ k }}" {% if val('kind', item.kind if item else 'receipt') == k %}selected{% endif %}>
                 {{ 'Receipt / invoice' if k == 'receipt' else 'Credit card bill' }}
               </option>
             {% endfor %}
           </select>
+          <small id="bill-kind-help" class="field-hint muted small-text" data-vi="Receipt = biên lai đã thanh toán (tính vào Chi tiêu thực tế). Credit card bill = sao kê thẻ tín dụng cần trả theo hạn (due date)." data-en="Receipt = paid purchase (counted in Spent). Credit card bill = statement balance due by due date.">
+            Receipt = biên lai đã trả (Spent). Credit card bill = sao kê thẻ có hạn thanh toán (due date).
+          </small>
         </div>
 
         <div class="field-group">

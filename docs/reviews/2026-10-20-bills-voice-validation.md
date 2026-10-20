@@ -3,7 +3,7 @@
 Branch: `codex/bills-voice-validation`. Read the commit containing this report for
 the exact revision; local evidence lives in ignored `instance/` files. The shared
 Antigravity and Claude checkouts were preserved. Real merges retain bills `970e8c0`,
-voice `1e14b4d`, Claude repairs `78dffc3`, and styled bills `6e21daf` histories.
+voice `1e14b4d`, Claude repairs `78dffc3`, styled bills `6e21daf`, and final UI/voice handoff `ac378e8` histories.
 
 ## Repaired review findings
 
