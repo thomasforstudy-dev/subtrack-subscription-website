@@ -607,7 +607,7 @@ def export(fmt: str):
     else:
         return "Unknown format.", 404
     response = Response(body, content_type=f"{kind}; charset=utf-8")
-    response.headers["Content-Disposition"] = f'attachment; filename="subtrack-bills.{fmt}"'
+    response.headers["Content-Disposition"] = f'attachment; filename="alloutfree-bills.{fmt}"'
     response.headers["Cache-Control"] = "no-store, private"
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
@@ -619,7 +619,7 @@ def md_text(value) -> str:
 
 
 def markdown(rows: list[dict]) -> str:
-    parts = ["# SubTrack bills", ""]
+    parts = ["# AllOutFree bills", ""]
     for row in rows:
         parts.append(f"## {md_text(row['merchant_name'])} — {md_text(row['transaction_datetime'] or row['invoice_date'] or row['due_date'] or 'no date')}")
         parts.append("")

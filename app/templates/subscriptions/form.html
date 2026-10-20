@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if item %}Sửa gói đăng ký{% else %}Thêm gói đăng ký{% endif %} — SubTrack{% endblock %}
+{% block title %}{% if item %}Sửa gói đăng ký{% else %}Thêm gói đăng ký{% endif %} — AllOutFree{% endblock %}
 {% block content %}
   {# Khi máy chủ trả lỗi kiểm tra hợp lệ, biến `form` chứa các giá trị người dùng vừa nhập;
      nếu không có `form`, hiển thị giá trị đã lưu trong `item`. #}
@@ -11,8 +11,8 @@
       <h1 data-vi="{% if item %}Chỉnh sửa gói đăng ký{% else %}Thêm gói đăng ký mới{% endif %}" data-en="{% if item %}Edit subscription{% else %}Add subscription{% endif %}">
         {% if item %}Chỉnh sửa gói đăng ký{% else %}Thêm gói đăng ký mới{% endif %}
       </h1>
-      <p class="muted" data-vi="Ghi lại chu kỳ, các mốc ngày nhắc trước (tối đa 3 mốc) và đường dẫn quản lý/hủy gói để SubTrack nhắc bạn đúng hạn. SubTrack không tự động hủy dịch vụ bên ngoài." data-en="Record the cycle, up to 3 reminder milestones, and the management/cancel URL so SubTrack can remind you in time. SubTrack never cancels external services automatically.">
-        Ghi lại chu kỳ, các mốc ngày nhắc trước (tối đa 3 mốc) và đường dẫn quản lý/hủy gói để SubTrack nhắc bạn đúng hạn. SubTrack không tự động hủy dịch vụ bên ngoài.
+      <p class="muted" data-vi="Ghi lại chu kỳ, các mốc ngày nhắc trước (tối đa 3 mốc) và đường dẫn quản lý/hủy gói để AllOutFree nhắc bạn đúng hạn. AllOutFree không tự động hủy dịch vụ bên ngoài." data-en="Record the cycle, up to 3 reminder milestones, and the management/cancel URL so AllOutFree can remind you in time. AllOutFree never cancels external services automatically.">
+        Ghi lại chu kỳ, các mốc ngày nhắc trước (tối đa 3 mốc) và đường dẫn quản lý/hủy gói để AllOutFree nhắc bạn đúng hạn. AllOutFree không tự động hủy dịch vụ bên ngoài.
       </p>
     </div>
   </div>

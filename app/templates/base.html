@@ -6,8 +6,11 @@
     {% if csrf_token is defined %}
       <meta name="csrf-token" content="{{ csrf_token() }}" />
     {% endif %}
-    <meta name="theme-color" content="#6d4aff" />
-    <title>{% block title %}SubTrack — Quản lý gói đăng ký, link & hóa đơn{% endblock %}</title>
+    <meta name="theme-color" content="#f2602d" />
+    {# The saved light/dark choice is applied before the page is drawn, so a dark
+       page never flashes white first (static/motion.js saves it). #}
+    <script>try { if (localStorage.getItem("alloutfree_theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}</script>
+    <title>{% block title %}AllOutFree — Quản lý gói đăng ký, link & hóa đơn{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.svg') }}" />
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
@@ -33,9 +36,9 @@
 
     <header class="topbar" role="banner" data-topbar>
       <div class="topbar-inner">
-        <a class="shell-brand" href="{{ url_for('main.index') }}" aria-label="SubTrack — Trang chủ">
+        <a class="shell-brand" href="{{ url_for('main.index') }}" aria-label="AllOutFree — Trang chủ">
           <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="36" height="36" alt="" />
-          <span class="shell-brand-text">SubTrack</span>
+          <span class="shell-brand-text">AllOutFree</span>
         </a>
 
         {% if signed_in %}
@@ -56,6 +59,10 @@
             </a>
           {% endif %}
           <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
+          {# Light/dark for screens without the left rail (the rail has its own sun/moon). #}
+          <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Đổi giao diện sáng / tối" title="Sáng / tối">
+            <span class="theme-icon-dark">{{ icon("moon", 18) }}</span><span class="theme-icon-light">{{ icon("sun", 18) }}</span>
+          </button>
 
           {% if signed_in %}
             {% set display_name = current_user.username or current_user.email %}
@@ -94,6 +101,40 @@
       </div>
     </header>
 
+    {% if signed_in %}
+      {# Left icon rail (wide screens only, see "Left rail" in style.css), as in the
+         Dashboard V14 reference: theme at the top, tools in the middle, help and
+         log out at the bottom. The current page gets a dark circle. #}
+      {% set rail_items = [
+        ("dashboard.show", "/dashboard", "grid", "Tổng quan", "Overview"),
+        ("subscriptions.create", "/subscriptions/new", "plus", "Thêm gói", "Add a plan"),
+        ("bills.list_bills", "/bills", "upload", "Tải hóa đơn", "Upload a bill"),
+        ("calendar.index", "/calendar", "calendar", "Lịch", "Calendar"),
+        ("settings.show", "/settings", "settings", "Cài đặt & nhắc nhở", "Settings & reminders"),
+      ] %}
+      <nav class="rail" aria-label="Công cụ nhanh">
+        <div class="rail-group">
+          <button type="button" class="rail-btn" data-theme-set="light" aria-label="Giao diện sáng" title="Sáng">{{ icon("sun", 18) }}</button>
+          <button type="button" class="rail-btn" data-theme-set="dark" aria-label="Giao diện tối" title="Tối">{{ icon("moon", 18) }}</button>
+        </div>
+        <div class="rail-group">
+          {% for endpoint, prefix, icon_name, vi, en in rail_items %}
+            {% set here = request.path == prefix or (prefix not in ("/subscriptions/new",) and request.path.startswith(prefix)) %}
+            <a class="rail-btn{% if here %} is-active{% endif %}" href="{{ url_for(endpoint) }}" aria-label="{{ vi }}" title="{{ vi }}" {% if here %}aria-current="page"{% endif %}>{{ icon(icon_name, 18) }}</a>
+          {% endfor %}
+        </div>
+        <div class="rail-group">
+          <button type="button" class="rail-btn" data-open-subby aria-label="Hỏi trợ lý Subby" title="Hỏi Subby">{{ icon("help", 18) }}</button>
+          {% if csrf_token is defined %}
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="rail-btn" aria-label="Đăng xuất" title="Đăng xuất">{{ icon("logout", 18) }}</button>
+            </form>
+          {% endif %}
+        </div>
+      </nav>
+    {% endif %}
+
     {% block main %}
       <main id="main-content">
         {% include "_flashes.html" %}
@@ -115,7 +156,7 @@
           <div class="footer-brand">
             <a class="shell-brand" href="{{ url_for('main.index') }}">
               <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="32" height="32" alt="" />
-              <span class="shell-brand-text">SubTrack</span>
+              <span class="shell-brand-text">AllOutFree</span>
             </a>
             <p data-vi="Gói đăng ký, hóa đơn và link quan trọng ở cùng một chỗ. Gia hạn có chủ đích, hủy kịp lúc." data-en="Subscriptions, bills and important links in one place. Renew on purpose, cancel in time.">Gói đăng ký, hóa đơn và link quan trọng ở cùng một chỗ. Gia hạn có chủ đích, hủy kịp lúc.</p>
           </div>
@@ -153,7 +194,7 @@
           </nav>
         </div>
         <div class="footer-bottom">
-          <span>© 2026 SubTrack</span>
+          <span>© 2026 AllOutFree</span>
           <span data-vi="Dự án portfolio sinh viên, làm bằng Flask và Python" data-en="A student portfolio project, built with Flask and Python">Dự án portfolio sinh viên, làm bằng Flask và Python</span>
         </div>
       </footer>
@@ -181,6 +222,7 @@
     <script src="{{ url_for('static', filename='app-ui.js') }}" defer></script>
     <script src="{{ url_for('static', filename='subby.js') }}" defer></script>
     <script src="{{ url_for('static', filename='nav.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='motion.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

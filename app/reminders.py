@@ -202,9 +202,9 @@ def build_email(reminder: Reminder, sub: Subscription, user: User, now: datetime
         lines += ["", f"Manage it here: {sub.manage_url}"]
     lines += [
         "",
-        f"See it in SubTrack: {external_url('subscriptions.edit', item_id=sub.id)}",
+        f"See it in AllOutFree: {external_url('subscriptions.edit', item_id=sub.id)}",
         "",
-        "SubTrack can't see your bank: this date is what you told us, not a confirmed payment.",
+        "AllOutFree can't see your bank: this date is what you told us, not a confirmed payment.",
         f"Change or turn off reminders: {external_url('settings.show')}",
     ]
     return Email(

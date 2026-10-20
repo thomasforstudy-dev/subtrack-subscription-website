@@ -1,4 +1,4 @@
-// SubTrack UI controller (Antigravity UI lane):
+// AllOutFree UI controller (Antigravity UI lane):
 // - VI / EN lightweight client-side language toggle
 // - Show / hide password button on auth forms
 // - Topbar Subby trigger & workspace tab highlight
@@ -576,7 +576,7 @@
                 var subs = collectSubscriptions();
                 if (fmt === "json") {
                     downloadBlob(
-                        "subtrack-current-page-subscriptions.json",
+                        "alloutfree-current-page-subscriptions.json",
                         JSON.stringify(
                             {
                                 exported_at: new Date().toISOString(),
@@ -603,7 +603,7 @@
                             ].join(",")
                         );
                     });
-                    downloadBlob("subtrack-current-page-subscriptions.csv", lines.join("\n"), "text/csv;charset=utf-8");
+                    downloadBlob("alloutfree-current-page-subscriptions.csv", lines.join("\n"), "text/csv;charset=utf-8");
                 }
                 if (exportStatus) {
                     exportStatus.hidden = false;
