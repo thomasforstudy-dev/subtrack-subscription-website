@@ -28,6 +28,10 @@ MAX_PAGES = 5  # same as documents.MAX_PAGES
 MAX_PAGE_CHARS = 20_000  # more than any real bill page; longer text is cut and marked
 MIN_USABLE_CHARS = 20  # fewer letters/digits than this on a PDF page = probably a scan
 DOCX_MAX_XML = 5 * 1024 * 1024  # word/document.xml bigger than 5 MB is not a bill
+# The same zip limits as the upload check (documents.py; this file can't import it).
+ZIP_MAX_FILES = 1000
+ZIP_MAX_UNPACKED = 50 * 1024 * 1024
+ZIP_MAX_RATIO = 100
 READ_SECONDS = 15
 SCRIPT = Path(__file__).resolve()
 
@@ -91,9 +95,11 @@ def pdf_pages(data: bytes) -> list[dict]:
 def docx_pages(data: bytes) -> list[dict]:
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
+        parts = archive.infolist()
         info = archive.getinfo("word/document.xml")
     except (zipfile.BadZipFile, KeyError, ValueError):
         raise TextError("bad-document") from None
+    check_archive(parts)
     if info.file_size > DOCX_MAX_XML:
         raise TextError("too-big")
     try:
@@ -112,6 +118,20 @@ def docx_pages(data: bytes) -> list[dict]:
                 cells = [" ".join(paragraph_text(p) for p in cell.iter(f"{WORD}p")) for cell in row.iter(f"{WORD}tc")]
                 lines.append(" | ".join(cells))
     return [page(1, "\n".join(lines))]
+
+
+def check_archive(parts) -> None:
+    """The upload check's zip limits again (documents.check_docx), because the
+    reader must not trust that a stored file was checked: at most ZIP_MAX_FILES
+    parts, ZIP_MAX_UNPACKED in total, no part unpacking to more than ZIP_MAX_RATIO
+    times its size (a "zip bomb"), nothing password-protected."""
+    if len(parts) > ZIP_MAX_FILES or sum(p.file_size for p in parts) > ZIP_MAX_UNPACKED:
+        raise TextError("too-big")
+    for part in parts:
+        if part.flag_bits & 0x1:  # bit 0 = encrypted
+            raise TextError("bad-document")
+        if part.compress_size and part.file_size / part.compress_size > ZIP_MAX_RATIO:
+            raise TextError("too-big")
 
 
 def paragraph_text(paragraph) -> str:

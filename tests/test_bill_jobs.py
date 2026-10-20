@@ -541,3 +541,107 @@ def test_the_command_runs_queued_jobs(user, app):
     read(user, doc_id)
     result = app.test_cli_runner().invoke(args=["process-documents"])
     assert result.exit_code == 0 and "succeeded: 1" in result.output
+
+
+# ---------- added after the recheck: reader timeout, archive limits, GOT-OCR paths ----
+
+def test_reading_that_takes_too_long_is_retried_later(user, app, monkeypatch):
+    from app import doc_text
+
+    doc_id = uploaded(app, user, docx(RECEIPT_LINES), "receipt.docx")
+    read(user, doc_id)
+    monkeypatch.setattr(doc_text, "READ_SECONDS", 0.001)  # no real file reads that fast
+    assert process(app)["retry"] == 1
+    job = only(app, DocumentJob)
+    assert (job.status, job.error_code, job.attempts) == ("queued", "timeout", 1)
+    with app.app_context():
+        assert BillDraft.query.count() == 0
+
+
+def test_the_reader_applies_the_zip_limits_itself(user, app):
+    """A stored Word file is checked again, not trusted because it passed upload."""
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+        archive.writestr("word/document.xml", "<w:document/>")
+        for n in range(1001):
+            archive.writestr(f"junk/{n}.txt", "x")
+    doc_id = stored_document(app, "a@example.com", out.getvalue(), "docx", "many-parts.docx")
+    read(user, doc_id)
+    process(app)
+    assert only(app, DocumentJob).error_code == "too-big"
+
+
+class FakeResponse:
+    def __init__(self, status=200, body=None, text=None):
+        self.status_code, self.body, self.text = status, body, text
+
+    @property
+    def ok(self):
+        return self.status_code < 400
+
+    def json(self):
+        if self.body is None:
+            raise ValueError("not JSON")
+        return self.body
+
+
+@pytest.fixture()
+def got(monkeypatch):
+    from app import ocr
+
+    monkeypatch.setenv("OCR_PROVIDER", "got")
+    monkeypatch.setenv("OCR_BASE_URL", "http://127.0.0.1:8090/")
+    monkeypatch.setenv("OCR_API_KEY", "test-ocr-key")
+    sent = {}
+
+    def answer_with(response=None, error=None):
+        def fake_post(url, headers, files, data, timeout):
+            sent.update(url=url, headers=headers, data=data, timeout=timeout)
+            if error:
+                raise error
+            return response
+        monkeypatch.setattr(ocr.requests, "post", fake_post)
+    return ocr, sent, answer_with
+
+
+def test_got_ocr_sends_the_key_in_a_header_and_reads_pages(got):
+    ocr, sent, answer_with = got
+    answer_with(FakeResponse(body={"model": "GOT-OCR2.0", "revision": "r1",
+                                   "pages": [{"page": 1, "text": "Total: 5.00 USD", "truncated": False}]}))
+    result = ocr.ocr_adapter().read(b"png bytes", "png", [1])
+    assert result.engine == "GOT-OCR2.0 r1" and result.pages[0].text == "Total: 5.00 USD"
+    assert sent["url"] == "http://127.0.0.1:8090/v1/ocr" and "test-ocr-key" not in sent["url"]
+    assert sent["headers"] == {"Authorization": "Bearer test-ocr-key"} and sent["data"]["pages"] == "1"
+
+
+@pytest.mark.parametrize("response,error,code", [
+    (None, __import__("requests").ConnectionError("PC asleep"), "offline"),
+    (FakeResponse(503), None, "busy"),
+    (FakeResponse(429), None, "busy"),
+    (FakeResponse(500), None, "http-500"),
+    (FakeResponse(200, text="<html>oops</html>"), None, "bad-reply"),  # not JSON
+])
+def test_got_ocr_problems_have_clear_codes(got, response, error, code):
+    ocr, sent, answer_with = got
+    answer_with(response, error)
+    with pytest.raises(OcrUnavailable) as problem:
+        ocr.ocr_adapter().read(b"x", "png", [1])
+    assert problem.value.code == code
+
+
+def test_got_ocr_without_its_settings_is_not_set_up(got, monkeypatch):
+    ocr, sent, answer_with = got
+    monkeypatch.setenv("OCR_API_KEY", "")
+    with pytest.raises(OcrUnavailable) as problem:
+        ocr.ocr_adapter().read(b"x", "png", [1])
+    assert problem.value.code == "not-set-up" and sent == {}  # nothing was sent anywhere
+
+
+def test_a_got_ocr_server_error_fails_the_job_honestly(user, app, got):
+    ocr, sent, answer_with = got
+    answer_with(FakeResponse(500))
+    doc_id = uploaded(app, user, photo(), "photo.png")
+    read(user, doc_id)
+    assert process(app)["failed"] == 1  # through ocr_adapter(), the real configured path
+    assert only(app, DocumentJob).error_code == "ocr-bad-reply"
