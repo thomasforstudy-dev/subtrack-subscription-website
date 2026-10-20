@@ -8,6 +8,8 @@ EXPECTED_TABLES = {
     "documents", "bills", "bill_lines",
     # 07_bill_jobs.sql: reading uploaded bills
     "document_jobs", "document_pages", "bill_drafts", "bill_draft_revisions",
+    # 08_api_tokens.sql: tokens for the Chrome extension
+    "api_tokens",
 }
 
 

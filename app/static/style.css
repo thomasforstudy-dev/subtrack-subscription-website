@@ -5227,3 +5227,14 @@ a.tile:hover {
     transform: rotate(10deg) translateY(-1px);
   }
 }
+
+/* Extension tokens page (api_tokens.html): the new secret, shown once, in full. */
+.token-new {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.token-new input {
+  width: 100%;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; /* tells l, 1 and I apart */
+}
