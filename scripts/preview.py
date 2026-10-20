@@ -31,7 +31,7 @@ def main():
                       GITHUB_CLIENT_SECRET="", MESSENGER_URL="", ZALO_URL="")
     with patch("dotenv.load_dotenv", return_value=False):
         from app import create_app, db
-        from app.models import Subscription, User, utcnow
+        from app.models import Bill, BillLine, Subscription, User, utcnow
         app = create_app()
     from app.ai_providers import FakeProvider
 
@@ -67,7 +67,18 @@ def main():
                     manage_url="https://example.com/manage", notes="Synthetic preview data only"))
             db.session.commit()
             access_path.write_text(json.dumps({"username": "review_demo", "password": password}), encoding="utf-8")
+        if Bill.query.filter_by(user_id=user.id).count() == 0:
+            for number in range(25):
+                bill = Bill(user_id=user.id, merchant=f"Synthetic shop {number:02d}",
+                            currency="USD", total=Decimal("4.50"), category="food",
+                            transaction_date=date.today(), notes="Synthetic review fixture only")
+                bill.lines = [BillLine(position=1, description="Synthetic item", quantity=Decimal("1"),
+                                       unit_price=Decimal("4.50"), amount=Decimal("4.50"))]
+                db.session.add(bill)
+            db.session.commit()
     revision = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT).decode().strip()
+    if subprocess.run(["git", "diff", "--quiet", "HEAD"], cwd=ROOT).returncode:
+        revision += " + local changes"
 
     @app.after_request
     def preview_banner(response):
@@ -77,7 +88,7 @@ def main():
                 '<div role="status" style="padding:12px;background:#fff0bf;color:#342500;'
                 'text-align:center;position:relative;z-index:10000">'
                 '<strong>Integration preview — synthetic data only</strong><br>'
-                'Backend: Flask · Database: SQLite · Mail: memory (no sends) · AI: fake · '
+                'Backend: Flask · Database: SQLite · Mail: memory (no sends) · AI: fake · OCR: unavailable · '
                 f'Revision: {html.escape(revision)}</div>'
             )
             body = response.get_data(as_text=True)
