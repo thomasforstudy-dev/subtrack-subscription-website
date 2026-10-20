@@ -37,6 +37,7 @@
         {% else %}
           <input id="draft-{{ name }}" name="{{ name }}" value="{{ shown }}"
                  {% if name in ("invoice_date", "transaction_date", "statement_start", "statement_end", "due_date") %}type="date"{% endif %}
+                 {% if name == "card_last4" %}maxlength="4" pattern="[0-9]{4}" inputmode="numeric" autocomplete="off"{% endif %}
                  {% if draft.status != "draft" %}disabled{% endif %} />
         {% endif %}
         <small class="muted">
