@@ -15,7 +15,7 @@ def test_preview_refuses_any_nonallowlisted_database(database):
 def test_preview_connection_is_explicit_sql_with_windows_authentication():
     value = sql_preview.dsn()
     assert "SERVER=localhost\\SQLEXPRESS" in value
-    assert "DATABASE=SubTrack_CodexPreview_20261020" in value
+    assert "DATABASE=SubTrack_CodexMainPreview_20261020" in value
     assert "Trusted_Connection=yes" in value and "PWD=" not in value
     assert "SubTrackCodexSQLPreview" in value
 

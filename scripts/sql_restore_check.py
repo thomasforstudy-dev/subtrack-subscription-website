@@ -81,7 +81,7 @@ def run():
             exists = master.execute("DECLARE @path nvarchar(4000)=?; EXEC master.dbo.xp_fileexist @path", backup).fetchone()
             if exists[0]:
                 raise RuntimeError("Backup filename exists; preserving it")
-            execute(master, "DECLARE @path nvarchar(4000)=?; BACKUP DATABASE [SubTrack_CodexPreview_20261020] "
+            execute(master, "DECLARE @path nvarchar(4000)=?; BACKUP DATABASE [SubTrack_CodexMainPreview_20261020] "
                     "TO DISK=@path WITH COPY_ONLY,CHECKSUM", backup)
             execute(master, "DECLARE @path nvarchar(4000)=?; RESTORE VERIFYONLY FROM DISK=@path WITH CHECKSUM", backup)
             cursor = master.execute("DECLARE @path nvarchar(4000)=?; RESTORE FILELISTONLY FROM DISK=@path", backup)
@@ -95,14 +95,14 @@ def run():
             log_name = next(row["LogicalName"] for row in parts if row["Type"] == "L")
             execute(master, "DECLARE @backup nvarchar(4000)=?,@dataName nvarchar(128)=?,@dataPath nvarchar(4000)=?,"
                     "@logName nvarchar(128)=?,@logPath nvarchar(4000)=?; "
-                    "RESTORE DATABASE [SubTrack_CodexRestore_20261020] FROM DISK=@backup "
+                    "RESTORE DATABASE [SubTrack_CodexMainRestore_20261020] FROM DISK=@backup "
                     "WITH MOVE @dataName TO @dataPath,MOVE @logName TO @logPath,CHECKSUM,RECOVERY",
                     backup, data_name, data_path, log_name, log_path)
         restored = build_app(RESTORE_DATABASE, uploads=uploads)
         if snapshots(restored) != before or snapshots(source) != before:
             raise RuntimeError("Restore records mismatch or source records changed")
         with pyodbc.connect(dsn(RESTORE_DATABASE), autocommit=True) as connection:
-            execute(connection, "DBCC CHECKDB ([SubTrack_CodexRestore_20261020]) WITH NO_INFOMSGS")
+            execute(connection, "DBCC CHECKDB ([SubTrack_CodexMainRestore_20261020]) WITH NO_INFOMSGS")
         for item in files:
             if hashlib.sha256((uploads / item["stored_name"]).read_bytes()).hexdigest() != item["sha256"]:
                 raise RuntimeError("Restored upload hash mismatch")

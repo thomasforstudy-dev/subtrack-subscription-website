@@ -238,6 +238,10 @@ def bill_checks(app, me, other, post):
 
 
 def main():
+    if "--dashboard-only" in sys.argv:
+        from scripts.validate_dashboard_sqlserver import main as check_dashboard
+        check_dashboard()
+        return
     if "--bills-only" in sys.argv:
         result = application_checks(bills_only=True)
         (ROOT / "instance" / "sql-bills-recheck.json").write_text(json.dumps(result, indent=2), encoding="utf-8")

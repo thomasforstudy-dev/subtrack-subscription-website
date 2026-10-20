@@ -158,7 +158,8 @@ def overview(user) -> dict:
         links_count=Link.query.filter_by(user_id=user.id).count(),
         spent_month=sum((total for (total,) in db.session.query(Bill.total).filter(
             Bill.user_id == user.id, Bill.status == "confirmed", Bill.kind == "receipt", Bill.currency == currency,
-            Bill.total.isnot(None), func.coalesce(Bill.transaction_date, Bill.invoice_date) >= month_start(today))),
+            Bill.total.isnot(None), func.coalesce(Bill.transaction_date, Bill.invoice_date) >= month_start(today),
+            func.coalesce(Bill.transaction_date, Bill.invoice_date) < month_start(today, 1))),
             Decimal(0)),
         bars=chart(user, active, currency, today) if currency else [],
         activity=activity(user, today),

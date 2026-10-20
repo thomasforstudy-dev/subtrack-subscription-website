@@ -24,9 +24,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 INSTANCE = ROOT / "instance"
 ACCESS = INSTANCE / "sql-preview-access.json"
-DATABASE = "SubTrack_CodexPreview_20261020"
-RESTORE_DATABASE = "SubTrack_CodexRestore_20261020"
-PORT = 8773
+DATABASE = "SubTrack_CodexMainPreview_20261020"
+RESTORE_DATABASE = "SubTrack_CodexMainRestore_20261020"
+PORT = 8774
 
 
 def dsn(database=DATABASE):
@@ -103,6 +103,8 @@ def build_app(database=DATABASE, uploads=None):
     # Public link metadata fetching is intentionally unavailable in this fixture.
     links.fetch_preview = lambda url: {}
     app.cli.commands.pop("send-reminders", None)
+    app.cli.commands.pop("process-documents", None)
+    os.environ.update(OCR_PROVIDER="", OCR_API_KEY="", OCR_BASE_URL="")
     if uploads is not None:
         app.instance_path = str(Path(uploads).parent)
     with app.app_context():
@@ -138,7 +140,7 @@ def initialize():
     access_details(create=True)
     with pyodbc.connect(dsn("master"), autocommit=True) as master:
         if master.execute("SELECT DB_ID(?)", DATABASE).fetchone()[0] is None:
-            master.execute("CREATE DATABASE [SubTrack_CodexPreview_20261020]")
+            master.execute("CREATE DATABASE [SubTrack_CodexMainPreview_20261020]")
     scripts = apply_migrations()
     app = build_app()
     from app import db

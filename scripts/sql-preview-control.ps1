@@ -7,7 +7,7 @@ $sqlRoot = Split-Path -Parent $PSScriptRoot
 $sqlInstance = Join-Path $sqlRoot 'instance'
 $sqlScript = Join-Path $PSScriptRoot 'sql_preview.py'
 $sqlPidFile = Join-Path $sqlInstance 'sql-preview.pid'
-$sqlHealthUrl = 'http://127.0.0.1:8773/__sql_preview__/health'
+$sqlHealthUrl = 'http://127.0.0.1:8774/__sql_preview__/health'
 New-Item -ItemType Directory -Force -Path $sqlInstance | Out-Null
 if (!$Python) {
     $Python = Join-Path (Split-Path -Parent $sqlRoot) 'subtrack\.venv\Scripts\python.exe'
@@ -38,8 +38,8 @@ if ($Action -eq 'stop') {
     exit 0
 }
 if ($Action -eq 'start' -and !$sqlProcess) {
-    $sqlListener = Get-NetTCPConnection -State Listen -LocalPort 8773 -ErrorAction SilentlyContinue
-    if ($sqlListener) { throw 'Port 8773 is occupied; no existing process was stopped.' }
+    $sqlListener = Get-NetTCPConnection -State Listen -LocalPort 8774 -ErrorAction SilentlyContinue
+    if ($sqlListener) { throw 'Port 8774 is occupied; no existing process was stopped.' }
     $sqlProcess = Start-Process -FilePath $Python -ArgumentList @('-u', "`"$sqlScript`"", 'serve') `
         -WorkingDirectory $sqlRoot -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput (Join-Path $sqlInstance 'sql-preview.log') `
@@ -53,7 +53,7 @@ do {
     try {
         $sqlHealth = Invoke-RestMethod -Uri $sqlHealthUrl -TimeoutSec 2
         $sqlAccess = Get-Content (Join-Path $sqlInstance 'sql-preview-access.json') -Raw | ConvertFrom-Json
-        if ($sqlHealth.provider -ne 'mssql' -or $sqlHealth.database -ne 'SubTrack_CodexPreview_20261020' -or
+        if ($sqlHealth.provider -ne 'mssql' -or $sqlHealth.database -ne 'SubTrack_CodexMainPreview_20261020' -or
             $sqlHealth.instance_id -ne $sqlAccess.instance_id) {
             throw 'Preview identity does not match the owned process.'
         }
@@ -65,7 +65,7 @@ do {
             }
             $sqlHealth.pid | Set-Content -LiteralPath $sqlPidFile
         }
-        Write-Output "Ready: http://127.0.0.1:8773/bills/ | SQL Server | $($sqlHealth.database) | $($sqlHealth.revision)"
+        Write-Output "Ready: http://127.0.0.1:8774/bills/ | SQL Server | $($sqlHealth.database) | $($sqlHealth.revision)"
         Write-Output 'Owner-only synthetic logins: instance\sql-preview-access.json'
         exit 0
     } catch {
