@@ -59,6 +59,24 @@ def test_only_the_newest_code_works(user, app):
     assert verified(app)
 
 
+def test_two_unused_codes_only_the_newest_works(user, app):
+    # Two "send again" clicks at the same moment can each leave an unused code.
+    from app import email_codes
+
+    with app.app_context():
+        me = User.query.one()
+        older = email_codes.issue(me)
+        db.session.add(EmailCode(user_id=me.id, code_hash=email_codes._hash(me, "424242"), email=me.email,
+                                 expires_at=utcnow() + timedelta(minutes=30)))
+        db.session.commit()
+        assert EmailCode.query.filter_by(used_at=None).count() == 2
+    if older != "424242":
+        user.post("/verify-email/code", data={"code": older})
+        assert not verified(app)
+    user.post("/verify-email/code", data={"code": "424242"})
+    assert verified(app)
+
+
 def test_a_code_belongs_to_one_account(client, app):
     sign_up(client, "first@example.com")
     first_code = last_code()
