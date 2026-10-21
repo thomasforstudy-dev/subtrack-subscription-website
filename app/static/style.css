@@ -1019,35 +1019,53 @@ button.small {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.85rem 1.1rem;
-  margin-bottom: 1.25rem;
-  border-radius: 14px;
+  gap: 0.85rem;
+  padding: 0.95rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-card, 16px);
   background: var(--tint-amber);
-  border: 1px solid #fde68a;
+  border: 1px solid var(--tint-amber-border, rgba(245, 158, 11, 0.35));
   color: var(--tint-amber-fg);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .verify-banner-content {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  flex: 1;
-  min-width: 15rem;
+  gap: 0.75rem;
+  flex: 1 1 18rem;
 }
 
 .verify-banner-icon {
   display: inline-grid;
   place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2.2rem;
+  height: 2.2rem;
   border-radius: 50%;
-  background: var(--sun);
-  color: var(--text);
-  font-weight: 800;
-  font-size: 0.82rem;
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--line);
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.verify-banner-text {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--tint-amber-fg);
+}
+
+.verify-banner-text strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.verify-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* --- Modal Dialogs (Scroll Containment per modern-web-guidance) --- */
@@ -2801,10 +2819,26 @@ dialog::backdrop {
   border-color: var(--line);
 }
 
+.status-banner.offline-banner {
+  background: var(--tint-amber);
+  color: var(--tint-amber-fg);
+  border-color: var(--line);
+  border-left: 4px solid var(--tint-amber-fg);
+  margin-top: 0.5rem;
+}
+
 .review-grid {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
   gap: 1.15rem;
+  max-width: 100%;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .source-toolbar,
@@ -4377,6 +4411,116 @@ nav.footer-cols {
   }
 }
 
+/* Document reading status (bills/job.html): one orb per job state.
+   Colours are tokens so the page works in the light and dark themes. */
+.reading-stage-card {
+  border-radius: var(--radius);
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+
+.reading-orb {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: var(--tint-amber);
+  color: var(--tint-amber-fg);
+  position: relative;
+}
+
+.reading-orb.running {
+  background: var(--accent-gradient);
+  color: #fff; /* white on the orange accent in both themes, like the hero tile */
+  animation: reading-pulse 2s infinite ease-in-out;
+}
+
+/* The ring uses the accent colour at fading strength. */
+@keyframes reading-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 18px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+.reading-orb.succeeded {
+  background: var(--tint-green);
+  color: var(--tint-green-fg);
+}
+
+.reading-orb.failed {
+  background: var(--tint-red);
+  color: var(--tint-red-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading-orb.running {
+    animation: none;
+  }
+}
+
+/* "Type it in yourself" row under the reading status. */
+.manual-entry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.compact-top-tight {
+  margin: 0.2rem 0 0;
+}
+
+/* Draft review: the uploaded picture and the text we read from each page. */
+.source-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.source-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.reading-meta-box {
+  max-width: 480px;
+}
+
+.reading-meta-box h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+}
+
+.reading-meta-box p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
 @media print {
   .topbar,
   .tabbar,
@@ -5230,14 +5374,38 @@ a.tile:hover {
 
 /* Extension tokens page (api_tokens.html): the new secret, shown once, in full. */
 .token-new {
-  border-color: var(--accent);
+  border-left: 4px solid var(--accent);
   background: var(--accent-soft);
+  padding: 1.25rem;
+  border-radius: var(--radius-card, 16px);
 }
 
-.token-new input {
-  width: 100%;
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; /* tells l, 1 and I apart */
+.token-secret-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
 }
+
+.token-secret-box input {
+  flex: 1 1 18rem;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; /* tells l, 1 and I apart */
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm, 8px);
+}
+
+.token-secret-box input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 /* Yellow "confirm your email" banner: the 6-digit code box (base.html). */
 .verify-code-form {
   display: flex;
@@ -5248,8 +5416,76 @@ a.tile:hover {
 .verify-code-form input {
   width: 8.5rem;
   min-height: 2.4rem;
-  text-align: center;
-  letter-spacing: 0.25em;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1.05rem;
   font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.22em;
   font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.verify-code-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.verify-code-form input::placeholder {
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.verify-resend-form {
+  display: inline-flex;
+  align-items: center;
+}
+
+.verify-resend-link {
+  color: var(--tint-amber-fg);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: none;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.verify-resend-link:hover {
+  opacity: 0.75;
+}
+
+@media (max-width: 640px) {
+  .verify-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.9rem 1rem;
+    gap: 0.8rem;
+  }
+  .verify-banner-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  .verify-code-form {
+    width: 100%;
+  }
+  .verify-code-form input {
+    flex: 1;
+    width: auto;
+  }
+  .verify-resend-form {
+    justify-content: center;
+  }
 }

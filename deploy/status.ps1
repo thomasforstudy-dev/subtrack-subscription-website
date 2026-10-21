@@ -12,7 +12,7 @@ Write-Host "============================================================" -Foreg
 
 # 1. Scheduled Tasks Status
 Write-Host "1. Windows Scheduled Tasks:" -ForegroundColor Yellow
-foreach ($taskName in @("SubTrack-Server", "SubTrack-Tunnel")) {
+foreach ($taskName in @("SubTrack-Server", "SubTrack-Tunnel", "SubTrack-Reminders")) {
     $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
     if ($task) {
         $info = Get-ScheduledTaskInfo -TaskName $taskName -ErrorAction SilentlyContinue

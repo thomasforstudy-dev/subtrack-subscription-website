@@ -99,9 +99,16 @@
           </p>
         </fieldset>
 
-        <p class="muted small-text" data-vi="Lưu ý: Số ngày nhắc trước (lead_days, ví dụ 14, 7, 3) được thiết lập riêng trên từng gói đăng ký." data-en="'Days before' is set on each subscription.">
-          Lưu ý: Số ngày nhắc trước (<code>lead_days</code>, ví dụ <code>14, 7, 3</code>) được thiết lập riêng trên từng gói đăng ký.
-        </p>
+        <div class="status-banner warn compact">
+          <strong data-vi="Trạng thái email nhắc nhở: Chưa bật (Đang chờ phê duyệt)" data-en="Reminder email status: Not switched on yet (Awaiting schedule approval)">Trạng thái email nhắc nhở: Chưa bật (Đang chờ phê duyệt)</strong>
+          <p class="muted small-text" data-vi="Email nhắc nhở hiện chưa được bật (đang chờ phê duyệt lịch gửi tự động). Khi được bật, hệ thống gửi email qua lệnh máy chủ 'flask send-reminders' chạy định kỳ mỗi 30 phút. Để nhận email thành công: (1) Tài khoản phải được xác nhận email; (2) Tùy chọn 'Bật gửi lời nhắc' phải được kích hoạt; (3) Kênh Email được tích chọn; (4) Từng gói đăng ký cần có số ngày nhắc trước (lead_days, ví dụ 14, 7, 3) phù hợp." data-en="Reminder emails are not switched on yet until the owner approves the schedule. Once active, reminders are dispatched by the server job 'flask send-reminders' (every 30 minutes). Delivery requires: (1) Confirmed email address; (2) 'Send me reminders' active; (3) Email channel checked; (4) Valid lead_days set on each subscription.">
+            Email nhắc nhở hiện <strong>chưa được bật</strong> (đang chờ phê duyệt lịch gửi tự động). Khi được bật, hệ thống gửi email qua lệnh máy chủ <code>flask send-reminders</code> (mỗi 30 phút). Để nhận email thành công:
+            (1) Tài khoản phải được <strong>xác nhận email</strong>;
+            (2) Tùy chọn <strong>Bật gửi lời nhắc</strong> phải được kích hoạt;
+            (3) Kênh <strong>Email</strong> được tích chọn;
+            (4) Từng gói đăng ký cần có số ngày nhắc trước (<code>lead_days</code>, ví dụ <code>14, 7, 3</code>) phù hợp.
+          </p>
+        </div>
 
         <div class="form-actions">
           <button type="submit" data-vi="Lưu cài đặt máy chủ (Save)" data-en="Save">Lưu cài đặt máy chủ (Save)</button>

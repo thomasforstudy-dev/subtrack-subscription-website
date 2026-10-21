@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% from "_mascot.html" import mascot %}
 {% block title %}Mã tiện ích Chrome — AllOutFree{% endblock %}
 {% block content %}
-  {# Backend page (app/api_tokens.py), plain on purpose: the UI lane can restyle it.
+  {# Backend page (app/api_tokens.py), restyled for AllOutFree v3 design system.
      Keep the routes and field names (docs/CONTRACT.md -> Extension API tokens). #}
   <div class="section-head">
     <div>
@@ -13,10 +14,16 @@
 
   {% if new_secret %}
     <div class="card token-new" role="status">
-      <h2 class="card-title" data-vi="Sao chép mã này ngay" data-en="Copy this token now">Sao chép mã này ngay</h2>
-      <p data-vi="Dán vào tiện ích AllOutFree. Mã chỉ hiện một lần: AllOutFree không lưu nó, nên không thể hiện lại." data-en="Paste it into the AllOutFree extension. It is shown only once: AllOutFree doesn't keep it, so it can't be shown again.">Dán vào tiện ích AllOutFree. Mã chỉ hiện một lần: AllOutFree không lưu nó, nên không thể hiện lại.</p>
+      <div class="card-head-row">
+        <h2 class="card-title" data-vi="Sao chép mã này ngay" data-en="Copy this token now">Sao chép mã này ngay</h2>
+        <span class="pill sun-label" data-vi="Chỉ hiện một lần" data-en="Shown once">Chỉ hiện một lần</span>
+      </div>
+      <p class="muted small-text" data-vi="Dán vào tiện ích AllOutFree. Mã chỉ hiện một lần: AllOutFree không lưu mã gốc, nên không thể hiện lại." data-en="Paste it into the AllOutFree extension. It is shown only once: AllOutFree doesn't keep it, so it can't be shown again.">Dán vào tiện ích AllOutFree. Mã chỉ hiện một lần: AllOutFree không lưu nó, nên không thể hiện lại.</p>
       <label class="sr-only" for="new-token">Token</label>
-      <input id="new-token" type="text" value="{{ new_secret }}" readonly autocomplete="off" spellcheck="false" />
+      <div class="token-secret-box">
+        <input id="new-token" type="text" value="{{ new_secret }}" readonly autocomplete="off" spellcheck="false" onclick="this.select()" />
+        <button type="button" class="button btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('new-token').value); this.innerText='Đã sao chép!';" data-vi="Sao chép" data-en="Copy">Sao chép</button>
+      </div>
     </div>
   {% endif %}
 
@@ -82,7 +89,10 @@
         </table>
       </div>
     {% else %}
-      <p class="muted" data-vi="Chưa có mã nào." data-en="No tokens yet.">Chưa có mã nào.</p>
+      <div class="empty-state">
+        {{ mascot("hi", 80) }}
+        <p class="empty-text" data-vi="Chưa có mã nào. Tạo một mã bên trên để kết nối tiện ích Chrome." data-en="No tokens yet. Create one above to connect the Chrome extension.">Chưa có mã nào. Tạo một mã bên trên để kết nối tiện ích Chrome.</p>
+      </div>
     {% endif %}
   </div>
 {% endblock %}
