@@ -54,7 +54,7 @@ def test_readiness_deadline_is_bounded(timeout):
 
 def test_readiness_checks_database_and_redacts_failures(app, monkeypatch):
     from app import db
-    monkeypatch.setattr("deploy.health.subprocess.check_output", lambda *args, **kwargs: b"new")
+    monkeypatch.setattr("deploy.health.read_revision", lambda root: "new")
     install_readiness(app)
     client = app.test_client()
     healthy = client.get("/__subtrack__/ready")
