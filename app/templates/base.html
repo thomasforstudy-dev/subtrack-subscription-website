@@ -142,13 +142,23 @@
       <main id="main-content">
         {% include "_flashes.html" %}
         {% if signed_in and (current_user.email_verified is defined and not current_user.email_verified) %}
-          <form class="verify-banner" method="post" action="{{ url_for('auth.resend_verification') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          {# Confirm with the 6-digit code from the email (or its link), or ask for a new email. #}
+          <div class="verify-banner">
             <span data-vi="Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn." data-en="Please confirm your email ({{ current_user.email }}) so we can send your reminders.">
               Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn. <span class="sr-only">Please confirm your email ({{ current_user.email }}) so we can send your reminders.</span>
             </span>
-            <button type="submit" class="link" data-vi="Gửi lại liên kết xác nhận" data-en="Send the link again">Gửi lại liên kết xác nhận</button>
-          </form>
+            <form class="verify-code-form" method="post" action="{{ url_for('auth.verify_code') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="hidden" name="next" value="{{ request.path }}" />
+              <label class="sr-only" for="verify-code">Mã 6 số trong email</label>
+              <input id="verify-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="Mã 6 số" required />
+              <button type="submit" class="btn-sm" data-vi="Xác nhận" data-en="Confirm">Xác nhận</button>
+            </form>
+            <form method="post" action="{{ url_for('auth.resend_verification') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="link" data-vi="Gửi lại email xác nhận" data-en="Send the email again">Gửi lại email xác nhận</button>
+            </form>
+          </div>
         {% endif %}
         {% block content %}{% endblock %}
       </main>

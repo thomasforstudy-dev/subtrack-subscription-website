@@ -13,7 +13,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app import api_tokens, db, tokens
+from app import api_tokens, db, email_codes, tokens
 from app.mailer import Email, MailError, MailNotReady, external_url, mail_ready, send_email
 from app.models import User, utcnow
 from app.schedule import user_zone
@@ -38,6 +38,8 @@ failed_logins = RateLimiter(5, LOCKOUT_MINUTES * 60)
 failed_logins_per_ip = RateLimiter(30, LOCKOUT_MINUTES * 60)
 # "Forgot password" and "resend the confirm email": 5 per hour per address.
 email_requests = RateLimiter(5, 60 * 60)
+# Wrong 6-digit codes: 5 per account, then the code is cancelled.
+wrong_codes = RateLimiter(5, LOCKOUT_MINUTES * 60)
 
 # Checked when nobody has that email, so a wrong email takes as long as a
 # wrong password and the timing doesn't reveal which accounts exist.
@@ -105,16 +107,21 @@ def finish_login(user: User, next_url: str | None = None):
 
 
 def send_verification(user: User) -> bool:
-    """Email a "confirm your email" link. Returns False if it couldn't be sent."""
+    """Email a "confirm your email" link and a 6-digit code (either one works).
+    Returns False if it couldn't be sent."""
     raw = tokens.issue(user, "verify_email", VERIFY_MINUTES)
     link = external_url("auth.verify_email", token=raw)
+    code = email_codes.issue(user)  # only the newest code works
+    wrong_codes.reset(f"user-{user.id}")  # a fresh code gets fresh tries
     return _send(Email(
         to=user.email,
-        subject="Confirm your AllOutFree email",
+        subject=f"{code} is your AllOutFree code",
         text=(
-            f"Hi {user.username},\n\nPlease confirm your email so AllOutFree can send "
-            f"your renewal reminders:\n\n{link}\n\nThe link works for 24 hours. "
-            "If you didn't sign up, you can ignore this email."
+            f"Hi {user.username},\n\nYour AllOutFree code is: {code}\n\n"
+            f"Type it in the yellow box on AllOutFree (it works for {email_codes.MINUTES} minutes), "
+            f"or click this link instead (it works for 24 hours):\n\n{link}\n\n"
+            "Confirming your email lets AllOutFree send your renewal reminders. "
+            "If you didn't sign up, you can ignore this email. Never share the code with anyone."
         ),
         idempotency_key=f"verify-{user.id}-{raw[:16]}",
     ))
@@ -179,7 +186,7 @@ def register():
         return show("auth/register.html")
 
     if send_verification(user):
-        flash("Welcome! We've sent you an email: click the link in it to confirm your address.")
+        flash("Welcome! We've emailed you a 6-digit code: type it in the yellow box (or click the link in the email).")
     else:
         flash("Welcome! We couldn't send the confirmation email right now. You can resend it later.")
     return finish_login(user)
@@ -247,6 +254,35 @@ def verify_email(token: str):
     return redirect(url_for("auth.login"))
 
 
+@bp.post("/verify-email/code")
+@login_required
+def verify_code():
+    """The 6-digit code from the email, typed into the yellow banner."""
+    back = safe_next_url(request.form.get("next")) or url_for("subscriptions.list_subscriptions")
+    if current_user.email_verified:
+        flash("Your email is already confirmed.")
+        return redirect(back)
+    key = f"user-{current_user.id}"
+    if wrong_codes.is_blocked(key):
+        flash("Too many wrong codes. Please send yourself a new one.")
+        return redirect(back)
+    code = "".join((request.form.get("code") or "").split())  # "123 456" is fine too
+    if not (re.fullmatch(r"[0-9]{6}", code) and email_codes.use(current_user, code)):
+        wrong_codes.hit(key)
+        if wrong_codes.is_blocked(key):
+            # Someone guessing gets no more tries at this code.
+            email_codes.cancel_all(current_user)
+            flash("That was the 5th wrong code, so we cancelled it. Please send yourself a new one.")
+        else:
+            flash("That code isn't right or has expired. Check the newest email from AllOutFree.")
+        return redirect(back)
+    current_user.email_verified_at = current_user.email_verified_at or utcnow()
+    db.session.commit()
+    wrong_codes.reset(key)
+    flash("Thanks! Your email is confirmed.")
+    return redirect(back)
+
+
 @bp.post("/verify-email/resend")
 @login_required
 def resend_verification():
@@ -256,7 +292,7 @@ def resend_verification():
     elif not email_requests.hit(f"user-{current_user.id}"):
         flash("We've sent a few emails already. Please check your spam folder, or try again in an hour.")
     elif send_verification(current_user):
-        flash(f"Sent! Check {current_user.email} for the link.")
+        flash(f"Sent! Check {current_user.email} for the new code (older codes stop working).")
     else:
         flash("We couldn't send the email right now. Please try again later.")
     return redirect(back)

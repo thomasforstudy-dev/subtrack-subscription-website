@@ -5238,3 +5238,18 @@ a.tile:hover {
   width: 100%;
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; /* tells l, 1 and I apart */
 }
+/* Yellow "confirm your email" banner: the 6-digit code box (base.html). */
+.verify-code-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.verify-code-form input {
+  width: 8.5rem;
+  min-height: 2.4rem;
+  text-align: center;
+  letter-spacing: 0.25em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
