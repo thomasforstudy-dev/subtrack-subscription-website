@@ -10,6 +10,8 @@ EXPECTED_TABLES = {
     "document_jobs", "document_pages", "bill_drafts", "bill_draft_revisions",
     # 08_api_tokens.sql: tokens for the Chrome extension
     "api_tokens",
+    # 09_email_codes.sql: 6-digit codes in the confirm email
+    "email_codes",
 }
 
 

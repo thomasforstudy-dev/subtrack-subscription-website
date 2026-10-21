@@ -50,10 +50,16 @@ Now **POST only** (a plain link answers 405). Use a small form:
 |---|---|---|
 | `GET /verify-email/<token>` | — | `auth/verify.html` (gets `valid: bool`) shows a "Confirm my email" button |
 | `POST /verify-email/<token>` | `csrf_token` | — (redirects) |
+| `POST /verify-email/code` (logged in, since 21 Oct) | `csrf_token`, `code` (6 digits, spaces ok), `next` (a path on this site) | — (redirects to `next`) |
 | `POST /verify-email/resend` (logged in) | `csrf_token` | — (redirects back) |
 
 The link is valid for 24 hours and works once. Clicking only *opens* the page;
 the button press confirms, so email scanners that open links can't use it up.
+
+The same email also holds a **6-digit code** (subject "123456 is your AllOutFree code"),
+typed into the yellow banner in `base.html` (`autocomplete="one-time-code"`). It works once,
+for 30 minutes, only for the address it was sent to; each new email cancels the older code;
+5 wrong codes cancel it. Codes are a separate table (`email_codes`), so a code is never a link.
 
 ### Forgot / reset password
 
