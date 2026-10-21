@@ -9,6 +9,12 @@
 (function () {
   "use strict";
 
+  // The page language comes from the server (<html data-ui-lang>, app/i18n.py).
+  // It is read on every call, so Subby always answers in the language shown.
+  function tr(vi, en) {
+    return document.documentElement.getAttribute("data-ui-lang") === "en" ? en : vi;
+  }
+
   const root = document.querySelector("[data-subby]");
   if (!root) return;
 
@@ -58,38 +64,38 @@
   const ANSWERS = [
     {
       words: ["remind", "reminder", "email", "before", "when", "nhắc", "lời nhắc", "gia hạn", "trước"],
-      fun: "Bạn chọn số ngày muốn được nhắc trước ngày gia hạn dự kiến (tối đa 3 mốc như 14, 7, 3 ngày) và giờ nhận trong Cài đặt. Khi công việc nhắc lịch chạy trên máy chủ và email đã xác thực, hệ thống sẽ gửi thông báo để bạn chủ động giữ hoặc hủy gói!",
-      plain: "Bạn có thể đặt tối đa 3 mốc nhắc trước ngày gia hạn dự kiến (ví dụ: 14,7,3 ngày) và cấu hình múi giờ/giờ nhắc trong Cài đặt.",
+      fun: tr("Bạn chọn số ngày muốn được nhắc trước ngày gia hạn dự kiến (tối đa 3 mốc như 14, 7, 3 ngày) và giờ nhận trong Cài đặt. Khi công việc nhắc lịch chạy trên máy chủ và email đã xác thực, hệ thống sẽ gửi thông báo để bạn chủ động giữ hoặc hủy gói!", 'You pick how many days before each renewal to be reminded (up to 3, like 14, 7, 3) and the hour in Settings. AllOutFree emails you then, so you can keep or cancel in time!'),
+      plain: tr("Bạn có thể đặt tối đa 3 mốc nhắc trước ngày gia hạn dự kiến (ví dụ: 14,7,3 ngày) và cấu hình múi giờ/giờ nhắc trong Cài đặt.", 'Set up to 3 reminder days before each renewal (like 14, 7, 3) and pick your time zone and hour in Settings.'),
     },
     {
       words: ["add", "new", "netflix", "spotify", "track", "how do i", "start", "thêm", "tạo", "mới", "bắt đầu"],
-      fun: "Bấm '+ Thêm gói', điền tên dịch vụ (như Netflix), số tiền, chu kỳ thanh toán, ngày gia hạn dự kiến tiếp theo và các mốc nhắc (ví dụ 14,7,3). Chưa đầy 20 giây là xong!",
-      plain: "Bấm '+ Thêm gói đăng ký', nhập tên dịch vụ, giá tiền, chu kỳ, ngày gia hạn tiếp theo, các mốc ngày nhắc và bấm Lưu.",
+      fun: tr("Bấm '+ Thêm gói', điền tên dịch vụ (như Netflix), số tiền, chu kỳ thanh toán, ngày gia hạn dự kiến tiếp theo và các mốc nhắc (ví dụ 14,7,3). Chưa đầy 20 giây là xong!", "Press '+ Add plan', type the service (like Netflix), price, cycle, next renewal date and reminder days (like 14,7,3). Done in 20 seconds!"),
+      plain: tr("Bấm '+ Thêm gói đăng ký', nhập tên dịch vụ, giá tiền, chu kỳ, ngày gia hạn tiếp theo, các mốc ngày nhắc và bấm Lưu.", "Press '+ Add plan', type the service, price, cycle, next renewal date and reminder days, then Save."),
     },
     {
       words: ["pin", "pinned", "link", "links", "bookmark", "save a link", "ghim", "đường dẫn", "lưu link"],
-      fun: "Link đã ghim là nơi cất giữ các trang quản lý/hủy gói khó tìm (như trang hủy Adobe hay Netflix). Khi dán URL, máy chủ tự lấy tiêu đề và biểu tượng trang web; tới kỳ gia hạn chỉ cần 1 cú nhấp là mở đúng chỗ!",
-      plain: "Link đã ghim giúp lưu lại URL trang quản lý hoặc hủy dịch vụ, tự động lấy tiêu đề và biểu tượng trang, hỗ trợ tìm kiếm theo thẻ.",
+      fun: tr("Link đã ghim là nơi cất giữ các trang quản lý/hủy gói khó tìm (như trang hủy Adobe hay Netflix). Khi dán URL, máy chủ tự lấy tiêu đề và biểu tượng trang web; tới kỳ gia hạn chỉ cần 1 cú nhấp là mở đúng chỗ!", "Pinned links keep those hard-to-find manage and cancel pages (like Adobe's or Netflix's). Paste a link and the title fills in by itself; at renewal time it's one click away!"),
+      plain: tr("Link đã ghim giúp lưu lại URL trang quản lý hoặc hủy dịch vụ, tự động lấy tiêu đề và biểu tượng trang, hỗ trợ tìm kiếm theo thẻ.", 'Pinned links save the manage or cancel page of a service, with its title and icon, and you can search them by tag.'),
     },
     {
       words: ["cancel", "unsubscribe", "stop a subscription", "hủy", "tự hủy"],
-      fun: "Mình không tự bấm nút hủy thay bạn (vì AllOutFree không bao giờ giữ mật khẩu Netflix hay thẻ ngân hàng của bạn). Thay vào đó, mình giữ sẵn đường dẫn hủy đã ghim để bạn tự hủy ngay khi nhận lời nhắc!",
-      plain: "AllOutFree không đăng nhập vào tài khoản dịch vụ của bạn. Bạn hãy lưu URL hủy vào mục Link đã lưu hoặc ô đường dẫn quản lý để mở nhanh khi cần.",
+      fun: tr("Mình không tự bấm nút hủy thay bạn (vì AllOutFree không bao giờ giữ mật khẩu Netflix hay thẻ ngân hàng của bạn). Thay vào đó, mình giữ sẵn đường dẫn hủy đã ghim để bạn tự hủy ngay khi nhận lời nhắc!", "I can't press cancel for you (AllOutFree never holds your Netflix password or bank card). But I keep your saved cancel link ready, so you can cancel the moment the reminder arrives!"),
+      plain: tr("AllOutFree không đăng nhập vào tài khoản dịch vụ của bạn. Bạn hãy lưu URL hủy vào mục Link đã lưu hoặc ô đường dẫn quản lý để mở nhanh khi cần.", "AllOutFree doesn't log in to your services. Save the cancel page in Links or in the plan's manage link to open it fast."),
     },
     {
       words: ["bill", "bills", "ocr", "receipt", "statement", "hóa đơn", "sao kê", "chứng từ"],
-      fun: "Bạn có thể lưu tệp riêng tư, nhập và sửa hóa đơn tại mục Hóa đơn, rồi xuất JSON, CSV hoặc Markdown. OCR tự điền vẫn chưa hoạt động — bạn kiểm tra và nhập những gì có trên hóa đơn nhé!",
-      plain: "Mục Hóa đơn hỗ trợ nhập tay, lưu tệp riêng tư và xuất dữ liệu. OCR tự trích xuất chưa hoạt động. Thống kê giao dịch của Subby hiện chỉ gồm các khoản gia hạn gói, không phải hóa đơn đã lưu.",
+      fun: tr("Bạn có thể lưu tệp riêng tư, nhập và sửa hóa đơn tại mục Hóa đơn, rồi xuất JSON, CSV hoặc Markdown. OCR tự điền vẫn chưa hoạt động — bạn kiểm tra và nhập những gì có trên hóa đơn nhé!", 'Keep your files private, type in or edit bills in Bills, and export JSON, CSV or Markdown. PDFs and Word files can be read for you; photos still need typing in.'),
+      plain: tr("Mục Hóa đơn hỗ trợ nhập tay, lưu tệp riêng tư và xuất dữ liệu. OCR tự trích xuất chưa hoạt động. Thống kê giao dịch của Subby hiện chỉ gồm các khoản gia hạn gói, không phải hóa đơn đã lưu.", 'Bills: type them in or upload a file, keep it private, and export your data. PDFs and Word files can be read for you.'),
     },
     {
       words: ["password", "login", "account", "sign up", "mật khẩu", "đăng nhập", "tài khoản", "đăng ký"],
-      fun: "Mật khẩu được băm bảo mật (tối thiểu 12 ký tự gồm chữ hoa, chữ thường, số và ký tự đặc biệt). Mỗi tài khoản chỉ nhìn thấy dữ liệu của chính mình!",
-      plain: "Đăng ký bằng tên người dùng, email và mật khẩu từ 12 ký tự trở lên. Dữ liệu của mỗi người dùng được cách ly hoàn toàn.",
+      fun: tr("Mật khẩu được băm bảo mật (tối thiểu 12 ký tự gồm chữ hoa, chữ thường, số và ký tự đặc biệt). Mỗi tài khoản chỉ nhìn thấy dữ liệu của chính mình!", 'Passwords are stored hashed (at least 12 characters with a capital, a number and a symbol). Every account only ever sees its own data!'),
+      plain: tr("Đăng ký bằng tên người dùng, email và mật khẩu từ 12 ký tự trở lên. Dữ liệu của mỗi người dùng được cách ly hoàn toàn.", "Sign up with a username, email and a password of 12+ characters. Each account's data is kept apart."),
     },
     {
       words: ["hello", "hi ", "hey ", "chào", "xin chào"],
-      fun: "Chào bạn! Mình là Subby 👋 Mình rành chuyện gói đăng ký, lịch gia hạn và link đã lưu. Bạn muốn hỏi bằng chữ hay thử bấm Mic nói chuyện nào?",
-      plain: "Xin chào! Mình là Subby. Bạn có thể nhập câu hỏi hoặc bấm nút Mic để hỏi bằng giọng nói.",
+      fun: tr("Chào bạn! Mình là Subby 👋 Mình rành chuyện gói đăng ký, lịch gia hạn và link đã lưu. Bạn muốn hỏi bằng chữ hay thử bấm Mic nói chuyện nào?", "Hi! I'm Subby 👋 I know all about subscriptions, renewal dates and saved links. Type a question or press the mic to talk!"),
+      plain: tr("Xin chào! Mình là Subby. Bạn có thể nhập câu hỏi hoặc bấm nút Mic để hỏi bằng giọng nói.", "Hello! I'm Subby. Type a question or press the mic to ask by voice."),
     },
   ];
 
@@ -128,36 +134,36 @@
       if (customLabel) {
         voiceDetectorLabel.textContent = customLabel;
       } else if (state === "listening") {
-        voiceDetectorLabel.textContent = "🎤 Active Speech Detected · Đang nghe (Nhấn Mic để dừng)";
+        voiceDetectorLabel.textContent = tr("🎤 Đang nghe (nhấn Mic để dừng)", "🎤 Listening (press the mic to stop)");
       } else if (state === "thinking") {
-        voiceDetectorLabel.textContent = "🤔 Subby đang suy nghĩ câu trả lời…";
+        voiceDetectorLabel.textContent = tr("🤔 Subby đang suy nghĩ…", "🤔 Subby is thinking…");
       } else if (state === "speaking") {
-        voiceDetectorLabel.textContent = "🔊 Subby đang đọc câu trả lời…";
+        voiceDetectorLabel.textContent = tr("🔊 Subby đang đọc câu trả lời…", "🔊 Subby is reading the answer…");
       } else {
-        voiceDetectorLabel.textContent = "Nhấn biểu tượng Mic ở giữa để bắt đầu nói";
+        voiceDetectorLabel.textContent = tr("Nhấn biểu tượng Mic ở giữa để bắt đầu nói", "Press the mic in the middle to start talking");
       }
     }
     if (voiceLiveBadge) {
       if (state === "listening") {
-        voiceLiveBadge.textContent = "● Live audio";
+        voiceLiveBadge.textContent = tr("● Đang nghe", "● Listening");
         voiceLiveBadge.classList.add("is-live");
       } else if (state === "thinking") {
-        voiceLiveBadge.textContent = "● Đang gửi…";
+        voiceLiveBadge.textContent = tr("● Đang gửi…", "● Sending…");
         voiceLiveBadge.classList.remove("is-live");
       } else {
-        voiceLiveBadge.textContent = "● Chờ giọng nói";
+        voiceLiveBadge.textContent = tr("● Chờ giọng nói", "● Waiting");
         voiceLiveBadge.classList.remove("is-live");
       }
     }
     if (voiceSpeakPill) {
       if (state === "speaking") {
-        voiceSpeakPill.textContent = "🔊 Speaking…";
+        voiceSpeakPill.textContent = tr("🔊 Đang đọc…", "🔊 Speaking…");
         voiceSpeakPill.classList.add("is-speaking");
       } else if (voiceMuted) {
-        voiceSpeakPill.textContent = "🔇 Đã tắt tiếng";
+        voiceSpeakPill.textContent = tr("🔇 Đã tắt tiếng", "🔇 Muted");
         voiceSpeakPill.classList.remove("is-speaking");
       } else {
-        voiceSpeakPill.textContent = "🔈 Sẵn sàng";
+        voiceSpeakPill.textContent = tr("🔈 Sẵn sàng", "🔈 Ready");
         voiceSpeakPill.classList.remove("is-speaking");
       }
     }
@@ -165,7 +171,7 @@
 
   function resetActiveSpeakBtn() {
     if (activeSpeakBtn) {
-      activeSpeakBtn.textContent = "🔊 Đọc";
+      activeSpeakBtn.textContent = tr("🔊 Đọc", "🔊 Read");
       activeSpeakBtn.classList.remove("is-speaking");
       activeSpeakBtn.setAttribute("aria-pressed", "false");
       activeSpeakBtn = null;
@@ -238,13 +244,13 @@
     if (matchedVoice) utter.voice = matchedVoice;
     const voiceSourceNote =
       matchedVoice && matchedVoice.localService === false
-        ? "🔊 Đang đọc (" + utter.lang + " · online voice)"
-        : "🔊 Đang đọc (" + utter.lang + ")";
+        ? tr("🔊 Đang đọc (", "🔊 Reading (") + utter.lang + " · online voice)"
+        : tr("🔊 Đang đọc (", "🔊 Reading (") + utter.lang + ")";
 
     if (ttsStopBtn) ttsStopBtn.hidden = false;
     if (triggerBtn) {
       activeSpeakBtn = triggerBtn;
-      triggerBtn.textContent = "⏹ Dừng đọc";
+      triggerBtn.textContent = tr("⏹ Dừng đọc", "⏹ Stop");
       triggerBtn.classList.add("is-speaking");
       triggerBtn.setAttribute("aria-pressed", "true");
     }
@@ -302,8 +308,8 @@
       const speakBtn = document.createElement("button");
       speakBtn.type = "button";
       speakBtn.className = "msg-tool-btn";
-      speakBtn.textContent = "🔊 Đọc";
-      speakBtn.setAttribute("aria-label", "Đọc to câu trả lời này");
+      speakBtn.textContent = tr("🔊 Đọc", "🔊 Read");
+      speakBtn.setAttribute("aria-label", tr("Đọc to câu trả lời này", "Read this answer aloud"));
       speakBtn.setAttribute("aria-pressed", "false");
       speakBtn.addEventListener("click", () => speakText(text, speakBtn));
       footer.append(speakBtn);
@@ -312,7 +318,7 @@
         const retryBtn = document.createElement("button");
         retryBtn.type = "button";
         retryBtn.className = "msg-tool-btn retry";
-        retryBtn.textContent = "↻ Thử lại với máy chủ";
+        retryBtn.textContent = tr(tr("↻ Thử lại", "↻ Try again"), "↻ Try again");
         retryBtn.addEventListener("click", () => reply(metaOption.retryQuestion));
         footer.append(retryBtn);
       }
@@ -323,7 +329,7 @@
       const retryBtn = document.createElement("button");
       retryBtn.type = "button";
       retryBtn.className = "msg-tool-btn retry";
-      retryBtn.textContent = "↻ Thử lại";
+      retryBtn.textContent = tr("↻ Thử lại", "↻ Try again");
       retryBtn.addEventListener("click", () => reply(metaOption.retryQuestion));
       footer.append(retryBtn);
       wrap.append(footer);
@@ -357,7 +363,7 @@
     const frag = actionCardTpl.content.cloneNode(true);
     const detail = frag.querySelector("[data-action-detail]");
     if (detail) {
-      detail.textContent = 'Yêu cầu của bạn: "' + question + '" — Đối tượng: Gói đăng ký / Lịch nhắc.';
+      detail.textContent = tr('Yêu cầu của bạn: "', 'You asked: "') + question + tr('" — về gói đăng ký / lời nhắc.', '" — about a plan / reminder.');
     }
     const dismissBtn = frag.querySelector("[data-action-dismiss]");
     const cardEl = frag.querySelector(".subby-action-card");
@@ -390,7 +396,7 @@
           status: "rate-limit",
           answer:
             data.answer ||
-            "⏳ Bạn đã hỏi khá nhanh (tối đa 30 câu/giờ). Cho Subby nghỉ lấy hơi ít phút rồi bấm Thử lại nhé!",
+            tr("⏳ Bạn đã hỏi khá nhanh (tối đa 30 câu/giờ). Cho Subby nghỉ ít phút rồi bấm Thử lại nhé!", "⏳ That was a lot of questions (30 an hour at most). Give Subby a few minutes, then press Try again!"),
         };
       }
       if (res.status === 503 || data.reason === "not-set-up") {
@@ -474,7 +480,7 @@
           const button = document.createElement("a");
           button.className = "button secondary btn-sm subby-draft-btn";
           button.href = url.pathname + url.search;
-          button.textContent = "Kiểm tra và lưu / Check and save";
+          button.textContent = tr("Kiểm tra và lưu", "Check and save");
           container.append(button);
         }
       } catch (err) {
@@ -505,7 +511,7 @@
 
   async function reply(question) {
     setVoiceStageState("thinking");
-    const typing = say("Subby đang suy nghĩ…", "bot typing");
+    const typing = say(tr("Subby đang suy nghĩ…", "Subby is thinking…"), "bot typing");
     const result = await askServer(question);
     typing.remove();
 
@@ -515,14 +521,14 @@
       const isFallback = Boolean(result.fallback);
 
       let badgeLabel = "AI · " + prov;
-      let statusLabel = "Trực tuyến · Phản hồi từ " + prov;
+      let statusLabel = tr("Trực tuyến · Trả lời bởi ", "Online · Answered by ") + prov;
       if (isFake) {
-        badgeLabel = "🧪 Mô hình giả lập kiểm thử (fake model)";
-        statusLabel = "Chế độ kiểm thử · fake model";
+        badgeLabel = tr("🧪 Câu trả lời thử nghiệm", "🧪 Test answers");
+        statusLabel = tr("Chế độ thử nghiệm", "Test mode");
       }
       if (isFallback) {
-        badgeLabel = "☁ Dự phòng đám mây (" + prov + " · answered by a cloud model)";
-        statusLabel = "Dự phòng đám mây · answered by a cloud model (" + prov + ")";
+        badgeLabel = tr("☁ Dự phòng đám mây (", "☁ Cloud backup (") + prov + ")";
+        statusLabel = tr("Dự phòng đám mây (", "Cloud backup (") + prov + ")";
       }
 
       updateProviderStatus(isFallback ? "cloud-fallback" : "online", statusLabel, prov);
@@ -542,7 +548,7 @@
         fbNote.className = "msg-fallback-note muted block-small";
         fbNote.setAttribute("data-cloud-fallback-note", "true");
         fbNote.textContent =
-          "☁ Lưu ý: Mô hình nội bộ hiện không khả dụng; câu trả lời này được tạo bởi mô hình đám mây dự phòng (answered by a cloud model).";
+          tr("☁ Lưu ý: mô hình trên máy chủ đang tắt; câu trả lời này đến từ mô hình đám mây dự phòng.", "☁ Note: the local model is off; this answer came from the backup cloud model.");
         renderedWrap.append(fbNote);
       }
 
@@ -559,10 +565,10 @@
     }
 
     if (result.status === "rate-limit") {
-      updateProviderStatus("rate-limit", "Tạm giới hạn lượt hỏi (429)", "Rate limit");
+      updateProviderStatus("rate-limit", tr("Tạm giới hạn lượt hỏi", "Too many questions for now"), "Rate limit");
       updateVoiceReplyCard(result.answer, true);
       say(result.answer, "bot", {
-        badge: "⏳ Giới hạn lượt hỏi — Chờ ít phút",
+        badge: tr("⏳ Chờ ít phút", "⏳ Wait a few minutes"),
         retryQuestion: question,
       });
       setVoiceStageState("idle");
@@ -570,26 +576,26 @@
     }
 
     if (result.status === "timeout") {
-      updateProviderStatus("timeout", "Quá thời gian chờ phản hồi máy chủ", "Timeout");
+      updateProviderStatus("timeout", tr("Máy chủ trả lời quá lâu", "The server took too long"), "Timeout");
       say(
-        "⏱ Máy chủ AI phản hồi lâu hơn dự kiến (Timeout). Bạn có thể bấm '↻ Thử lại' hoặc xem câu trả lời hướng dẫn có sẵn bên dưới.",
+        tr("⏱ Máy chủ AI trả lời lâu hơn dự kiến. Hãy bấm '↻ Thử lại' hoặc xem câu trả lời có sẵn bên dưới.", "⏱ The AI server took too long. Press '↻ Try again' or read the built-in answer below."),
         "bot",
-        { badge: "⏱ Timeout máy chủ", retryQuestion: question }
+        { badge: tr("⏱ Quá thời gian", "⏱ Timed out"), retryQuestion: question }
       );
     } else if (result.status === "not-configured") {
       updateProviderStatus(
         "not-configured",
-        "AI chưa cấu hình (not-set-up) · Đang dùng FAQ có sẵn",
+        tr("AI chưa bật · Đang dùng câu trả lời có sẵn", "AI is off · Using built-in answers"),
         "FAQ Fallback"
       );
     } else {
       const reasonText =
         result.reason === "model-offline"
-          ? "Mô hình AI ngoại tuyến (model-offline)"
-          : "AI tạm nghỉ (" + (result.reason || "offline") + ")";
+          ? tr("AI đang ngoại tuyến", "The AI is offline")
+          : tr("AI tạm nghỉ (", "AI is resting (") + (result.reason || "offline") + ")";
       updateProviderStatus(
         "fallback",
-        reasonText + " · Đang dùng bộ câu trả lời có sẵn (FAQ Fallback)",
+        reasonText + tr(" · Đang dùng câu trả lời có sẵn", " · Using built-in answers"),
         "FAQ Fallback"
       );
     }
@@ -598,7 +604,7 @@
     if (answer) {
       updateVoiceReplyCard(answer, true);
       say(answer, "bot", {
-        badge: "📋 Câu trả lời hướng dẫn có sẵn (FAQ Fallback — máy chủ AI chưa kết nối)",
+        badge: tr("📋 Câu trả lời có sẵn (AI chưa kết nối)", "📋 Built-in answer (the AI isn't connected)"),
         retryQuestion: question,
       });
       if (isMutationIntent(question)) {
@@ -610,11 +616,11 @@
 
     const handoffMsg =
       funBox && funBox.checked
-        ? "Máy chủ AI hiện chưa phản hồi và câu này cũng nằm ngoài sổ tay FAQ có sẵn của mình 😅 Bạn có thể thử lại hoặc nhắn trực tiếp cho chủ sở hữu:"
-        : "Hiện máy chủ AI chưa phản hồi cho câu hỏi này. Bạn có thể bấm Thử lại hoặc liên hệ trực tiếp với chủ sở hữu:";
+        ? tr("Máy chủ AI hiện chưa phản hồi và câu này cũng nằm ngoài sổ tay FAQ có sẵn của mình 😅 Bạn có thể thử lại hoặc nhắn trực tiếp cho chủ sở hữu:", "The AI server isn't answering and this one isn't in my little FAQ book 😅 Try again, or message the owner directly:")
+        : tr("Hiện máy chủ AI chưa trả lời câu này. Bạn có thể bấm Thử lại hoặc liên hệ trực tiếp với chủ sở hữu:", "The AI server hasn't answered this one. Press Try again or contact the owner directly:");
     updateVoiceReplyCard(handoffMsg, true);
     showHandoff(handoffMsg, {
-      badge: "📋 Chế độ FAQ Fallback (Không giả lập câu trả lời AI động)",
+      badge: tr("📋 Câu trả lời có sẵn", "📋 Built-in answers"),
       retryQuestion: question,
     });
     setVoiceStageState("idle");
@@ -656,7 +662,7 @@
     if (open) {
       if (!log.children.length) {
         say(
-          "Chào bạn, mình là Subby! Bạn có thể hỏi về lời nhắc gia hạn, link đã ghim, hóa đơn hoặc bấm 🎙️ Voice để nói chuyện trực tiếp. 👋",
+          tr("Chào bạn, mình là Subby! Bạn có thể hỏi về lời nhắc gia hạn, link đã ghim, hóa đơn hoặc bấm 🎙️ Voice để nói chuyện trực tiếp. 👋", "Hi, I'm Subby! Ask me about renewal reminders, pinned links or bills, or press 🎙️ Voice to talk. 👋"),
           "bot"
         );
       }
@@ -740,7 +746,7 @@
       }
       setVoiceStageState(
         "idle",
-        "✓ Đã ghi nhận câu hỏi — Bấm '🚀 Gửi câu hỏi này' hoặc chỉnh dưới ô chữ"
+        tr("✓ Đã ghi nhận câu hỏi — bấm '🚀 Gửi câu hỏi này' hoặc sửa trong ô chữ", "✓ Got it — press '🚀 Send question' or edit it in the text box")
       );
       input.focus();
     } else if (cancelled) {
@@ -923,7 +929,7 @@
       stopVoiceRecognition(true);
       input.value = "";
       if (voiceTranscriptEl) {
-        voiceTranscriptEl.textContent = "“Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”";
+        voiceTranscriptEl.textContent = tr("“Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”", "“Press the mic to ask, or type below…”");
       }
       input.focus();
     });
@@ -935,7 +941,7 @@
       voiceMuteBtn.setAttribute("aria-pressed", String(voiceMuted));
       voiceMuteBtn.classList.toggle("is-muted", voiceMuted);
       if (voiceMuteLabel) {
-        voiceMuteLabel.textContent = voiceMuted ? "Đã tắt tiếng" : "Đọc tiếng";
+        voiceMuteLabel.textContent = voiceMuted ? tr("Đã tắt tiếng", "Muted") : tr("Đọc tiếng", "Read aloud");
       }
       if (voiceMuted) {
         stopSpeaking();

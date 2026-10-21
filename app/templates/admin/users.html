@@ -1,12 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Quản trị người dùng — AllOutFree{% endblock %}
+{% block title %}{{ t("Quản trị người dùng", "Users") }} — AllOutFree{% endblock %}
 {% block content %}
   <div class="page-head">
     <div>
-      <h1 data-vi="Danh sách tài khoản đăng ký" data-en="Registered users">Danh sách tài khoản đăng ký</h1>
-      <p class="muted" data-vi="Dữ liệu lưu trong cơ sở dữ liệu SQL. Trang này chỉ hiển thị danh sách tổng hợp, không phải bảng điều khiển truy vấn SQL trực tiếp." data-en="Stored in SQL. This page lists rows; it is not a live SQL console.">
-        Dữ liệu lưu trong cơ sở dữ liệu SQL. Trang này chỉ hiển thị danh sách tổng hợp, không phải bảng điều khiển truy vấn SQL trực tiếp.
-      </p>
+      <h1>{{ t("Danh sách tài khoản đăng ký", "Registered users") }}</h1>
+      <p class="muted">{{ t("Dữ liệu lưu trong cơ sở dữ liệu SQL. Trang này chỉ hiển thị danh sách tổng hợp, không phải bảng điều khiển truy vấn SQL trực tiếp.", "Stored in SQL. This page lists rows; it is not a live SQL console.") }}</p>
     </div>
   </div>
 
@@ -16,16 +14,16 @@
         <tr>
           <th>ID</th>
           {% if accounts and accounts[0].username is defined %}
-            <th data-vi="Tên đăng nhập" data-en="Username">Tên đăng nhập</th>
+            <th>{{ t("Tên đăng nhập", "Username") }}</th>
           {% endif %}
           <th>Email</th>
           {% if accounts and accounts[0].email_verified is defined %}
-            <th data-vi="Xác thực Email" data-en="Confirmed">Xác thực Email</th>
+            <th>{{ t("Xác thực Email", "Confirmed") }}</th>
           {% endif %}
-          <th data-vi="Quản trị" data-en="Admin">Quản trị</th>
-          <th data-vi="Ngày tạo" data-en="Created">Ngày tạo</th>
-          <th data-vi="Đăng nhập cuối" data-en="Last login">Đăng nhập cuối</th>
-          <th data-vi="Số gói" data-en="Subscriptions">Số gói</th>
+          <th>{{ t("Quản trị", "Admin") }}</th>
+          <th>{{ t("Ngày tạo", "Created") }}</th>
+          <th>{{ t("Đăng nhập cuối", "Last login") }}</th>
+          <th>{{ t("Số gói", "Subscriptions") }}</th>
         </tr>
       </thead>
       <tbody>

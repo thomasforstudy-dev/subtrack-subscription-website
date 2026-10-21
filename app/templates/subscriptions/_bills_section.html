@@ -3,17 +3,17 @@
   <div class="section-head">
     <div>
       <div class="section-badges">
-        <span class="pill mint" data-vi="Đã kết nối /bills/ — Tải tệp riêng tư & Lưu hóa đơn thật" data-en="Connected to /bills/ — Private uploads & Real bill storage">Đã kết nối /bills/ — Tải tệp riêng tư & Lưu hóa đơn thật</span>
-        <span class="pill sun-label" data-vi="Trích xuất OCR tự động: Chế độ xem trước (Demo)" data-en="Automated OCR extraction: Preview Mode (Demo)">Trích xuất OCR tự động: Chế độ xem trước (Demo)</span>
+        <span class="pill mint">{{ t("Đã kết nối /bills/ — Tải tệp riêng tư & Lưu hóa đơn thật", "Connected to /bills/ — Private uploads & Real bill storage") }}</span>
+        <span class="pill sun-label">{{ t("Trích xuất OCR tự động: Chế độ xem trước (minh họa)", "Automated OCR extraction: Preview Mode (Demo)") }}</span>
       </div>
-      <h2 id="bills-heading" data-vi="Hóa đơn, Sao kê thẻ & Kiểm tra chứng từ" data-en="Bills, Card Statements & Document Review">Hóa đơn, Sao kê thẻ & Kiểm tra chứng từ</h2>
-      <p class="muted" data-vi="Tải lên ảnh chụp (PNG/JPG/WEBP), PDF (≤ 5 trang) hoặc Word (.docx ≤ 10 MB) để lưu trữ riêng tư và nhập đối chiếu bên cạnh tệp gốc, hoặc quản lý toàn bộ hóa đơn & sao kê thẻ tại trang /bills/." data-en="Upload receipt images (PNG/JPG/WEBP), PDFs (≤ 5 pages), or Word (.docx ≤ 10 MB) for private storage and side-by-side verified entry, or manage all bills and card statements at /bills/.">
+      <h2 id="bills-heading">{{ t("Hóa đơn, Sao kê thẻ & Kiểm tra chứng từ", "Bills, Card Statements & Document Review") }}</h2>
+      <p class="muted" data-vi="Tải lên ảnh chụp, PDF (≤ 5 trang) hoặc Word (.docx ≤ 10 MB) để lưu trữ riêng tư và nhập đối chiếu bên cạnh tệp gốc, hoặc quản lý toàn bộ hóa đơn & sao kê thẻ tại trang /bills/." data-en="Upload receipt images (PNG/JPG/WEBP), PDFs (≤ 5 pages), or Word (.docx ≤ 10 MB) for private storage and side-by-side verified entry, or manage all bills and card statements at /bills/.">
         Tải lên ảnh chụp (<strong>PNG, JPG, WEBP</strong>), <strong>PDF</strong> (≤ 5 trang) hoặc <strong>Word (.docx)</strong> (≤ 10 MB) để lưu trữ riêng tư và nhập đối chiếu bên cạnh tệp gốc, hoặc quản lý toàn bộ hóa đơn & sao kê thẻ tại trang <a href="{{ url_for('bills.list_bills') }}"><code>/bills/</code></a>.
       </p>
     </div>
     <div class="head-actions">
-      <a class="button secondary" href="{{ url_for('bills.list_bills') }}" data-vi="📂 Mở danh sách Hóa đơn (/bills/)" data-en="📂 Open Bills (/bills/)">📂 Mở danh sách Hóa đơn (/bills/)</a>
-      <a class="button" href="{{ url_for('bills.create') }}" data-vi="+ Nhập hóa đơn thủ công" data-en="+ Type a bill in">+ Nhập hóa đơn thủ công</a>
+      <a class="button secondary" href="{{ url_for('bills.list_bills') }}">{{ t("📂 Mở danh sách Hóa đơn (/bills/)", "📂 Open Bills (/bills/)") }}</a>
+      <a class="button" href="{{ url_for('bills.create') }}">{{ t("+ Nhập hóa đơn thủ công", "+ Type a bill in") }}</a>
     </div>
   </div>
 
@@ -21,20 +21,18 @@
   <div class="card upload-card">
     <div class="upload-top">
       <div>
-        <h3 class="card-title" data-vi="1. Tải lên tệp hóa đơn riêng tư (POST /bills/upload)" data-en="1. Upload private bill file (POST /bills/upload)">1. Tải lên tệp hóa đơn riêng tư (POST /bills/upload)</h3>
+        <h3 class="card-title">{{ t("1. Tải lên tệp hóa đơn riêng tư", "1. Upload private bill file (POST /bills/upload)") }}</h3>
         <p class="muted small-text" data-vi="Định dạng hỗ trợ: PNG, JPG, WEBP, PDF (tối đa 5 trang) hoặc Word (.docx), tối đa 10 MB. Máy chủ kiểm tra chữ ký tệp (magic bytes), từ chối tệp .doc cũ, tệp khóa mật khẩu và zip bomb." data-en="Supported: PNG, JPG, WEBP, PDF (up to 5 pages) or Word (.docx), max 10 MB. Server verifies magic bytes and refuses legacy .doc, password-locked files, and zip bombs.">
           Định dạng hỗ trợ: <strong>PNG, JPG, WEBP, PDF</strong> (tối đa 5 trang) hoặc <strong>Word (.docx)</strong>, tối đa 10 MB. Máy chủ kiểm tra chữ ký tệp (magic bytes), từ chối tệp <code>.doc</code> cũ, tệp khóa mật khẩu và zip bomb.
         </p>
       </div>
       <details class="archived-info-box">
-        <summary class="muted small-text" data-vi="🛠 Kiểm thử trạng thái tiến trình OCR (Dev/QA Preview — Demo)" data-en="🛠 OCR Step State Preview (Dev/QA — Demo)">
-          🛠 Kiểm thử trạng thái tiến trình OCR (Dev/QA Preview — Demo)
-        </summary>
+        <summary class="muted small-text">{{ t("🛠 Kiểm thử trạng thái tiến trình OCR", "🛠 OCR Step State Preview (Dev/QA — Demo)") }}</summary>
         <div class="state-switcher compact-top" role="group" aria-label="Xem thử các bước xử lý hóa đơn">
-          <button type="button" class="chip" data-bill-step="upload" data-vi="1. Đang tải" data-en="1. Uploading">1. Đang tải</button>
-          <button type="button" class="chip" data-bill-step="ocr" data-vi="2. Đang đọc OCR (Demo)" data-en="2. Reading OCR (Demo)">2. Đang đọc OCR (Demo)</button>
-          <button type="button" class="chip on" data-bill-step="review" data-vi="3. Chờ duyệt" data-en="3. Ready to review">3. Chờ duyệt</button>
-          <button type="button" class="chip" data-bill-step="error" data-vi="⚠ Lỗi & Thử lại" data-en="⚠ Error & Retry">⚠ Lỗi & Thử lại</button>
+          <button type="button" class="chip" data-bill-step="upload">{{ t("1. Đang tải", "1. Uploading") }}</button>
+          <button type="button" class="chip" data-bill-step="ocr">{{ t("2. Đang đọc OCR (minh họa)", "2. Reading OCR (Demo)") }}</button>
+          <button type="button" class="chip on" data-bill-step="review">{{ t("3. Chờ duyệt", "3. Ready to review") }}</button>
+          <button type="button" class="chip" data-bill-step="error">{{ t("⚠ Lỗi & Thử lại", "⚠ Error & Retry") }}</button>
         </div>
       </details>
     </div>
@@ -52,17 +50,15 @@
         />
         <label for="bill-file-input" class="dropzone-label">
           <span class="dropzone-icon" aria-hidden="true">📄</span>
-          <strong id="bill-file-name" data-vi="Chọn tệp Ảnh (PNG/JPG/WEBP), PDF (≤ 5 trang) hoặc Word (.docx) · Tối đa 10 MB" data-en="Choose PNG/JPG/WEBP image, PDF (≤ 5 pages), or Word (.docx) · Max 10 MB">
-            Chọn tệp Ảnh (PNG/JPG/WEBP), PDF (≤ 5 trang) hoặc Word (.docx) · Tối đa 10 MB
-          </strong>
+          <strong id="bill-file-name">{{ t("Chọn tệp Ảnh, PDF (≤ 5 trang) hoặc Word (.docx) · Tối đa 10 MB", "Choose PNG/JPG/WEBP image, PDF (≤ 5 pages), or Word (.docx) · Max 10 MB") }}</strong>
           <span id="bill-file-help" class="muted small-text" data-vi="Tệp được lưu riêng tư trong instance/uploads và mở ngay màn hình nhập đối chiếu /bills/new?document_id=…" data-en="File is stored privately in instance/uploads and opens the side-by-side entry form /bills/new?document_id=…">
             Tệp được lưu riêng tư trong <code>instance/uploads</code> và chuyển ngay tới màn hình nhập đối chiếu <code>/bills/new?document_id=…</code>.
           </span>
         </label>
       </div>
       <div class="form-actions compact-top">
-        <button type="submit" class="button" data-vi="📤 Tải tệp lên & Mở khung nhập đối chiếu" data-en="📤 Upload & Open side-by-side form">📤 Tải tệp lên & Mở khung nhập đối chiếu</button>
-        <a class="button secondary" href="{{ url_for('bills.create') }}" data-vi="Nhập hóa đơn không kèm tệp" data-en="Type a bill in without a file">Nhập hóa đơn không kèm tệp</a>
+        <button type="submit" class="button">{{ t("📤 Tải tệp lên & Mở khung nhập đối chiếu", "📤 Upload & Open side-by-side form") }}</button>
+        <a class="button secondary" href="{{ url_for('bills.create') }}">{{ t("Nhập hóa đơn không kèm tệp", "Type a bill in without a file") }}</a>
       </div>
     </form>
 
@@ -71,29 +67,29 @@
       <li class="step done" data-step-item="upload">
         <span class="step-num">1</span>
         <div>
-          <strong data-vi="Tải tệp riêng tư (Đã hoạt động)" data-en="Private upload (Live)">Tải tệp riêng tư (Đã hoạt động)</strong>
-          <small class="muted" data-vi="Kiểm tra magic bytes, ≤ 10 MB, PDF ≤ 5 trang" data-en="Verify magic bytes, ≤ 10 MB, PDF ≤ 5 pages">Kiểm tra magic bytes, ≤ 10 MB, PDF ≤ 5 trang</small>
+          <strong>{{ t("Tải tệp riêng tư (Đã hoạt động)", "Private upload (Live)") }}</strong>
+          <small class="muted">{{ t("Kiểm tra magic bytes, ≤ 10 MB, PDF ≤ 5 trang", "Verify magic bytes, ≤ 10 MB, PDF ≤ 5 pages") }}</small>
         </div>
       </li>
       <li class="step done" data-step-item="ocr">
         <span class="step-num">2</span>
         <div>
-          <strong data-vi="Đọc chứng từ OCR (Demo)" data-en="Read document OCR (Demo)">Đọc chứng từ OCR (Demo)</strong>
-          <small class="muted" data-vi="Sẽ kết nối bộ chuyển đổi GOT-OCR ở lát cắt tiếp theo" data-en="GOT-OCR adapter arrives in the next slice">Sẽ kết nối bộ chuyển đổi GOT-OCR ở lát cắt tiếp theo</small>
+          <strong>{{ t("Đọc chứng từ OCR (minh họa)", "Read document OCR (Demo)") }}</strong>
+          <small class="muted">{{ t("Sẽ kết nối bộ chuyển đổi GOT-OCR ở lát cắt tiếp theo", "GOT-OCR adapter arrives in the next slice") }}</small>
         </div>
       </li>
       <li class="step done" data-step-item="suggest">
         <span class="step-num">3</span>
         <div>
-          <strong data-vi="AI đề xuất trường (Demo)" data-en="AI field suggestion (Demo)">AI đề xuất trường (Demo)</strong>
-          <small class="muted" data-vi="Không tự đoán trường thiếu (giờ trống giữ nguyên null)" data-en="Never guesses missing fields (empty time stays null)">Không tự đoán trường thiếu (giờ trống giữ nguyên null)</small>
+          <strong>{{ t("AI đề xuất trường (minh họa)", "AI field suggestion (Demo)") }}</strong>
+          <small class="muted">{{ t("Không tự đoán trường thiếu (giờ trống giữ nguyên null)", "Never guesses missing fields (empty time stays null)") }}</small>
         </div>
       </li>
       <li class="step current" data-step-item="review">
         <span class="step-num">4</span>
         <div>
-          <strong data-vi="Người dùng kiểm tra & Lưu thật" data-en="Human review & Real save">Người dùng kiểm tra & Lưu thật</strong>
-          <small class="muted" data-vi="Xác nhận và lưu vào cơ sở dữ liệu tại /bills/" data-en="Confirm and save to database at /bills/">Xác nhận và lưu vào cơ sở dữ liệu tại /bills/</small>
+          <strong>{{ t("Người dùng kiểm tra & Lưu thật", "Human review & Real save") }}</strong>
+          <small class="muted">{{ t("Xác nhận và lưu vào cơ sở dữ liệu tại /bills/", "Confirm and save to database at /bills/") }}</small>
         </div>
       </li>
     </ol>
@@ -101,12 +97,12 @@
     {# Khối báo lỗi & Thử lại có lý do rõ ràng (Xem thử trong Dev/QA Preview) #}
     <div id="bill-step-error" class="status-banner danger" role="alert" hidden>
       <div>
-        <strong data-vi="Không thể đọc hoàn chỉnh tệp vừa tải lên" data-en="Could not read the uploaded file completely">Không thể đọc hoàn chỉnh tệp vừa tải lên</strong>
+        <strong>{{ t("Không thể đọc hoàn chỉnh tệp vừa tải lên", "Could not read the uploaded file completely") }}</strong>
         <p id="bill-error-reason" class="muted" data-vi="Lý do: Tệp vượt quá giới hạn (10 MB / 5 trang), định dạng .doc cũ, tệp khóa mật khẩu hoặc bị hỏng." data-en="Reason: File exceeds limits (10 MB / 5 pages), legacy .doc format, password-protected, or damaged.">
           Lý do: Tệp vượt quá giới hạn (10 MB / 5 trang), định dạng <code>.doc</code> cũ, tệp khóa mật khẩu hoặc bị hỏng.
         </p>
       </div>
-      <button type="button" class="button secondary btn-sm" data-bill-retry data-vi="Thử lại với tệp khác" data-en="Retry with another file">Thử lại với tệp khác</button>
+      <button type="button" class="button secondary btn-sm" data-bill-retry>{{ t("Thử lại với tệp khác", "Retry with another file") }}</button>
     </div>
   </div>
 
@@ -114,14 +110,14 @@
   <div class="card review-workspace" id="bill-review-workspace">
     <div class="review-header">
       <div>
-        <span class="pill sun-label" data-vi="AI đề xuất / OCR tự động — Bản xem trước giao diện (Demo)" data-en="AI suggested / Automated OCR — UI Preview (Demo)">AI đề xuất / OCR tự động — Bản xem trước giao diện (Demo)</span>
-        <h3 class="card-title" data-vi="2. Mô phỏng đối chiếu nguồn chứng từ OCR & trường giao dịch (Demo)" data-en="2. OCR Source & Field Verification Walkthrough (Demo)">2. Mô phỏng đối chiếu nguồn chứng từ OCR & trường giao dịch (Demo)</h3>
+        <span class="pill sun-label">{{ t("AI đề xuất / OCR tự động — Bản xem trước giao diện (minh họa)", "AI suggested / Automated OCR — UI Preview (Demo)") }}</span>
+        <h3 class="card-title">{{ t("2. Mô phỏng đối chiếu nguồn chứng từ OCR & trường giao dịch (minh họa)", "2. OCR Source & Field Verification Walkthrough (Demo)") }}</h3>
       </div>
       {# Tab chuyển đổi trên Mobile (<= 900px) #}
       <div class="mobile-review-tabs" role="tablist" aria-label="Chuyển cột xem hóa đơn trên điện thoại">
-        <button type="button" role="tab" aria-selected="true" class="chip on" data-review-tab="fields" data-vi="✏️ Trường giao dịch" data-en="✏️ Fields">✏️ Trường giao dịch</button>
-        <button type="button" role="tab" aria-selected="false" class="chip" data-review-tab="source" data-vi="📄 Tài liệu nguồn (2 trang)" data-en="📄 Source (2 pages)">📄 Tài liệu nguồn (2 trang)</button>
-        <button type="button" role="tab" aria-selected="false" class="chip" data-review-tab="markdown" data-vi="📝 Markdown" data-en="📝 Markdown">📝 Markdown</button>
+        <button type="button" role="tab" aria-selected="true" class="chip on" data-review-tab="fields">{{ t("✏️ Trường giao dịch", "✏️ Fields") }}</button>
+        <button type="button" role="tab" aria-selected="false" class="chip" data-review-tab="source">{{ t("📄 Tài liệu nguồn (2 trang)", "📄 Source (2 pages)") }}</button>
+        <button type="button" role="tab" aria-selected="false" class="chip" data-review-tab="markdown">{{ t("📝 Markdown", "📝 Markdown") }}</button>
       </div>
     </div>
 
@@ -129,7 +125,7 @@
     <div class="ocr-warning-banner" role="status">
       <span class="ocr-warn-icon" aria-hidden="true">⚠</span>
       <div>
-        <strong data-vi="Minh họa nguyên tắc Bằng chứng vs. Trường chưa xác định (Trang 2 bị cắt mép dưới)" data-en="Evidence vs. Unknown Fields Demo: Bottom edge of Page 2 is partially cropped">Minh họa nguyên tắc Bằng chứng vs. Trường chưa xác định (Trang 2 bị cắt mép dưới)</strong>
+        <strong>{{ t("Minh họa nguyên tắc Bằng chứng vs. Trường chưa xác định (Trang 2 bị cắt mép dưới)", "Evidence vs. Unknown Fields Demo: Bottom edge of Page 2 is partially cropped") }}</strong>
         <p class="muted small-text" data-vi="Trường 'Giờ giao dịch' và 'Địa chỉ chi nhánh' không hiển thị rõ trên ảnh gốc nên được để trống (null — không bao giờ tự điền 00:00). Để nhập hóa đơn thật, hãy dùng trang /bills/new." data-en="'Transaction time' and 'Branch address' were unclear in the scan and left blank (null — never 00:00). To enter a real bill, use /bills/new.">
           Trường <strong>Giờ giao dịch</strong> và <strong>Địa chỉ chi nhánh</strong> không hiển thị rõ trên ảnh gốc nên được để trống (<code>null</code> — không bao giờ tự điền <code>00:00</code>). Để nhập và lưu hóa đơn thật, hãy bấm <a href="{{ url_for('bills.create') }}"><strong>Mở biểu mẫu nhập hóa đơn thật (<code>/bills/new</code>)</strong></a>.
         </p>
@@ -140,10 +136,10 @@
       {# Cột trái: Nguồn tài liệu / từng trang (Demo) #}
       <div class="review-col source-col" data-review-pane="source">
         <div class="source-toolbar">
-          <strong data-vi="Nguồn tài liệu mẫu (invoice-demo-2026.pdf — Demo)" data-en="Sample document source (invoice-demo-2026.pdf — Demo)">Nguồn tài liệu mẫu (invoice-demo-2026.pdf — Demo)</strong>
+          <strong>{{ t("Nguồn tài liệu mẫu (invoice-demo-2026.pdf — Demo)", "Sample document source (invoice-demo-2026.pdf — Demo)") }}</strong>
           <div class="page-switcher" role="group" aria-label="Chuyển trang tài liệu">
-            <button type="button" class="chip on" data-doc-page="1" data-vi="Trang 1 / 2" data-en="Page 1 / 2">Trang 1 / 2</button>
-            <button type="button" class="chip" data-doc-page="2" data-vi="Trang 2 / 2 (Cắt mép)" data-en="Page 2 / 2 (Cropped)">Trang 2 / 2 (Cắt mép)</button>
+            <button type="button" class="chip on" data-doc-page="1">{{ t("Trang 1 / 2", "Page 1 / 2") }}</button>
+            <button type="button" class="chip" data-doc-page="2">{{ t("Trang 2 / 2 (Cắt mép)", "Page 2 / 2 (Cropped)") }}</button>
           </div>
         </div>
 
@@ -184,89 +180,87 @@
             </div>
           </div>
         </div>
-        <p class="muted small-text" data-vi="💡 Mẹo: Bấm vào bất kỳ ô trường giao dịch nào ở cột phải để làm nổi bật đoạn nguồn tương ứng tại đây." data-en="💡 Tip: Click any transaction field on the right to highlight its source line and page here.">
-          💡 Mẹo: Bấm vào bất kỳ ô trường giao dịch nào ở cột phải để làm nổi bật đoạn nguồn tương ứng tại đây.
-        </p>
+        <p class="muted small-text">{{ t("💡 Mẹo: Bấm vào bất kỳ ô trường giao dịch nào ở cột phải để làm nổi bật đoạn nguồn tương ứng tại đây.", "💡 Tip: Click any transaction field on the right to highlight its source line and page here.") }}</p>
       </div>
 
       {# Cột phải: Các trường giao dịch & Markdown #}
       <div class="review-col fields-col" data-review-pane="fields">
         <div class="pane-switch-desktop" role="tablist" aria-label="Chế độ xem dữ liệu trích xuất">
-          <button type="button" class="chip on" data-right-mode="form" data-vi="Trường giao dịch (Demo)" data-en="Transaction fields (Demo)">Trường giao dịch (Demo)</button>
-          <button type="button" class="chip" data-right-mode="md" data-vi="Nội dung Markdown (Demo)" data-en="Extracted Markdown (Demo)">Nội dung Markdown (Demo)</button>
+          <button type="button" class="chip on" data-right-mode="form">{{ t("Trường giao dịch (minh họa)", "Transaction fields (Demo)") }}</button>
+          <button type="button" class="chip" data-right-mode="md">{{ t("Nội dung Markdown (minh họa)", "Extracted Markdown (Demo)") }}</button>
         </div>
 
         <form id="bill-review-form" class="bill-fields-form" data-right-content="form">
           <div class="form-row-2">
             <div class="field-group">
-              <label for="bill-merchant" data-vi="Đơn vị bán (Merchant)" data-en="Merchant">Đơn vị bán (Merchant)</label>
+              <label for="bill-merchant">{{ t("Đơn vị bán", "Merchant") }}</label>
               <input id="bill-merchant" name="merchant" value="Adobe Systems Software" data-focus-source="merchant" data-focus-page="1" />
             </div>
             <div class="field-group">
-              <label for="bill-branch" data-vi="Chi nhánh" data-en="Branch">Chi nhánh</label>
+              <label for="bill-branch">{{ t("Chi nhánh", "Branch") }}</label>
               <input id="bill-branch" name="branch" value="SEA Digital Hub" data-focus-source="merchant" data-focus-page="1" />
             </div>
           </div>
 
           <div class="field-group">
             <label for="bill-address" data-vi="Địa chỉ (Để trống nếu chưa xác định)" data-en="Address (Blank if undetermined)">
-              Địa chỉ <span class="missing-badge" data-vi="Chưa xác định trên ảnh" data-en="Undetermined in scan">Chưa xác định trên ảnh</span>
+              Địa chỉ <span class="missing-badge">{{ t("Chưa xác định trên ảnh", "Undetermined in scan") }}</span>
             </label>
             <input id="bill-address" name="address" value="" placeholder="Chưa xác định — bị cắt ở mép dưới Trang 2" data-focus-source="address" data-focus-page="2" />
           </div>
 
           <div class="form-row-3">
             <div class="field-group">
-              <label for="bill-date" data-vi="Ngày giao dịch" data-en="Date">Ngày giao dịch</label>
+              <label for="bill-date">{{ t("Ngày giao dịch", "Date") }}</label>
               <input id="bill-date" type="date" name="transaction_date" value="2026-10-15" data-focus-source="date" data-focus-page="1" />
             </div>
             <div class="field-group">
               <label for="bill-time" data-vi="Giờ (nếu có)" data-en="Time (if available)">
-                Giờ <span class="missing-badge" data-vi="Trống (null)" data-en="Blank (null)">Trống (null)</span>
+                Giờ <span class="missing-badge">{{ t("Trống (null)", "Blank (null)") }}</span>
               </label>
               <input id="bill-time" type="text" name="transaction_time" value="" placeholder="Chưa xác định (không điền 00:00)" data-focus-source="date" data-focus-page="1" />
             </div>
             <div class="field-group">
-              <label for="bill-category" data-vi="Ngành hàng" data-en="Category">Ngành hàng</label>
+              <label for="bill-category">{{ t("Ngành hàng", "Category") }}</label>
               <select id="bill-category" name="category" data-focus-source="items" data-focus-page="1">
-                <option value="software" selected data-vi="Phần mềm & Đám mây" data-en="Software & Cloud">Phần mềm & Đám mây</option>
-                <option value="streaming" data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</option>
-                <option value="education" data-vi="Học tập & Nghiên cứu" data-en="Education">Học tập & Nghiên cứu</option>
-                <option value="utilities" data-vi="Hóa đơn tiện ích / Thẻ" data-en="Utilities & Card">Hóa đơn tiện ích / Thẻ</option>
+                <option value="software" selected>{{ t("Phần mềm & Đám mây", "Software & Cloud") }}</option>
+                <option value="streaming">{{ t("Giải trí / Streaming", "Streaming & Media") }}</option>
+                <option value="education">{{ t("Học tập & Nghiên cứu", "Education") }}</option>
+                <option value="utilities">{{ t("Hóa đơn tiện ích / Thẻ", "Utilities & Card") }}</option>
               </select>
             </div>
           </div>
 
           <div class="form-row-4">
             <div class="field-group">
-              <label for="bill-currency" data-vi="Tiền tệ" data-en="Currency">Tiền tệ</label>
+              <label for="bill-currency">{{ t("Tiền tệ", "Currency") }}</label>
               <input id="bill-currency" name="currency" value="USD" data-focus-source="total" data-focus-page="2" />
             </div>
             <div class="field-group">
-              <label for="bill-subtotal" data-vi="Tạm tính" data-en="Subtotal">Tạm tính</label>
+              <label for="bill-subtotal">{{ t("Tạm tính", "Subtotal") }}</label>
               <input id="bill-subtotal" name="subtotal" type="number" step="0.01" value="54.54" data-focus-source="subtotal" data-focus-page="2" />
             </div>
             <div class="field-group">
-              <label for="bill-tax" data-vi="Thuế (Tax)" data-en="Tax">Thuế (Tax)</label>
+              <label for="bill-tax">{{ t("Thuế", "Tax") }}</label>
               <input id="bill-tax" name="tax" type="number" step="0.01" value="5.45" data-focus-source="subtotal" data-focus-page="2" />
             </div>
             <div class="field-group">
-              <label for="bill-total" data-vi="Tổng cộng" data-en="Total">Tổng cộng</label>
+              <label for="bill-total">{{ t("Tổng cộng", "Total") }}</label>
               <input id="bill-total" name="total" type="number" step="0.01" value="59.99" data-focus-source="total" data-focus-page="2" />
             </div>
           </div>
 
           {# Bảng Line Items #}
           <div class="line-items-box" data-focus-source="items" data-focus-page="1">
-            <strong class="small-label" data-vi="Danh sách mặt hàng (Line items)" data-en="Line items">Danh sách mặt hàng (Line items)</strong>
+            <strong class="small-label">{{ t("Danh sách mặt hàng", "Line items") }}</strong>
             <div class="table-scroll">
               <table class="compact-table">
                 <thead>
                   <tr>
-                    <th data-vi="Mặt hàng" data-en="Item">Mặt hàng</th>
-                    <th data-vi="SL" data-en="Qty">SL</th>
-                    <th data-vi="Đơn giá" data-en="Unit price">Đơn giá</th>
-                    <th data-vi="Thành tiền" data-en="Amount">Thành tiền</th>
+                    <th>{{ t("Mặt hàng", "Item") }}</th>
+                    <th>{{ t("SL", "Qty") }}</th>
+                    <th>{{ t("Đơn giá", "Unit price") }}</th>
+                    <th>{{ t("Thành tiền", "Amount") }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -282,8 +276,8 @@
           </div>
 
           <div class="review-actions">
-            <button type="button" class="button secondary" data-bill-action="draft" data-vi="Xem thử lưu nháp (Demo)" data-en="Preview draft (Demo)">Xem thử lưu nháp (Demo)</button>
-            <a class="button" href="{{ url_for('bills.create') }}" data-vi="✏️ Mở biểu mẫu nhập & lưu Hóa đơn thật (/bills/new)" data-en="✏️ Open real Bill entry form (/bills/new)">✏️ Mở biểu mẫu nhập & lưu Hóa đơn thật (/bills/new)</a>
+            <button type="button" class="button secondary" data-bill-action="draft">{{ t("Xem thử lưu nháp (minh họa)", "Preview draft (Demo)") }}</button>
+            <a class="button" href="{{ url_for('bills.create') }}">{{ t("✏️ Mở biểu mẫu nhập & lưu Hóa đơn thật (/bills/new)", "✏️ Open real Bill entry form (/bills/new)") }}</a>
           </div>
           <p id="bill-action-feedback" class="field-hint" role="status" aria-live="polite" hidden></p>
         </form>
@@ -312,21 +306,19 @@
   <div class="card transactions-card">
     <div class="section-head compact">
       <div>
-        <h3 class="card-title" data-vi="3. Quản lý Hóa đơn đã lưu & Xuất dữ liệu chuẩn (/bills/)" data-en="3. Saved Bills & Standard Exports (/bills/)">3. Quản lý Hóa đơn đã lưu & Xuất dữ liệu chuẩn (/bills/)</h3>
+        <h3 class="card-title">{{ t("3. Quản lý Hóa đơn đã lưu & Xuất dữ liệu chuẩn (/bills/)", "3. Saved Bills & Standard Exports (/bills/)") }}</h3>
         <p class="muted small-text" data-vi="Xem, tìm kiếm, lọc theo loại (receipt / card_bill), đánh dấu đã thanh toán sao kê thẻ, lưu trữ/khôi phục và xuất toàn bộ hóa đơn đã xác nhận sang JSON, CSV (an toàn công thức Excel) hoặc Markdown." data-en="View, search, filter by kind (receipt / card_bill), mark card bills paid, archive/restore, and export all confirmed bills to JSON, formula-safe CSV, or Markdown.">
           Xem, tìm kiếm, lọc theo loại (<code>receipt</code> / <code>card_bill</code>), đánh dấu đã thanh toán sao kê thẻ, lưu trữ/khôi phục và xuất toàn bộ hóa đơn đã xác nhận sang <strong>JSON</strong>, <strong>CSV (an toàn công thức Excel)</strong> hoặc <strong>Markdown</strong>.
         </p>
       </div>
       <div class="tx-toolbar-actions">
-        <a class="button btn-sm" href="{{ url_for('bills.list_bills') }}" data-vi="📂 Mở trang Hóa đơn (/bills/)" data-en="📂 Open /bills/">📂 Mở trang Hóa đơn (/bills/)</a>
-        <button type="button" class="chip" data-toggle-tx-demo aria-pressed="false" data-vi="🧪 Xem bảng mẫu (Demo)" data-en="🧪 Show Demo Table">🧪 Xem bảng mẫu (Demo)</button>
+        <a class="button btn-sm" href="{{ url_for('bills.list_bills') }}">{{ t("📂 Mở trang Hóa đơn (/bills/)", "📂 Open /bills/") }}</a>
+        <button type="button" class="chip" data-toggle-tx-demo aria-pressed="false">{{ t("🧪 Xem bảng mẫu (minh họa)", "🧪 Show Demo Table") }}</button>
       </div>
     </div>
 
     <div class="export-bar">
-      <span class="muted small-text" data-vi="Tải xuống toàn bộ hóa đơn đã xác nhận trong tài khoản của bạn:" data-en="Download all confirmed bills in your account:">
-        Tải xuống toàn bộ hóa đơn đã xác nhận trong tài khoản của bạn:
-      </span>
+      <span class="muted small-text">{{ t("Tải xuống toàn bộ hóa đơn đã xác nhận trong tài khoản của bạn:", "Download all confirmed bills in your account:") }}</span>
       <div class="chips small">
         <a class="chip" href="{{ url_for('bills.export', fmt='json') }}">⬇ Export JSON (/bills/export.json)</a>
         <a class="chip" href="{{ url_for('bills.export', fmt='csv') }}">⬇ Export CSV (/bills/export.csv)</a>
@@ -336,8 +328,8 @@
 
     <div id="tx-real-empty" class="empty-state-box compact-top">
       <p><strong data-vi="Danh sách hóa đơn thật & bộ lọc đầy đủ được quản lý tại trang /bills/" data-en="Your real bills list and full server filters live at /bills/">Danh sách hóa đơn thật & bộ lọc đầy đủ được quản lý tại trang <a href="{{ url_for('bills.list_bills') }}"><code>/bills/</code></a></strong></p>
-      <p class="muted small-text" data-vi="Bấm '📂 Mở trang Hóa đơn (/bills/)' để xem dữ liệu thật trên máy chủ, hoặc bấm '🧪 Xem bảng mẫu (Demo)' ở góc phải nếu chỉ muốn xem thử bố cục bảng." data-en="Click 'Open /bills/' to view your real server-stored bills, or toggle 'Show Demo Table' above to preview the table layout.">
-        Bấm <a href="{{ url_for('bills.list_bills') }}"><strong>📂 Mở trang Hóa đơn (<code>/bills/</code>)</strong></a> để xem dữ liệu thật trên máy chủ, hoặc bấm <strong>🧪 Xem bảng mẫu (Demo)</strong> ở góc phải nếu chỉ muốn xem thử bố cục bảng.
+      <p class="muted small-text" data-vi="Bấm '📂 Mở trang Hóa đơn (/bills/)' để xem dữ liệu thật trên máy chủ, hoặc bấm '🧪 Xem bảng mẫu (minh họa)' ở góc phải nếu chỉ muốn xem thử bố cục bảng." data-en="Click 'Open /bills/' to view your real server-stored bills, or toggle 'Show Demo Table' above to preview the table layout.">
+        Bấm <a href="{{ url_for('bills.list_bills') }}"><strong>📂 Mở trang Hóa đơn (<code>/bills/</code>)</strong></a> để xem dữ liệu thật trên máy chủ, hoặc bấm <strong>🧪 Xem bảng mẫu (minh họa)</strong> ở góc phải nếu chỉ muốn xem thử bố cục bảng.
       </p>
     </div>
 
@@ -346,49 +338,49 @@
         <input type="search" id="tx-filter-merchant" placeholder="Tìm đơn vị bán trong bảng Demo…" aria-label="Tìm đơn vị bán" />
         <input type="date" id="tx-filter-date" aria-label="Lọc theo ngày giao dịch" />
         <select id="tx-filter-category" aria-label="Lọc theo ngành hàng">
-          <option value="all" data-vi="Tất cả ngành hàng" data-en="All categories">Tất cả ngành hàng</option>
-          <option value="software" data-vi="Phần mềm & Đám mây" data-en="Software & Cloud">Phần mềm & Đám mây</option>
-          <option value="streaming" data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</option>
-          <option value="utilities" data-vi="Thẻ & Tiện ích" data-en="Card & Utilities">Thẻ & Tiện ích</option>
+          <option value="all">{{ t("Tất cả ngành hàng", "All categories") }}</option>
+          <option value="software">{{ t("Phần mềm & Đám mây", "Software & Cloud") }}</option>
+          <option value="streaming">{{ t("Giải trí / Streaming", "Streaming & Media") }}</option>
+          <option value="utilities">{{ t("Thẻ & Tiện ích", "Card & Utilities") }}</option>
         </select>
         <select id="tx-filter-status" aria-label="Lọc theo trạng thái duyệt">
-          <option value="all" data-vi="Tất cả trạng thái" data-en="All statuses">Tất cả trạng thái</option>
-          <option value="pending" data-vi="AI đề xuất — Chờ duyệt (Demo)" data-en="AI suggested — Pending review (Demo)">AI đề xuất — Chờ duyệt (Demo)</option>
-          <option value="verified" data-vi="Đã kiểm tra (Demo)" data-en="Verified (Demo)">Đã kiểm tra (Demo)</option>
+          <option value="all">{{ t("Tất cả trạng thái", "All statuses") }}</option>
+          <option value="pending">{{ t("AI đề xuất — Chờ duyệt (minh họa)", "AI suggested — Pending review (Demo)") }}</option>
+          <option value="verified">{{ t("Đã kiểm tra (minh họa)", "Verified (Demo)") }}</option>
         </select>
       </div>
       <div class="table-scroll compact-top">
         <table>
           <thead>
             <tr>
-              <th data-vi="Ngày" data-en="Date">Ngày</th>
-              <th data-vi="Đơn vị bán" data-en="Merchant">Đơn vị bán</th>
-              <th data-vi="Ngành hàng" data-en="Category">Ngành hàng</th>
-              <th data-vi="Tổng tiền" data-en="Total">Tổng tiền</th>
-              <th data-vi="Trạng thái" data-en="Status">Trạng thái</th>
+              <th>{{ t("Ngày", "Date") }}</th>
+              <th>{{ t("Đơn vị bán", "Merchant") }}</th>
+              <th>{{ t("Ngành hàng", "Category") }}</th>
+              <th>{{ t("Tổng tiền", "Total") }}</th>
+              <th>{{ t("Trạng thái", "Status") }}</th>
             </tr>
           </thead>
           <tbody id="tx-demo-tbody">
             <tr data-tx-merchant="adobe systems software" data-tx-date="2026-10-15" data-tx-cat="software" data-tx-status="pending">
               <td>2026-10-15</td>
               <td><strong>Adobe Systems Software</strong> <span class="pill sun-label">Demo</span></td>
-              <td data-vi="Phần mềm & Đám mây" data-en="Software & Cloud">Phần mềm & Đám mây</td>
+              <td>{{ t("Phần mềm & Đám mây", "Software & Cloud") }}</td>
               <td><strong>59.99 USD</strong></td>
-              <td><span class="pill sun-label" data-vi="AI đề xuất — cần kiểm tra" data-en="AI suggested — needs review">AI đề xuất — cần kiểm tra</span></td>
+              <td><span class="pill sun-label">{{ t("AI đề xuất — cần kiểm tra", "AI suggested — needs review") }}</span></td>
             </tr>
             <tr data-tx-merchant="netflix" data-tx-date="2026-10-10" data-tx-cat="streaming" data-tx-status="verified">
               <td>2026-10-10</td>
               <td><strong>Netflix</strong> <span class="pill sun-label">Demo</span></td>
-              <td data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</td>
+              <td>{{ t("Giải trí / Streaming", "Streaming & Media") }}</td>
               <td><strong>260.000 VND</strong></td>
-              <td><span class="pill mint" data-vi="Đã kiểm tra (Mẫu Demo)" data-en="Reviewed (Demo)">Đã kiểm tra (Mẫu Demo)</span></td>
+              <td><span class="pill mint">{{ t("Đã kiểm tra (Mẫu Demo)", "Reviewed (Demo)") }}</span></td>
             </tr>
             <tr data-tx-merchant="spotify" data-tx-date="2026-10-05" data-tx-cat="streaming" data-tx-status="pending">
               <td>2026-10-05</td>
               <td><strong>Spotify AB</strong> <span class="pill sun-label">Demo</span></td>
-              <td data-vi="Giải trí / Streaming" data-en="Streaming & Media">Giải trí / Streaming</td>
+              <td>{{ t("Giải trí / Streaming", "Streaming & Media") }}</td>
               <td><strong>59.000 VND</strong></td>
-              <td><span class="pill sun-label" data-vi="Thiếu giờ giao dịch — cần kiểm tra" data-en="Missing time — needs review">Thiếu giờ giao dịch — cần kiểm tra</span></td>
+              <td><span class="pill sun-label">{{ t("Thiếu giờ giao dịch — cần kiểm tra", "Missing time — needs review") }}</span></td>
             </tr>
           </tbody>
         </table>

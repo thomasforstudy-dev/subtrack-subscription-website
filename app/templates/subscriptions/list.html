@@ -1,121 +1,78 @@
 {% extends "base.html" %}
 {% from "_mascot.html" import mascot %}
-{% block title %}Gói đăng ký (Subscriptions) — AllOutFree{% endblock %}
+{% block title %}{{ t("Gói đăng ký", "Subscriptions") }} — AllOutFree{% endblock %}
 {% block content %}
   {% set has_server_pager = (pages is defined) %}
+  {% set cycles = {"weekly": t("hằng tuần", "weekly"), "monthly": t("hằng tháng", "monthly"), "yearly": t("hằng năm", "yearly")} %}
 
   <div class="section-head" id="subscriptions">
     <div>
-      <h1 data-vi="Danh sách gói đăng ký (Subscriptions)" data-en="Subscriptions">Danh sách gói đăng ký (Subscriptions)</h1>
-      <p class="muted" data-vi="Lưu ý: Ngày hiển thị là ngày gia hạn dự kiến (không phải xác nhận đã trừ tiền). Lời nhắc giúp bạn chủ động tự gia hạn hoặc tự hủy trên trang nhà cung cấp." data-en="Note: Dates shown are expected renewal dates (not confirmed charges). Reminders help you renew or cancel on the provider's site.">
-        Lưu ý: Ngày hiển thị là <strong>ngày gia hạn dự kiến</strong> (không phải xác nhận đã trừ tiền). Lời nhắc giúp bạn chủ động tự gia hạn hoặc tự hủy trên trang nhà cung cấp.
-      </p>
+      <h1>{{ t("Gói đăng ký", "Subscriptions") }}</h1>
+      <p class="muted">{{ t("Ngày hiển thị là ngày gia hạn dự kiến, chưa phải tiền đã trừ. Lời nhắc giúp bạn kịp giữ hoặc hủy gói trên trang của nhà cung cấp.", "Dates are expected renewal dates, not confirmed charges. Reminders help you keep or cancel in time on the provider's site.") }}</p>
     </div>
     <div class="head-actions">
-      <a class="button secondary" href="{{ url_for('calendar.index') }}">Calendar / Lịch gia hạn</a>
-      {% if has_server_pager %}
-        <a class="button secondary" href="{{ url_for('dashboard.show') }}" data-vi="📊 Xem Tổng quan (Toàn tài khoản)" data-en="📊 Full Account Dashboard">📊 Xem Tổng quan (Toàn tài khoản)</a>
-      {% endif %}
-      <a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký" data-en="Add subscription">+ Thêm gói đăng ký</a>
+      <a class="button secondary" href="{{ url_for('calendar.index') }}">{{ t("Lịch gia hạn", "Renewal calendar") }}</a>
+      <a class="button" href="{{ url_for('subscriptions.create') }}">+ {{ t("Thêm gói", "Add plan") }}</a>
     </div>
   </div>
 
-  {# Thanh tóm tắt Chi dự kiến Toàn tài khoản (lấy từ /dashboard.json bằng Decimal chuẩn, không cộng float trên trang phân trang) #}
-  {% if has_server_pager %}
-    <div class="card account-summary-strip" id="account-wide-summary" data-dashboard-json="{{ url_for('dashboard.as_json') }}">
-      <div class="summary-strip-head">
-        <div>
-          <span class="dash-label" data-vi="Chi dự kiến toàn tài khoản (Mọi trang · Decimal)" data-en="Account-wide projected spend (All pages · Decimal)">Chi dự kiến toàn tài khoản (Mọi trang · Decimal)</span>
-          <p class="muted small-text" data-vi="Số liệu này luôn tính trên toàn bộ gói đang hoạt động trong tài khoản của bạn, không bị cắt theo trang 20 mục hay bộ lọc bên dưới." data-en="Computed across all active subscriptions in your account, never limited to the current 20-item page or search filter.">
-            Số liệu này luôn tính trên toàn bộ gói đang hoạt động trong tài khoản của bạn, không bị cắt theo trang 20 mục hay bộ lọc bên dưới.
-          </p>
-        </div>
-        <a class="small-link" href="{{ url_for('dashboard.show') }}" data-vi="Chi tiết Tổng quan →" data-en="Open Dashboard →">Chi tiết Tổng quan →</a>
-      </div>
-      <div id="account-wide-totals-body" class="summary-strip-totals">
-        <div class="summary-grid">
-          {% for row in totals %}
-            <div class="stat-card">
-              <span class="stat-label">Tổng quy đổi ({{ row.currency }})</span>
-              <strong class="stat-value">{{ row.currency }} {{ row.monthly }} / tháng</strong>
-              <span class="stat-sub">{{ row.currency }} {{ row.yearly }} / năm · {{ row.count }} gói đang hoạt động</span>
-            </div>
-          {% else %}
-            <p class="muted">Chưa có gói đăng ký đang hoạt động.</p>
-          {% endfor %}
-        </div>
+  {# Monthly cost over the whole account (every page, not only the 20 rows below), in each currency. #}
+  {% if has_server_pager and totals %}
+    <div class="card account-summary-strip" id="account-wide-summary">
+      <div class="summary-grid">
+        {% for row in totals %}
+          <div class="stat-card">
+            <span class="stat-label">{{ t("Mỗi tháng", "Per month") }} ({{ row.currency }})</span>
+            <strong class="stat-value">{{ row.currency }} {{ row.monthly }} / {{ t("tháng", "month") }}</strong>
+            <span class="stat-sub">{{ row.currency }} {{ row.yearly }} / {{ t("năm", "year") }} · {{ row.count }} {{ t("gói đang hoạt động", "active plans") }}</span>
+          </div>
+        {% endfor %}
       </div>
     </div>
   {% endif %}
 
-  {# Thanh Tìm kiếm, Lọc trạng thái (active/archived/all) và Sắp xếp gửi trực tiếp lên máy chủ (GET /subscriptions/) #}
-  <form class="search filter-bar card compact-card" method="get" action="{{ url_for('subscriptions.list_subscriptions') }}" aria-label="Tìm kiếm, lọc và sắp xếp gói đăng ký trên toàn tài khoản">
-    <div class="filter-search-wrap">
-      <label for="sub-q-input" class="sr-only">Tìm theo tên hoặc ghi chú</label>
-      <input
-        id="sub-q-input"
-        type="search"
-        name="q"
-        value="{{ q if q is defined else '' }}"
-        placeholder="Tìm theo tên gói hoặc ghi chú trên toàn tài khoản…"
-        aria-label="Search name or notes"
-      />
-    </div>
-    <div class="filter-selects">
-      <label for="sub-status-select" class="sr-only">Trạng thái gói</label>
-      <select id="sub-status-select" name="status" aria-label="Status">
-        {% set cur_status = status if status is defined else 'active' %}
-        {% for value, label_vi, label_en in [
-          ('active', 'Đang hoạt động (Active)', 'Active'),
-          ('archived', 'Đã lưu trữ (Archived)', 'Archived'),
-          ('all', 'Tất cả trạng thái (All)', 'All')
-        ] %}
-          <option value="{{ value }}" {% if cur_status == value %}selected{% endif %} data-vi="{{ label_vi }}" data-en="{{ label_en }}">{{ label_vi }}</option>
-        {% endfor %}
-      </select>
-
-      <label for="sub-sort-select" class="sr-only">Sắp xếp theo</label>
-      <select id="sub-sort-select" name="sort" aria-label="Sort">
-        {% set cur_sort = sort if sort is defined else 'renewal' %}
-        {% for value, label_vi, label_en in [
-          ('renewal', 'Sắp xếp: Gia hạn gần nhất (Next renewal)', 'Next renewal'),
-          ('name', 'Sắp xếp: Tên A → Z (Name)', 'Name'),
-          ('amount', 'Sắp xếp: Giá cao trước (Price high first)', 'Price (high first)')
-        ] %}
-          <option value="{{ value }}" {% if cur_sort == value %}selected{% endif %} data-vi="{{ label_vi }}" data-en="{{ label_en }}">{{ label_vi }}</option>
-        {% endfor %}
-      </select>
-
-      <button type="submit" data-vi="Hiển thị (Show)" data-en="Show">Hiển thị (Show)</button>
-      {% if (q is defined and q) or (status is defined and status != 'active') or (sort is defined and sort != 'renewal') %}
-        <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Đặt lại" data-en="Reset">Đặt lại</a>
-      {% endif %}
-    </div>
+  {# Search, status and sort are sent to the server (GET /subscriptions/), so they cover every page. #}
+  <form class="search filter-bar card compact-card" method="get" action="{{ url_for('subscriptions.list_subscriptions') }}" aria-label="{{ t('Tìm, lọc và sắp xếp gói', 'Search, filter and sort your plans') }}">
+    <label for="sub-q-input" class="sr-only">{{ t("Tìm theo tên hoặc ghi chú", "Search by name or notes") }}</label>
+    <input id="sub-q-input" type="search" name="q" value="{{ q if q is defined else '' }}"
+           placeholder="{{ t('Tìm theo tên gói hoặc ghi chú…', 'Search plan names or notes…') }}" />
+    <label for="sub-status-select" class="sr-only">{{ t("Trạng thái", "Status") }}</label>
+    <select id="sub-status-select" name="status">
+      {% set cur_status = status if status is defined else 'active' %}
+      {% for value, label in [('active', t('Đang dùng', 'Active')), ('archived', t('Đã lưu trữ', 'Archived')), ('all', t('Tất cả', 'All'))] %}
+        <option value="{{ value }}" {% if cur_status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <label for="sub-sort-select" class="sr-only">{{ t("Sắp xếp theo", "Sort by") }}</label>
+    <select id="sub-sort-select" name="sort">
+      {% set cur_sort = sort if sort is defined else 'renewal' %}
+      {% for value, label in [('renewal', t('Gia hạn gần nhất', 'Next renewal')), ('name', t('Tên A → Z', 'Name A → Z')), ('amount', t('Giá cao trước', 'Price, high first'))] %}
+        <option value="{{ value }}" {% if cur_sort == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">{{ t("Lọc", "Filter") }}</button>
+    {% if (q is defined and q) or (status is defined and status != 'active') or (sort is defined and sort != 'renewal') %}
+      <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions') }}">{{ t("Đặt lại", "Reset") }}</a>
+    {% endif %}
   </form>
 
   {% if items %}
     {% if has_server_pager %}
-      <div class="scope-notice muted small-text">
-        <span>
-          <strong data-vi="Phạm vi hiển thị:" data-en="Showing scope:">Phạm vi hiển thị:</strong>
-          {{ items|length }} / {{ pages.total }} gói khớp điều kiện
-          (Page {{ pages.page }} of {{ pages.pages }})
-          {% if q %} · Từ khóa: <code>{{ q }}</code>{% endif %}
-          {% if status is defined %} · Trạng thái: <code>{{ status }}</code>{% endif %}
-        </span>
-      </div>
+      <p class="scope-notice muted small-text">
+        {{ t("Đang hiện", "Showing") }} {{ items|length }} / {{ pages.total }} {{ t("gói", "plans") }}{% if pages.pages > 1 %} · {{ t("trang", "page") }} {{ pages.page }}/{{ pages.pages }}{% endif %}{% if q %} · “{{ q }}”{% endif %}
+      </p>
     {% endif %}
 
     <div class="table-scroll">
       <table id="subs-table">
         <thead>
           <tr>
-            <th data-vi="Dịch vụ" data-en="Name">Dịch vụ</th>
-            <th data-vi="Số tiền" data-en="Amount">Số tiền</th>
-            <th data-vi="Chu kỳ" data-en="Cycle">Chu kỳ</th>
-            <th data-vi="Ngày gia hạn dự kiến" data-en="Next renewal">Ngày gia hạn dự kiến</th>
-            <th data-vi="Trạng thái & Nhắc trước" data-en="Status & Lead days">Trạng thái & Nhắc trước</th>
-            <th data-vi="Thao tác" data-en="Actions">Thao tác</th>
+            <th>{{ t("Dịch vụ", "Service") }}</th>
+            <th>{{ t("Số tiền", "Amount") }}</th>
+            <th>{{ t("Chu kỳ", "Cycle") }}</th>
+            <th>{{ t("Gia hạn dự kiến", "Next renewal") }}</th>
+            <th>{{ t("Trạng thái", "Status") }}</th>
+            <th>{{ t("Thao tác", "Actions") }}</th>
           </tr>
         </thead>
         <tbody id="subs-tbody">
@@ -123,17 +80,10 @@
             {% set days_left = (item.next_renewal_at - today).days %}
             {% set btile = (item.name[:1] or 'S')|upper %}
             {% set is_active = (item.status is not defined or item.status == 'active') %}
-
-            <tr
-              class="{% if is_active and item.next_renewal_at <= today %}due{% elif is_active and days_left <= 7 %}soon-row{% endif %}"
-              data-sub-row
-              data-name="{{ item.name }}"
-              data-currency="{{ item.currency }}"
-              data-amount="{{ item.amount }}"
-              data-cycle="{{ item.cycle }}"
-              data-date="{{ item.next_renewal_at.isoformat() }}"
-              data-status="{{ item.status if item.status is defined else 'active' }}"
-            >
+            <tr class="{% if is_active and item.next_renewal_at <= today %}due{% elif is_active and days_left <= 7 %}soon-row{% endif %}"
+                data-sub-row data-name="{{ item.name }}" data-currency="{{ item.currency }}" data-amount="{{ item.amount }}"
+                data-cycle="{{ item.cycle }}" data-date="{{ item.next_renewal_at.isoformat() }}"
+                data-status="{{ item.status if item.status is defined else 'active' }}">
               <td>
                 <div class="service-cell">
                   <span class="service-tile" aria-hidden="true">{{ btile }}</span>
@@ -141,59 +91,48 @@
                     <div class="sub-card-title-row">
                       <strong class="service-name">{{ item.name }}</strong>
                       {% if item.manage_url is defined and item.manage_url %}
-                        <a class="pill small-link" href="{{ item.manage_url }}" rel="noopener noreferrer nofollow" target="_blank" data-vi="quản lý / hủy ↗" data-en="manage">manage</a>
+                        <a class="pill small-link" href="{{ item.manage_url }}" rel="noopener noreferrer nofollow" target="_blank">{{ t("quản lý ↗", "manage ↗") }}</a>
                       {% endif %}
                     </div>
-                    {% if item.notes %}
-                      <small class="muted service-note">{{ item.notes }}</small>
-                    {% endif %}
+                    {% if item.notes %}<small class="muted service-note">{{ item.notes }}</small>{% endif %}
                   </div>
                 </div>
               </td>
-              <td class="num-cell">
-                <strong>{{ item.amount }} {{ item.currency }}</strong>
-              </td>
+              <td class="num-cell"><strong>{{ item.amount }} {{ item.currency }}</strong></td>
+              <td><span class="pill">{{ cycles.get(item.cycle, item.cycle) }}</span></td>
               <td>
-                <span class="pill">{{ item.cycle }}</span>
-              </td>
-              <td>
-                <strong class="num-cell">{{ item.next_renewal_at }}</strong>
+                <strong class="num-cell">{{ item.next_renewal_at.strftime('%d/%m/%Y') }}</strong>
                 {% if is_active %}
                   <small class="block-small muted">
                     {% if days_left < 0 %}
-                      <span class="hot" data-vi="Quá ngày dự kiến {{ -days_left }} ngày" data-en="{{ -days_left }}d past expected">Quá ngày dự kiến {{ -days_left }} ngày</span>
+                      <span class="hot">{{ t("Quá " ~ (-days_left) ~ " ngày", (-days_left) ~ " days ago") }}</span>
                     {% elif days_left == 0 %}
-                      <span class="hot" data-vi="Dự kiến hôm nay" data-en="Expected today">Dự kiến hôm nay</span>
+                      <span class="hot">{{ t("Hôm nay", "Today") }}</span>
                     {% else %}
-                      <span data-vi="Còn {{ days_left }} ngày" data-en="In {{ days_left }} days">Còn {{ days_left }} ngày</span>
+                      <span>{{ t("Còn " ~ days_left ~ " ngày", "In " ~ days_left ~ " days") }}</span>
                     {% endif %}
                   </small>
                 {% endif %}
               </td>
               <td>
                 {% if is_active %}
-                  <span class="pill mint" data-vi="Đang hoạt động" data-en="Active">Đang hoạt động</span>
+                  <span class="pill mint">{{ t("Đang dùng", "Active") }}</span>
                 {% else %}
-                  <span class="pill sun-label" data-vi="Đã lưu trữ" data-en="Archived">Đã lưu trữ</span>
+                  <span class="pill sun-label">{{ t("Đã lưu trữ", "Archived") }}</span>
                 {% endif %}
-                <small class="block-small muted">
-                  <span data-vi="Nhắc trước:" data-en="Remind:">Nhắc trước:</span>
-                  {{ item.lead_days if (item.lead_days is defined and item.lead_days) else item.remind_days }}d
-                </small>
+                <small class="block-small muted">{{ t("Nhắc trước", "Remind") }}: {{ item.lead_days if (item.lead_days is defined and item.lead_days) else item.remind_days }} {{ t("ngày", "days") }}</small>
               </td>
               <td class="actions-cell">
-                <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}" data-vi="Sửa" data-en="Edit">Sửa</a>
+                <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}">{{ t("Sửa", "Edit") }}</a>
                 {% if is_active %}
                   <form class="inline archive-form" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}" data-sub-title="{{ item.name }}">
-                    {% if csrf_token is defined %}
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    {% endif %}
-                    <button type="submit" data-vi="Lưu trữ" data-en="Archive">Lưu trữ</button>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">{{ t("Lưu trữ", "Archive") }}</button>
                   </form>
-                {% elif csrf_token is defined %}
+                {% else %}
                   <form class="inline restore-form" method="post" action="{{ url_for('subscriptions.restore', item_id=item.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit" data-vi="Khôi phục" data-en="Restore">Khôi phục</button>
+                    <button type="submit">{{ t("Khôi phục", "Restore") }}</button>
                   </form>
                 {% endif %}
               </td>
@@ -203,32 +142,24 @@
       </table>
     </div>
 
-    {# Phân trang máy chủ (Server-side pagination: 20 mục / trang) #}
     {% if has_server_pager and pages.pages > 1 %}
-      <nav class="pager card compact-card" aria-label="Phân trang gói đăng ký">
+      <nav class="pager card compact-card" aria-label="{{ t('Chuyển trang', 'Pages') }}">
         {% if pages.has_prev %}
-          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.prev_num) }}">← Newer</a>
+          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.prev_num) }}">← {{ t("Trước", "Previous") }}</a>
         {% endif %}
-        <span class="pager-info">Page {{ pages.page }} of {{ pages.pages }}</span>
+        <span class="pager-info">{{ t("Trang " ~ pages.page ~ " / " ~ pages.pages, "Page " ~ pages.page ~ " of " ~ pages.pages) }}</span>
         {% if pages.has_next %}
-          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.next_num) }}">More →</a>
+          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions', q=q, status=status, sort=sort, page=pages.next_num) }}">{{ t("Sau", "Next") }} →</a>
         {% endif %}
       </nav>
     {% endif %}
 
-    {# Khối xuất dữ liệu với phạm vi rõ ràng (Explicit export scope & CSV formula safety) #}
+    {# Export only what is shown here; CSV cells are made safe to open in Excel (app-ui.js). #}
     <div class="card compact-card export-scope-bar">
-      <div>
-        <strong class="small-text" data-vi="Xuất dữ liệu bảng đang hiển thị (Phạm vi: {{ items|length }} dòng trên trang/bộ lọc hiện tại)" data-en="Export visible table rows (Scope: {{ items|length }} rows on current page/filter)">
-          Xuất dữ liệu bảng đang hiển thị (Phạm vi: {{ items|length }} dòng trên trang/bộ lọc hiện tại)
-        </strong>
-        <p class="muted small-text" data-vi="Lưu ý: Tệp tải xuống chỉ bao gồm các dòng đang hiển thị trên trang hiện tại (không phải bản sao lưu toàn bộ các trang ẩn). Giá trị CSV được bảo vệ chống chèn công thức (formula-safe)." data-en="Note: Exports only the rows currently shown on this page (not hidden pages). CSV cells are sanitized against formula injection.">
-          Lưu ý: Tệp tải xuống chỉ bao gồm các dòng đang hiển thị trên trang hiện tại (không phải bản sao lưu toàn bộ các trang ẩn). Giá trị CSV được bảo vệ chống chèn công thức (formula-safe).
-        </p>
-      </div>
+      <p class="muted small-text">{{ t("Tải về " ~ (items|length) ~ " gói đang hiện trên trang này.", "Download the " ~ (items|length) ~ " plans shown on this page.") }}</p>
       <div class="head-actions">
-        <button type="button" class="button secondary btn-sm" data-export-subs="csv" data-vi="⬇ Xuất trang hiện tại (.CSV)" data-en="⬇ Export current page (.CSV)">⬇ Xuất trang hiện tại (.CSV)</button>
-        <button type="button" class="button secondary btn-sm" data-export-subs="json" data-vi="⬇ Xuất trang hiện tại (.JSON)" data-en="⬇ Export current page (.JSON)">⬇ Xuất trang hiện tại (.JSON)</button>
+        <button type="button" class="button secondary btn-sm" data-export-subs="csv">⬇ CSV</button>
+        <button type="button" class="button secondary btn-sm" data-export-subs="json">⬇ JSON</button>
       </div>
       <p id="export-subs-status" class="field-hint" role="status" aria-live="polite" hidden></p>
     </div>
@@ -237,48 +168,33 @@
     <div class="card empty-state-box mascot-box">
       {{ mascot("look", 96) }}
       <div>
-        <p>
-          <strong data-vi="Không có gói đăng ký nào khớp với điều kiện lọc." data-en="Nothing matches.">Không có gói đăng ký nào khớp với điều kiện lọc.</strong>
-          <span class="sr-only">Nothing matches.</span>
-        </p>
-        <p class="muted">
-          <a href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Hiển thị toàn bộ gói đang hoạt động (Show all active)" data-en="Show all active">Hiển thị toàn bộ gói đang hoạt động (Show all active)</a>
-        </p>
+        <p><strong>{{ t("Không có gói nào khớp.", "Nothing matches.") }}</strong></p>
+        <p class="muted"><a href="{{ url_for('subscriptions.list_subscriptions') }}">{{ t("Hiện tất cả gói đang dùng", "Show all active plans") }}</a></p>
       </div>
     </div>
   {% else %}
     <div class="card empty-state-box mascot-box">
       {{ mascot("hi", 96) }}
       <div>
-        <p>
-          <strong data-vi="Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn." data-en="None yet. Add your first subscription to get reminded in time.">
-            Chưa có gói đăng ký nào. Hãy thêm dịch vụ đầu tiên để AllOutFree nhắc trước hạn.
-          </strong>
-          <span class="sr-only">None yet.</span>
-        </p>
-        <p><a class="button" href="{{ url_for('subscriptions.create') }}" data-vi="+ Thêm gói đăng ký đầu tiên" data-en="Add subscription">+ Thêm gói đăng ký đầu tiên</a></p>
+        <p><strong>{{ t("Chưa có gói nào. Thêm dịch vụ đầu tiên để AllOutFree nhắc bạn trước hạn.", "None yet. Add your first subscription to get reminded in time.") }}</strong></p>
+        <p><a class="button" href="{{ url_for('subscriptions.create') }}">+ {{ t("Thêm gói đầu tiên", "Add your first plan") }}</a></p>
       </div>
     </div>
   {% endif %}
 
-  {# Hộp thoại xác nhận trước khi Lưu trữ (Archive) gói đăng ký #}
+  {# Asked before archiving (app-ui.js opens it). #}
   <dialog id="dialog-confirm-archive" class="legal-dialog" aria-labelledby="archive-dialog-title">
     <div class="legal-dialog-inner">
       <header class="legal-dialog-head">
-        <h3 id="archive-dialog-title" data-vi="Xác nhận lưu trữ gói đăng ký" data-en="Confirm archiving subscription">Xác nhận lưu trữ gói đăng ký</h3>
-        <button type="button" class="subby-close" data-close-dialog aria-label="Đóng">×</button>
+        <h3 id="archive-dialog-title">{{ t("Lưu trữ gói này?", "Archive this plan?") }}</h3>
+        <button type="button" class="subby-close" data-close-dialog aria-label="{{ t('Đóng', 'Close') }}">×</button>
       </header>
       <div class="legal-dialog-body">
-        <p>
-          <span data-vi="Bạn có chắc muốn lưu trữ gói" data-en="Are you sure you want to archive">Bạn có chắc muốn lưu trữ gói</span>
-          <strong id="archive-target-name"></strong>?
-        </p>
-        <p class="muted small-text" data-vi="Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (Archived) trên AllOutFree, KHÔNG tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài." data-en="Note: This stops reminders and moves the plan to Archived on AllOutFree; it does NOT cancel your subscription with the external provider.">
-          Lưu ý: Thao tác này chỉ dừng nhắc lịch và chuyển gói sang mục Đã lưu trữ (<code>Archived</code>) trên AllOutFree, <strong>KHÔNG</strong> tự động hủy gói cước tại nhà cung cấp dịch vụ bên ngoài.
-        </p>
+        <p>{{ t("Lưu trữ", "Archive") }} <strong id="archive-target-name"></strong>?</p>
+        <p class="muted small-text">{{ t("AllOutFree sẽ ngừng nhắc gói này. Việc này KHÔNG hủy gói ở nhà cung cấp: bạn vẫn cần tự hủy trên trang của họ.", "AllOutFree stops reminding you about it. This does NOT cancel it with the provider: do that on their site.") }}</p>
         <div class="form-actions compact-top">
-          <button type="button" class="button" id="confirm-archive-btn" data-vi="Đồng ý lưu trữ" data-en="Yes, archive">Đồng ý lưu trữ</button>
-          <button type="button" class="button secondary" data-close-dialog data-vi="Giữ lại" data-en="Cancel">Giữ lại</button>
+          <button type="button" class="button" id="confirm-archive-btn">{{ t("Lưu trữ", "Archive") }}</button>
+          <button type="button" class="button secondary" data-close-dialog>{{ t("Giữ lại", "Keep it") }}</button>
         </div>
       </div>
     </div>

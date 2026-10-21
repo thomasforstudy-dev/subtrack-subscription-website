@@ -58,7 +58,14 @@ class CSRFClient(FlaskClient):
 
     The server still checks the token for real. Pass csrf=False to send a
     form without it (to test that it is refused).
+
+    It reads the site in English (the VI / EN cookie), so messages can be
+    checked in one language; tests/test_language.py covers Vietnamese.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_cookie("ui_lang", "en")
 
     def csrf_token(self) -> str:
         from app.security import CSRF_FIELD

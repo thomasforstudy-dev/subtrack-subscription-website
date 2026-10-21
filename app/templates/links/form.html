@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if item %}Sửa link đã lưu{% else %}Thêm link mới{% endif %} — AllOutFree{% endblock %}
+{% block title %}{% if item %}{{ t("Sửa link", "Edit link") }}{% else %}{{ t("Thêm link", "Add a link") }}{% endif %} — AllOutFree{% endblock %}
 {% block content %}
   <div class="page-head">
     <div>
-      <p class="breadcrumb"><a href="{{ url_for('links.list_links') }}" data-vi="← Quay lại danh sách link" data-en="← Back to links">← Quay lại danh sách link</a></p>
+      <p class="breadcrumb"><a href="{{ url_for('links.list_links') }}">{{ t("← Quay lại danh sách link", "← Back to links") }}</a></p>
       <h1 data-vi="{% if item %}Chỉnh sửa đường dẫn{% else %}Thêm đường dẫn mới{% endif %}" data-en="{% if item %}Edit link{% else %}Add link{% endif %}">
         {% if item %}Chỉnh sửa đường dẫn{% else %}Thêm đường dẫn mới{% endif %}
       </h1>
@@ -19,7 +19,7 @@
       class="sub-form"
       action="{{ url_for('links.edit', link_id=item.id) if item else url_for('links.create') }}"
       data-link-preview="{{ url_for('links.preview') }}"
-      data-submitting-text="Đang lưu link…"
+      data-submitting-text="{{ t('Đang lưu link…', 'Saving link…') }}"
     >
       {% if csrf_token is defined %}
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -27,7 +27,7 @@
       <input type="hidden" name="form" value="full" />
 
       <div class="field-group">
-        <label for="link-url" data-vi="Đường dẫn (URL)" data-en="Link">Đường dẫn (URL)</label>
+        <label for="link-url">{{ t("Đường dẫn", "Link") }}</label>
         <input
           id="link-url"
           name="url"
@@ -37,26 +37,24 @@
           placeholder="https://account.adobe.com/plans"
           value="{{ form.get('url', item.url if item else '') }}"
         />
-        <small class="field-hint" data-vi="Tên miền đích sẽ được hiển thị rõ ràng bên cạnh tiêu đề." data-en="The destination domain will be displayed clearly next to the title.">
-          Tên miền đích sẽ được hiển thị rõ ràng bên cạnh tiêu đề.
-        </small>
+        <small class="field-hint">{{ t("Tên miền đích sẽ được hiển thị rõ ràng bên cạnh tiêu đề.", "The destination domain will be displayed clearly next to the title.") }}</small>
       </div>
 
       <p class="preview-status muted small-text" data-preview-status role="status" aria-live="polite" hidden></p>
 
       <div class="field-group">
-        <label for="link-title" data-vi="Tiêu đề trang" data-en="Title">Tiêu đề trang</label>
+        <label for="link-title">{{ t("Tiêu đề trang", "Title") }}</label>
         <input
           id="link-title"
           name="title"
           maxlength="200"
-          placeholder="Để trống để tự động lấy tiêu đề trang web"
+          placeholder="{{ t('Để trống để tự lấy tiêu đề trang', 'Leave empty to fetch the page title') }}"
           value="{{ form.get('title', item.title if item else '') }}"
         />
       </div>
 
       <div class="field-group">
-        <label for="link-tags" data-vi="Thẻ phân loại (Tags — cách nhau bởi dấu phẩy)" data-en="Tags">Thẻ phân loại (Tags — cách nhau bởi dấu phẩy)</label>
+        <label for="link-tags" >{{ t("Thẻ (cách nhau bởi dấu phẩy)", "Tags (separated by commas)") }}</label>
         <input
           id="link-tags"
           name="tags"
@@ -67,7 +65,7 @@
       </div>
 
       <div class="field-group">
-        <label for="link-notes" data-vi="Ghi chú" data-en="Notes">Ghi chú</label>
+        <label for="link-notes">{{ t("Ghi chú", "Notes") }}</label>
         <textarea
           id="link-notes"
           name="notes"
@@ -81,12 +79,12 @@
           name="is_pinned"
           {% if (form.get('is_pinned') == 'on') or (not form and item and item.is_pinned) %}checked{% endif %}
         />
-        <span data-vi="📌 Ghim đường dẫn này lên đầu danh sách" data-en="Pin to top">📌 Ghim đường dẫn này lên đầu danh sách</span>
+        <span>{{ t("📌 Ghim đường dẫn này lên đầu danh sách", "Pin to top") }}</span>
       </label>
 
       <div class="form-actions">
-        <button type="submit" data-vi="Lưu đường dẫn" data-en="Save">Lưu đường dẫn</button>
-        <a class="button secondary" href="{{ url_for('links.list_links') }}" data-vi="Quay lại" data-en="Back to links">Quay lại</a>
+        <button type="submit">{{ t("Lưu đường dẫn", "Save") }}</button>
+        <a class="button secondary" href="{{ url_for('links.list_links') }}">{{ t("Quay lại", "Back to links") }}</a>
       </div>
     </form>
   </div>

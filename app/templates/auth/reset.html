@@ -1,73 +1,56 @@
 {% extends "base.html" %}
-{% block title %}Đặt lại mật khẩu mới — AllOutFree{% endblock %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ t("Đặt mật khẩu mới", "Choose a new password") }} — AllOutFree{% endblock %}
 {% block content %}
   <div class="card auth-card">
     <div class="auth-header">
-      <h1 data-vi="Chọn mật khẩu mới" data-en="Choose a new password">Chọn mật khẩu mới</h1>
-      <p class="muted" data-vi="Sau khi lưu mật khẩu mới, các phiên đăng nhập trên thiết bị khác sẽ tự động đăng xuất để bảo vệ tài khoản của bạn." data-en="Saving a new password will sign out other browsers automatically.">
-        Sau khi lưu mật khẩu mới, các phiên đăng nhập trên thiết bị khác sẽ tự động đăng xuất để bảo vệ tài khoản của bạn.
-      </p>
+      <h1>{{ t("Chọn mật khẩu mới", "Choose a new password") }}</h1>
+      <p class="muted">{{ t("Khi lưu mật khẩu mới, các thiết bị khác sẽ tự đăng xuất.", "Saving a new password signs out your other browsers.") }}</p>
     </div>
 
-    <form method="post" id="reset-form" class="auth-form" data-submitting-text="Đang lưu mật khẩu mới…">
-      {% if csrf_token is defined %}
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      {% endif %}
+    <form method="post" id="reset-form" class="auth-form" data-submitting-text="{{ t('Đang lưu…', 'Saving…') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <div class="field-group">
-        <label for="reset-new-password" data-vi="Mật khẩu mới" data-en="New password">Mật khẩu mới</label>
+        <label for="reset-new-password">{{ t("Mật khẩu mới", "New password") }}</label>
         <div class="password-wrap">
-          <input
-            id="reset-new-password"
-            type="password"
-            name="password"
-            required
-            minlength="12"
-            maxlength="128"
-            autocomplete="new-password"
-            aria-describedby="reset-pwd-rules"
-          />
-          <button
-            type="button"
-            class="pwd-toggle"
-            data-toggle-password="reset-new-password"
-            aria-label="Hiện mật khẩu mới"
-            aria-pressed="false"
-            data-vi="Hiện"
-            data-en="Show"
-          >Hiện</button>
+          <input id="reset-new-password" type="password" name="password" required minlength="12" maxlength="128"
+                 autocomplete="new-password" aria-describedby="reset-pwd-rules" />
+          <button type="button" class="pwd-toggle" data-toggle-password="reset-new-password" aria-pressed="false"
+                  aria-label="{{ t('Hiện mật khẩu', 'Show password') }}">{{ icon("eye", 18) }}{{ icon("eye-off", 18) }}</button>
         </div>
-        <p id="reset-pwd-rules" class="field-hint" data-vi="Từ 12 đến 128 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt (như ! hoặc #)." data-en="At least 12 characters, with an upper-case letter, a number and a special character like ! or #.">
-          Từ 12 đến 128 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt (như ! hoặc #).
-          <span class="sr-only">12 to 128 characters, upper-case letter, a number, special character</span>
-        </p>
+        <ul id="reset-pwd-rules" class="pwd-rules" aria-live="polite">
+          <li data-rule="length">{{ t("12–128 ký tự", "12–128 characters") }}</li>
+          <li data-rule="upper">{{ t("1 chữ in hoa (A–Z)", "1 capital letter (A–Z)") }}</li>
+          <li data-rule="digit">{{ t("1 chữ số (0–9)", "1 number (0–9)") }}</li>
+          <li data-rule="special">{{ t("1 ký tự đặc biệt (! @ # $ …)", "1 symbol (! @ # $ …)") }}</li>
+        </ul>
       </div>
 
       <div class="field-group">
-        <label for="reset-confirm-password" data-vi="Nhập lại mật khẩu mới" data-en="Confirm new password">Nhập lại mật khẩu mới</label>
+        <label for="reset-confirm-password">{{ t("Nhập lại mật khẩu mới", "Confirm new password") }}</label>
         <div class="password-wrap">
-          <input
-            id="reset-confirm-password"
-            type="password"
-            name="confirm"
-            required
-            minlength="12"
-            maxlength="128"
-            autocomplete="new-password"
-          />
-          <button
-            type="button"
-            class="pwd-toggle"
-            data-toggle-password="reset-confirm-password"
-            aria-label="Hiện mật khẩu xác nhận"
-            aria-pressed="false"
-            data-vi="Hiện"
-            data-en="Show"
-          >Hiện</button>
+          <input id="reset-confirm-password" type="password" name="confirm" required minlength="12" maxlength="128" autocomplete="new-password" />
+          <button type="button" class="pwd-toggle" data-toggle-password="reset-confirm-password" aria-pressed="false"
+                  aria-label="{{ t('Hiện mật khẩu', 'Show password') }}">{{ icon("eye", 18) }}{{ icon("eye-off", 18) }}</button>
         </div>
       </div>
 
-      <button type="submit" class="auth-submit" data-vi="Lưu mật khẩu mới" data-en="Save new password">Lưu mật khẩu mới</button>
+      <button type="submit" class="auth-submit">{{ t("Lưu mật khẩu mới", "Save new password") }}</button>
     </form>
   </div>
+
+  <script>
+    (function () {
+      // Same green ticks as on the sign-up page, while typing.
+      const pwd = document.getElementById("reset-new-password");
+      const rules = { length: (v) => v.length >= 12 && v.length <= 128, upper: (v) => /[A-Z]/.test(v),
+                      digit: (v) => /[0-9]/.test(v), special: (v) => /[^A-Za-z0-9]/.test(v) };
+      pwd.addEventListener("input", () => {
+        Object.keys(rules).forEach((key) => {
+          document.querySelector('#reset-pwd-rules [data-rule="' + key + '"]').classList.toggle("rule-ok", rules[key](pwd.value));
+        });
+      });
+    })();
+  </script>
 {% endblock %}

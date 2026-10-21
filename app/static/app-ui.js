@@ -11,7 +11,14 @@
 (function () {
     "use strict";
 
-    // --- 1. Password Show / Hide Toggle ---
+    // The page's language comes from the server (<html lang>, app/i18n.py);
+    // every message this file writes uses it too, so a page is never half VI, half EN.
+    var EN = document.documentElement.getAttribute("lang") === "en";
+    function tr(vi, en) {
+        return EN ? en : vi;
+    }
+
+    // --- 1. Password Show / Hide Toggle (the eye inside the field) ---
     function initPasswordToggles() {
         var toggles = document.querySelectorAll("[data-pw-toggle], [data-toggle-password]");
         toggles.forEach(function (btn) {
@@ -22,7 +29,7 @@
                 var isPassword = input.type === "password";
                 input.type = isPassword ? "text" : "password";
                 btn.setAttribute("aria-pressed", isPassword ? "true" : "false");
-                btn.textContent = isPassword ? "Ẩn" : "Hiện";
+                btn.setAttribute("aria-label", isPassword ? tr("Ẩn mật khẩu", "Hide password") : tr("Hiện mật khẩu", "Show password"));
             });
         });
     }
@@ -68,7 +75,7 @@
                 var submitBtn = form.querySelector('button[type="submit"]');
                 if (!submitBtn || submitBtn.disabled) return;
                 submitBtn.disabled = true;
-                submitBtn.textContent = form.getAttribute("data-submitting-text") || "Đang xử lý…";
+                submitBtn.textContent = form.getAttribute("data-submitting-text") || tr("Đang xử lý…", "Working…");
             });
         });
     }
@@ -181,7 +188,7 @@
                 event.preventDefault();
                 pendingArchiveForm = form;
                 if (archiveTargetName) {
-                    archiveTargetName.textContent = form.getAttribute("data-sub-title") || "gói đăng ký này";
+                    archiveTargetName.textContent = form.getAttribute("data-sub-title") || tr("gói đăng ký này", "this plan");
                 }
                 archiveDialog.showModal();
             });
@@ -222,7 +229,7 @@
                     var emptyP = document.createElement("p");
                     emptyP.className = "hint";
                     emptyP.style.margin = "0.35rem 0 0";
-                    emptyP.textContent = "Chưa có gói đăng ký đang hoạt động để tính tổng toàn tài khoản.";
+                    emptyP.textContent = tr("Chưa có gói đăng ký đang hoạt động.", "No active plans yet.");
                     body.appendChild(emptyP);
                     return;
                 }
@@ -235,7 +242,7 @@
 
                     var label = document.createElement("span");
                     label.className = "stat-label";
-                    label.textContent = "Tổng quy đổi (" + String(t.currency || "") + ")";
+                    label.textContent = tr("Tổng (", "Total (") + String(t.currency || "") + ")";
 
                     var val = document.createElement("strong");
                     val.className = "stat-value";
@@ -247,9 +254,9 @@
                         String(t.currency || "") +
                         " " +
                         String(t.yearly || "0.00") +
-                        " / năm · " +
+                        tr(" / năm · ", " / year · ") +
                         String(t.count || 0) +
-                        " gói đang hoạt động";
+                        tr(" gói đang hoạt động", " active plans");
 
                     card.appendChild(label);
                     card.appendChild(val);
@@ -263,7 +270,7 @@
                 fallbackP.className = "hint";
                 fallbackP.style.margin = "0.35rem 0 0";
                 fallbackP.textContent =
-                    "Chưa thể làm mới tổng chi. Bạn có thể mở trang Tổng quan hoặc thử tải lại sau.";
+                    tr("Chưa thể làm mới tổng chi. Hãy tải lại trang sau.", "Couldn't refresh the totals. Please reload the page later.");
                 body.appendChild(fallbackP);
             });
     }
@@ -329,7 +336,7 @@
                 event.preventDefault();
                 pendingDeleteForm = form;
                 if (deleteTargetName) {
-                    deleteTargetName.textContent = form.getAttribute("data-link-title") || "đường dẫn này";
+                    deleteTargetName.textContent = form.getAttribute("data-link-title") || tr("đường dẫn này", "this link");
                 }
                 deleteDialog.showModal();
             });
@@ -394,7 +401,7 @@
                     return;
                 }
                 if (fileNameEl) {
-                    fileNameEl.textContent = "Đã chọn: " + file.name + " (" + Math.max(1, Math.round(file.size / 1024)) + " KB)";
+                    fileNameEl.textContent = tr("Đã chọn: ", "Selected: ") + file.name + " (" + Math.max(1, Math.round(file.size / 1024)) + " KB)";
                 }
                 setBillStep("review");
             });
@@ -527,7 +534,7 @@
                 }
                 if (regStatus) {
                     regStatus.hidden = false;
-                    regStatus.textContent = "✓ Đã lưu tùy chọn hiển thị cục bộ trên trình duyệt này.";
+                    regStatus.textContent = tr("✓ Đã lưu trên trình duyệt này.", "✓ Saved in this browser.");
                 }
             });
         }
@@ -608,11 +615,11 @@
                 if (exportStatus) {
                     exportStatus.hidden = false;
                     exportStatus.textContent =
-                        "✓ Đã xuất " +
+                        tr("✓ Đã xuất ", "✓ Exported ") +
                         subs.length +
-                        " dòng đang hiển thị trên trang hiện tại ra tệp ." +
+                        tr(" dòng đang hiển thị ra tệp .", " rows shown on this page to a .") +
                         fmt.toUpperCase() +
-                        " (đã bảo vệ chống CSV formula injection).";
+                        tr(" (an toàn khi mở bằng Excel).", " file (safe to open in Excel).");
                 }
             });
         });
@@ -623,34 +630,44 @@
         var toggleBtn = document.querySelector("[data-lang-toggle]");
         if (!toggleBtn) return;
 
+        // The server builds the page in the language saved in the "ui_lang" cookie
+        // (app/i18n.py) and puts it on <html lang>. Here we only swap the texts that
+        // carry both data-vi and data-en, so the whole page is in that one language.
         function applyLang(lang) {
-            document.documentElement.setAttribute("data-ui-lang", lang);
-            toggleBtn.textContent = lang === "en" ? "EN · VI" : "VI · EN";
             document.querySelectorAll("[data-vi][data-en]").forEach(function (el) {
                 var text = el.getAttribute(lang === "en" ? "data-en" : "data-vi");
                 if (text) el.textContent = text;
             });
         }
 
-        var savedLang = "vi";
-        try {
-            savedLang = localStorage.getItem("subtrack_ui_lang") || "vi";
-        } catch (e) {
-            savedLang = "vi";
-        }
-        if (savedLang === "en") {
-            applyLang("en");
+        function saveLang(lang) {
+            document.cookie = "ui_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+            try {
+                localStorage.setItem("subtrack_ui_lang", lang);
+            } catch (e) {
+                // private mode: the cookie is enough
+            }
         }
 
+        var serverLang = document.documentElement.getAttribute("data-ui-lang") === "en" ? "en" : "vi";
+        var hasCookie = /(?:^|;\s*)ui_lang=/.test(document.cookie);
+        var oldChoice = null;
+        try {
+            oldChoice = localStorage.getItem("subtrack_ui_lang");
+        } catch (e) {
+            oldChoice = null;
+        }
+        if (!hasCookie && oldChoice === "en" && serverLang === "vi") {
+            // Chosen before the cookie existed: move it to the cookie and rebuild once.
+            saveLang("en");
+            window.location.reload();
+            return;
+        }
+        if (serverLang === "en") applyLang("en");
+
         toggleBtn.addEventListener("click", function () {
-            var current = document.documentElement.getAttribute("data-ui-lang") || "vi";
-            var next = current === "vi" ? "en" : "vi";
-            try {
-                localStorage.setItem("subtrack_ui_lang", next);
-            } catch (e) {
-                // ignore
-            }
-            applyLang(next);
+            saveLang(serverLang === "vi" ? "en" : "vi");
+            window.location.reload();
         });
     }
 

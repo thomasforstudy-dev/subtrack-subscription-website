@@ -2,16 +2,14 @@
 <section id="reminders" class="workspace-section" aria-labelledby="reminders-heading">
   <div class="section-head">
     <div>
-      <h2 id="reminders-heading" data-vi="Cấu hình Nhắc nhở trước hạn" data-en="Reminder Preferences">Cấu hình Nhắc nhở trước hạn</h2>
-      <p class="muted" data-vi="Chọn mốc ngày nhắc trước và kênh thông báo. Lời nhắc giúp bạn chủ động tự gia hạn hoặc tự hủy đúng hạn; AllOutFree không tự hủy dịch vụ bên ngoài." data-en="Choose your advance reminder milestones and channels. Reminders help you renew or cancel in time; AllOutFree never cancels external services.">
-        Chọn mốc ngày nhắc trước và kênh thông báo. Lời nhắc giúp bạn chủ động tự gia hạn hoặc tự hủy đúng hạn; AllOutFree không tự hủy dịch vụ bên ngoài.
-      </p>
+      <h2 id="reminders-heading">{{ t("Cấu hình Nhắc nhở trước hạn", "Reminder Preferences") }}</h2>
+      <p class="muted">{{ t("Chọn mốc ngày nhắc trước và kênh thông báo. Lời nhắc giúp bạn chủ động tự gia hạn hoặc tự hủy đúng hạn; AllOutFree không tự hủy dịch vụ bên ngoài.", "Choose your advance reminder milestones and channels. Reminders help you renew or cancel in time; AllOutFree never cancels external services.") }}</p>
     </div>
   </div>
 
   <div class="card settings-grid-card">
     <div class="status-banner info" role="status">
-      <strong data-vi="Trạng thái hệ thống gửi lời nhắc" data-en="Reminder delivery status">Trạng thái hệ thống gửi lời nhắc</strong>
+      <strong>{{ t("Trạng thái hệ thống gửi lời nhắc", "Reminder delivery status") }}</strong>
       <p class="muted small-text" data-vi="Số ngày nhắc trước (remind_days) của từng gói được lưu trực tiếp trong cơ sở dữ liệu. Tác vụ gửi email tự động định kỳ qua Resend đang được hoàn thiện ở nhánh Backend — giao diện sẽ không hiển thị 'Đã gửi email' khi chưa có kết quả thực tế từ máy chủ." data-en="Each subscription's remind_days value is stored in the database. Automated daily email delivery via Resend is being finalized in the backend lane — the UI never shows 'Email sent' without a real server confirmation.">
         Số ngày nhắc trước (<code>remind_days</code>) của từng gói được lưu trực tiếp trong cơ sở dữ liệu. Tác vụ gửi email tự động định kỳ qua Resend đang được hoàn thiện ở nhánh Backend — giao diện sẽ không hiển thị <em>"Đã gửi email"</em> khi chưa có kết quả thực tế từ máy chủ.
       </p>
@@ -19,36 +17,32 @@
 
     <div class="settings-two-col">
       <div>
-        <h3 class="card-title" data-vi="Mốc nhắc mặc định khi thêm gói mới" data-en="Default reminder milestones">Mốc nhắc mặc định khi thêm gói mới</h3>
+        <h3 class="card-title">{{ t("Mốc nhắc mặc định khi thêm gói mới", "Default reminder milestones") }}</h3>
         <div class="check-list" role="group" aria-label="Mốc ngày nhắc trước">
-          <label class="check"><input type="checkbox" data-pref-milestone="14" checked /> <span data-vi="Nhắc trước 14 ngày (Gói năm / gói giá trị cao)" data-en="14 days before (Annual / high-value plans)">Nhắc trước 14 ngày (Gói năm / gói giá trị cao)</span></label>
-          <label class="check"><input type="checkbox" data-pref-milestone="7" checked /> <span data-vi="Nhắc trước 7 ngày (Mặc định khuyến nghị)" data-en="7 days before (Recommended default)">Nhắc trước 7 ngày (Mặc định khuyến nghị)</span></label>
-          <label class="check"><input type="checkbox" data-pref-milestone="3" checked /> <span data-vi="Nhắc trước 3 ngày (Sát hạn thanh toán)" data-en="3 days before (Close to renewal)">Nhắc trước 3 ngày (Sát hạn thanh toán)</span></label>
-          <label class="check"><input type="checkbox" data-pref-milestone="1" /> <span data-vi="Nhắc trước 1 ngày (Khẩn cấp)" data-en="1 day before (Urgent)">Nhắc trước 1 ngày (Khẩn cấp)</span></label>
+          <label class="check"><input type="checkbox" data-pref-milestone="14" checked /> <span>{{ t("Nhắc trước 14 ngày (Gói năm / gói giá trị cao)", "14 days before (Annual / high-value plans)") }}</span></label>
+          <label class="check"><input type="checkbox" data-pref-milestone="7" checked /> <span>{{ t("Nhắc trước 7 ngày (Mặc định khuyến nghị)", "7 days before (Recommended default)") }}</span></label>
+          <label class="check"><input type="checkbox" data-pref-milestone="3" checked /> <span>{{ t("Nhắc trước 3 ngày (Sát hạn thanh toán)", "3 days before (Close to renewal)") }}</span></label>
+          <label class="check"><input type="checkbox" data-pref-milestone="1" /> <span>{{ t("Nhắc trước 1 ngày (Khẩn cấp)", "1 day before (Urgent)") }}</span></label>
         </div>
       </div>
 
       <div>
-        <h3 class="card-title" data-vi="Kênh nhận thông báo" data-en="Notification channels">Kênh nhận thông báo</h3>
+        <h3 class="card-title">{{ t("Kênh nhận thông báo", "Notification channels") }}</h3>
         <div class="channel-cards">
           <div class="channel-item">
             <div>
               <strong data-vi="📧 Email ({{ current_user.email }})" data-en="📧 Email ({{ current_user.email }})">📧 Email ({{ current_user.email }})</strong>
-              <p class="muted small-text" data-vi="Gửi tới email đăng ký khi tác vụ nhắc lịch hàng ngày kích hoạt." data-en="Sent to your account email once the daily reminder job is active.">
-                Gửi tới email đăng ký khi tác vụ nhắc lịch hàng ngày kích hoạt.
-              </p>
+              <p class="muted small-text">{{ t("Gửi tới email đăng ký khi tác vụ nhắc lịch hàng ngày kích hoạt.", "Sent to your account email once the daily reminder job is active.") }}</p>
             </div>
-            <span class="pill" data-vi="Đang chuẩn bị job gửi" data-en="Scheduler in progress">Đang chuẩn bị job gửi</span>
+            <span class="pill">{{ t("Đang chuẩn bị job gửi", "Scheduler in progress") }}</span>
           </div>
 
           <div class="channel-item">
             <div>
-              <strong data-vi="🧩 Tiện ích Chrome Extension" data-en="🧩 Chrome Extension">🧩 Tiện ích Chrome Extension</strong>
-              <p class="muted small-text" data-vi="Hiển thị số lượng gói sắp đến hạn trên biểu tượng trình duyệt (Phần Codex phụ trách — chưa phát hành)." data-en="Shows upcoming renewal badge count in browser toolbar (Codex lane — not released yet).">
-                Hiển thị số lượng gói sắp đến hạn trên biểu tượng trình duyệt (Phần Codex phụ trách — chưa phát hành).
-              </p>
+              <strong>{{ t("🧩 Tiện ích Chrome Extension", "🧩 Chrome Extension") }}</strong>
+              <p class="muted small-text">{{ t("Hiển thị số lượng gói sắp đến hạn trên biểu tượng trình duyệt (Phần Codex phụ trách — chưa phát hành).", "Shows upcoming renewal badge count in browser toolbar (Codex lane — not released yet).") }}</p>
             </div>
-            <span class="pill sun-label" data-vi="Chưa phát hành" data-en="Unreleased">Chưa phát hành</span>
+            <span class="pill sun-label">{{ t("Chưa phát hành", "Unreleased") }}</span>
           </div>
         </div>
       </div>
@@ -59,43 +53,41 @@
 <section id="settings" class="workspace-section" aria-labelledby="settings-heading">
   <div class="section-head">
     <div>
-      <h2 id="settings-heading" data-vi="Cài đặt Tài khoản, Gmail, Ứng dụng (PWA) & Dữ liệu" data-en="Account, Gmail, App Install (PWA) & Data Settings">Cài đặt Tài khoản, Gmail, Ứng dụng (PWA) & Dữ liệu</h2>
-      <p class="muted" data-vi="Quản lý múi giờ, tiền tệ hiển thị, kết nối đồng bộ hóa đơn và hướng dẫn cài đặt AllOutFree lên màn hình chính." data-en="Manage timezone, display currency, invoice sync preparation, and PWA installation guide.">
-        Quản lý múi giờ, tiền tệ hiển thị, kết nối đồng bộ hóa đơn và hướng dẫn cài đặt AllOutFree lên màn hình chính.
-      </p>
+      <h2 id="settings-heading">{{ t("Cài đặt Tài khoản, Gmail, Ứng dụng & Dữ liệu", "Account, Gmail, App Install (PWA) & Data Settings") }}</h2>
+      <p class="muted">{{ t("Quản lý múi giờ, tiền tệ hiển thị, kết nối đồng bộ hóa đơn và hướng dẫn cài đặt AllOutFree lên màn hình chính.", "Manage timezone, display currency, invoice sync preparation, and PWA installation guide.") }}</p>
     </div>
   </div>
 
   <div class="settings-cards-grid">
     {# 1. Tài khoản & Múi giờ / Tiền tệ #}
     <div class="card">
-      <h3 class="card-title" data-vi="1. Tài khoản & Khu vực hiển thị" data-en="1. Account & Regional Preferences">1. Tài khoản & Khu vực hiển thị</h3>
+      <h3 class="card-title">{{ t("1. Tài khoản & Khu vực hiển thị", "1. Account & Regional Preferences") }}</h3>
       <div class="kv-list">
         <div class="kv-row">
-          <span class="muted" data-vi="Email đăng nhập:" data-en="Account email:">Email đăng nhập:</span>
+          <span class="muted">{{ t("Email đăng nhập:", "Account email:") }}</span>
           <strong>{{ current_user.email }}</strong>
         </div>
         {% if current_user.username is defined and current_user.username %}
           <div class="kv-row">
-            <span class="muted" data-vi="Tên đăng nhập:" data-en="Username:">Tên đăng nhập:</span>
+            <span class="muted">{{ t("Tên đăng nhập:", "Username:") }}</span>
             <strong>{{ current_user.username }}</strong>
           </div>
         {% endif %}
         <div class="kv-row">
-          <span class="muted" data-vi="Trạng thái xác thực email:" data-en="Email verification:">Trạng thái xác thực email:</span>
+          <span class="muted">{{ t("Trạng thái xác thực email:", "Email verification:") }}</span>
           {% if current_user.email_verified is defined %}
             <span class="pill {% if current_user.email_verified %}mint{% else %}sun-label{% endif %}">
               {{ "Đã xác nhận" if current_user.email_verified else "Chưa xác nhận email" }}
             </span>
           {% else %}
-            <span class="pill" data-vi="Đang chờ trường email_verified" data-en="Pending email_verified field">Đang chờ trường email_verified</span>
+            <span class="pill">{{ t("Đang chờ trường email_verified", "Pending email_verified field") }}</span>
           {% endif %}
         </div>
       </div>
 
       <form id="regional-settings-form" class="sub-form compact-top">
         <div class="field-group">
-          <label for="pref-timezone" data-vi="Múi giờ tính ngày gia hạn" data-en="Timezone">Múi giờ tính ngày gia hạn</label>
+          <label for="pref-timezone">{{ t("Múi giờ tính ngày gia hạn", "Timezone") }}</label>
           <select id="pref-timezone" name="timezone">
             <option value="Asia/Ho_Chi_Minh" selected>Asia/Ho_Chi_Minh (GMT+07:00 — Việt Nam)</option>
             <option value="Asia/Bangkok">Asia/Bangkok (GMT+07:00)</option>
@@ -106,7 +98,7 @@
         </div>
 
         <div class="field-group">
-          <label for="pref-currency" data-vi="Tiền tệ mặc định khi tạo gói mới" data-en="Default currency">Tiền tệ mặc định khi tạo gói mới</label>
+          <label for="pref-currency">{{ t("Tiền tệ mặc định khi tạo gói mới", "Default currency") }}</label>
           <select id="pref-currency" name="default_currency">
             <option value="VND" selected>VND (₫) — Đồng Việt Nam</option>
             <option value="USD">USD ($) — Đô la Mỹ</option>
@@ -115,7 +107,7 @@
           </select>
         </div>
 
-        <button type="submit" class="button secondary btn-sm" data-vi="Lưu tùy chọn hiển thị trên trình duyệt" data-en="Save browser preferences">Lưu tùy chọn hiển thị trên trình duyệt</button>
+        <button type="submit" class="button secondary btn-sm">{{ t("Lưu tùy chọn hiển thị trên trình duyệt", "Save browser preferences") }}</button>
         <p id="regional-save-status" class="field-hint" role="status" aria-live="polite" hidden></p>
       </form>
     </div>
@@ -123,66 +115,60 @@
     {# 2. Gmail Connect / Disconnect (Phần UI chuẩn bị) #}
     <div class="card">
       <div class="card-head-row">
-        <h3 class="card-title" data-vi="2. Kết nối Gmail đọc hóa đơn (Chuẩn bị UI)" data-en="2. Gmail Invoice Sync (UI Preparation)">2. Kết nối Gmail đọc hóa đơn (Chuẩn bị UI)</h3>
-        <span class="pill sun-label" data-vi="Chưa kết nối" data-en="Not connected">Chưa kết nối</span>
+        <h3 class="card-title">{{ t("2. Kết nối Gmail đọc hóa đơn (Chuẩn bị UI)", "2. Gmail Invoice Sync (UI Preparation)") }}</h3>
+        <span class="pill sun-label">{{ t("Chưa kết nối", "Not connected") }}</span>
       </div>
-      <p class="muted small-text" data-vi="Tự động tìm biên lai và hóa đơn gia hạn gửi về hộp thư để đề xuất vào mục Hóa đơn." data-en="Scan incoming subscription receipts to suggest bills for review.">
-        Tự động tìm biên lai và hóa đơn gia hạn gửi về hộp thư để đề xuất vào mục Hóa đơn.
-      </p>
+      <p class="muted small-text">{{ t("Tự động tìm biên lai và hóa đơn gia hạn gửi về hộp thư để đề xuất vào mục Hóa đơn.", "Scan incoming subscription receipts to suggest bills for review.") }}</p>
       <div class="status-banner warn compact">
-        <strong data-vi="Lưu ý: Đăng nhập Google khác với quyền đọc Gmail" data-en="Note: Google Login is NOT Gmail inbox access">Lưu ý: Đăng nhập Google khác với quyền đọc Gmail</strong>
+        <strong>{{ t("Lưu ý: Đăng nhập Google khác với quyền đọc Gmail", "Note: Google Login is NOT Gmail inbox access") }}</strong>
         <p class="muted small-text" data-vi="Việc bạn chọn 'Tiếp tục với Google' lúc đăng nhập chỉ xác thực địa chỉ email, hoàn toàn KHÔNG cấp quyền đọc thư Gmail. Quyền đọc hóa đơn Gmail cần luồng OAuth riêng." data-en="'Continue with Google' at sign-in only verifies your email address and does NOT grant Gmail read access. Gmail invoice sync requires a separate OAuth consent flow.">
           Việc bạn chọn <em>"Tiếp tục với Google"</em> lúc đăng nhập chỉ xác thực địa chỉ email, hoàn toàn <strong>KHÔNG</strong> cấp quyền đọc thư Gmail. Quyền đọc hóa đơn Gmail cần luồng OAuth riêng.
         </p>
       </div>
       <div class="kv-list">
         <div class="kv-row">
-          <span class="muted" data-vi="Trạng thái kết nối:" data-en="Connection status:">Trạng thái kết nối:</span>
-          <strong data-vi="Chưa kết nối OAuth Gmail" data-en="Gmail OAuth not connected">Chưa kết nối OAuth Gmail</strong>
+          <span class="muted">{{ t("Trạng thái kết nối:", "Connection status:") }}</span>
+          <strong>{{ t("Chưa kết nối OAuth Gmail", "Gmail OAuth not connected") }}</strong>
         </div>
         <div class="kv-row">
-          <span class="muted" data-vi="Lần đồng bộ cuối:" data-en="Last sync:">Lần đồng bộ cuối:</span>
-          <span class="muted" data-vi="Chưa đồng bộ lần nào" data-en="Never synced">Chưa đồng bộ lần nào</span>
+          <span class="muted">{{ t("Lần đồng bộ cuối:", "Last sync:") }}</span>
+          <span class="muted">{{ t("Chưa đồng bộ lần nào", "Never synced") }}</span>
         </div>
       </div>
       <div class="form-actions compact-top">
-        <button type="button" class="button secondary btn-sm" disabled title="Chờ backend cung cấp OAuth endpoint cho Gmail" data-vi="Kết nối Gmail (Chờ OAuth endpoint)" data-en="Connect Gmail (Awaiting OAuth endpoint)">
-          Kết nối Gmail (Chờ OAuth endpoint)
-        </button>
+        <button type="button" class="button secondary btn-sm" disabled title="Chờ backend cung cấp OAuth endpoint cho Gmail">{{ t("Kết nối Gmail (Chờ OAuth endpoint)", "Connect Gmail (Awaiting OAuth endpoint)") }}</button>
       </div>
     </div>
 
     {# 3. Hướng dẫn cài ứng dụng PWA & Chrome Extension #}
     <div class="card">
       <div class="card-head-row">
-        <h3 class="card-title" data-vi="3. Cài đặt Ứng dụng (PWA) & Tiện ích mở rộng" data-en="3. Install App (PWA) & Browser Extension">3. Cài đặt Ứng dụng (PWA) & Tiện ích mở rộng</h3>
+        <h3 class="card-title">{{ t("3. Cài đặt Ứng dụng & Tiện ích mở rộng", "3. Install App (PWA) & Browser Extension") }}</h3>
         <img src="{{ url_for('static', filename='favicon.svg') }}" width="28" height="28" alt="" aria-hidden="true" />
       </div>
 
       <div id="pwa-install-banner" class="pwa-banner">
         <div>
-          <strong data-vi="Cài AllOutFree lên màn hình chính" data-en="Install AllOutFree to your home screen">Cài AllOutFree lên màn hình chính</strong>
+          <strong>{{ t("Cài AllOutFree lên màn hình chính", "Install AllOutFree to your home screen") }}</strong>
           <ul class="pwa-guide-list muted small-text">
             <li data-vi="Chrome / Edge (Máy tính & Android): Bấm biểu tượng Cài đặt (⊕) trên thanh địa chỉ hoặc vào Menu (⋮) → Cài đặt ứng dụng." data-en="Chrome / Edge (Desktop & Android): Click the Install icon (⊕) in the address bar or Menu (⋮) → Install app.">
               <strong>Chrome / Edge (Máy tính & Android):</strong> Bấm biểu tượng Cài đặt (⊕) trên thanh địa chỉ hoặc vào Menu (⋮) → <em>Cài đặt ứng dụng</em>.
             </li>
-            <li data-vi="Safari (iPhone / iPad): Bấm nút Chia sẻ (Share) ở cạnh dưới → chọn 'Thêm vào MH chính' (Add to Home Screen)." data-en="Safari (iOS): Tap Share at the bottom → choose 'Add to Home Screen'.">
+            <li data-vi="Safari (iPhone / iPad): Bấm nút Chia sẻ ở cạnh dưới → chọn 'Thêm vào MH chính'." data-en="Safari (iOS): Tap Share at the bottom → choose 'Add to Home Screen'.">
               <strong>Safari (iPhone / iPad):</strong> Bấm nút Chia sẻ (Share) → chọn <em>Thêm vào MH chính (Add to Home Screen)</em>.
             </li>
           </ul>
-          <p class="muted small-text" data-vi="🔒 An toàn bộ nhớ đệm: Không lưu hóa đơn hay phản hồi cá nhân vào bộ nhớ đệm ngoại tuyến dùng chung." data-en="🔒 Cache safety: Invoices and private responses are never stored in shared offline caches.">
-            🔒 An toàn bộ nhớ đệm: Không lưu hóa đơn hay phản hồi cá nhân vào bộ nhớ đệm ngoại tuyến dùng chung.
-          </p>
+          <p class="muted small-text">{{ t("🔒 An toàn bộ nhớ đệm: Không lưu hóa đơn hay phản hồi cá nhân vào bộ nhớ đệm ngoại tuyến dùng chung.", "🔒 Cache safety: Invoices and private responses are never stored in shared offline caches.") }}</p>
         </div>
-        <button type="button" class="link small-text" data-dismiss-pwa data-vi="Ẩn hướng dẫn này" data-en="Dismiss guide">Ẩn hướng dẫn này</button>
+        <button type="button" class="link small-text" data-dismiss-pwa>{{ t("Ẩn hướng dẫn này", "Dismiss guide") }}</button>
       </div>
 
       <div class="ext-preview-box">
-        <span class="pill" data-vi="Giao diện chuẩn bị cho Extension (Nhánh Codex)" data-en="Prepared UI for Chrome Extension (Codex lane)">Giao diện chuẩn bị cho Extension (Nhánh Codex)</span>
+        <span class="pill">{{ t("Giao diện chuẩn bị cho Extension (Nhánh Codex)", "Prepared UI for Chrome Extension (Codex lane)") }}</span>
         <div class="ext-mockup-row">
           <img src="{{ url_for('static', filename='icon-192.svg') }}" width="36" height="36" alt="Biểu tượng AllOutFree" />
           <div>
-            <strong data-vi="AllOutFree Reminder Badge (Mẫu thiết kế)" data-en="AllOutFree Reminder Badge (Design preview)">AllOutFree Reminder Badge (Mẫu thiết kế)</strong>
+            <strong>{{ t("AllOutFree Reminder Badge (Mẫu thiết kế)", "AllOutFree Reminder Badge (Design preview)") }}</strong>
             <p class="muted small-text" data-vi="Tiện ích Chrome Extension đang được phát triển ở nhánh extension/. Sẽ chỉ kích hoạt sau khi phát hành chính thức." data-en="The Chrome Extension is under development in extension/ and will activate once released.">
               Tiện ích Chrome Extension đang được phát triển ở nhánh <code>extension/</code>. Sẽ chỉ kích hoạt sau khi phát hành chính thức.
             </p>
@@ -193,13 +179,11 @@
 
     {# 4. Quyền riêng tư & Xuất dữ liệu #}
     <div class="card">
-      <h3 class="card-title" data-vi="4. Quyền riêng tư & Xuất dữ liệu cá nhân" data-en="4. Privacy & Personal Data Export">4. Quyền riêng tư & Xuất dữ liệu cá nhân</h3>
-      <p class="muted small-text" data-vi="Bạn toàn quyền kiểm soát dữ liệu các gói đăng ký và đường dẫn đã lưu của mình. Có thể tải xuống bản sao dữ liệu đang hiển thị dưới dạng JSON hoặc CSV bất cứ lúc nào." data-en="You control your tracked subscriptions and saved links. Download a copy of your current subscriptions in JSON or CSV format anytime.">
-        Bạn toàn quyền kiểm soát dữ liệu các gói đăng ký và đường dẫn đã lưu của mình. Có thể tải xuống bản sao dữ liệu đang hiển thị dưới dạng JSON hoặc CSV bất cứ lúc nào.
-      </p>
+      <h3 class="card-title">{{ t("4. Quyền riêng tư & Xuất dữ liệu cá nhân", "4. Privacy & Personal Data Export") }}</h3>
+      <p class="muted small-text">{{ t("Bạn toàn quyền kiểm soát dữ liệu các gói đăng ký và đường dẫn đã lưu của mình. Có thể tải xuống bản sao dữ liệu đang hiển thị dưới dạng JSON hoặc CSV bất cứ lúc nào.", "You control your tracked subscriptions and saved links. Download a copy of your current subscriptions in JSON or CSV format anytime.") }}</p>
       <div class="form-actions compact-top">
-        <button type="button" class="button secondary btn-sm" data-export-subs="json" data-vi="⬇ Tải danh sách gói (.JSON)" data-en="⬇ Export subscriptions (.JSON)">⬇ Tải danh sách gói (.JSON)</button>
-        <button type="button" class="button secondary btn-sm" data-export-subs="csv" data-vi="⬇ Tải danh sách gói (.CSV)" data-en="⬇ Export subscriptions (.CSV)">⬇ Tải danh sách gói (.CSV)</button>
+        <button type="button" class="button secondary btn-sm" data-export-subs="json">{{ t("⬇ Tải danh sách gói (.JSON)", "⬇ Export subscriptions (.JSON)") }}</button>
+        <button type="button" class="button secondary btn-sm" data-export-subs="csv">{{ t("⬇ Tải danh sách gói (.CSV)", "⬇ Export subscriptions (.CSV)") }}</button>
       </div>
       <p id="export-subs-status" class="field-hint" role="status" aria-live="polite" hidden></p>
     </div>

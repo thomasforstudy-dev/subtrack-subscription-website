@@ -12,7 +12,7 @@ def test_missing_page_shows_the_lost_mascot(client):
     response = client.get("/no-such-page")
     page = response.get_data(as_text=True)
     assert response.status_code == 404
-    assert "mascot-lost" in page and "Không tìm thấy trang này" in page
+    assert "mascot-lost" in page and "Page not found" in page
     assert 'href="/"' in page  # signed out: back to the home page
 
 
@@ -37,10 +37,10 @@ def test_json_addresses_keep_the_plain_404(user):
 
 def test_new_user_is_welcomed_by_the_mascot(user):
     page = user.get("/dashboard").get_data(as_text=True)
-    assert "mascot-hi" in page and "Chào mừng bạn đến AllOutFree!" in page
+    assert "mascot-hi" in page and "Welcome to AllOutFree!" in page
     user.post("/subscriptions/new", data={"name": "Netflix", "amount": "260000", "currency": "VND", "cycle": "monthly",
                                           "next_renewal_at": "2026-12-01", "lead_days": "3"})
-    assert "Chào mừng bạn đến AllOutFree!" not in user.get("/dashboard").get_data(as_text=True)
+    assert "Welcome to AllOutFree!" not in user.get("/dashboard").get_data(as_text=True)
 
 
 def test_empty_lists_show_the_mascot(user):

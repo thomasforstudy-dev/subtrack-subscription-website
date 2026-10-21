@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_mascot.html" import mascot %}
-{% block title %}Check the draft — AllOutFree{% endblock %}
+{% block title %}{{ t("Kiểm tra bản nháp", "Check the draft") }} — AllOutFree{% endblock %}
 {% block content %}
   {# Styled 2-column side-by-side document & draft review (docs/CONTRACT.md → Reading bills).
      Every field shows where its value came from. Document text is shown as text, never as HTML. #}
@@ -9,15 +9,15 @@
     <div>
       <div class="section-badges">
         {% if draft.status == "accepted" %}
-          <span class="pill mint" data-vi="✓ Đã xác nhận & tạo hóa đơn (Accepted)" data-en="✓ Accepted">✓ Accepted</span>
+          <span class="pill mint">{{ t("✓ Đã xác nhận & tạo hóa đơn", "✓ Accepted") }}</span>
         {% elif draft.status == "discarded" %}
-          <span class="pill sun-label" data-vi="Đã bỏ qua bản nháp (Put aside)" data-en="Put aside">Put aside</span>
+          <span class="pill sun-label">{{ t("Đã bỏ qua bản nháp", "Put aside") }}</span>
         {% else %}
-          <span class="pill sun-label" data-vi="Bản nháp chờ bạn kiểm tra (Draft — Needs review)" data-en="Draft — Needs your review">Draft — Needs your review</span>
+          <span class="pill sun-label">{{ t("Bản nháp chờ bạn kiểm tra", "Draft — Needs your review") }}</span>
         {% endif %}
         <span class="pill" data-vi="Bằng chứng trích xuất (Extractor: {{ draft.extractor }})" data-en="Extractor: {{ draft.extractor }}">Extractor: {{ draft.extractor }}</span>
         {% if 'fake' in (draft.extractor or '')|lower %}
-          <span class="pill sun-label" data-vi="🧪 Trình đọc giả lập kiểm thử (Test/Fake reader)" data-en="🧪 Test / Fake reader">🧪 Test / Fake reader</span>
+          <span class="pill sun-label">{{ t("🧪 Trình đọc giả lập kiểm thử", "🧪 Test / Fake reader") }}</span>
         {% endif %}
       </div>
       <h1>Check the draft from {{ draft.document.original_name }}</h1>
@@ -86,8 +86,8 @@
           <div class="empty-state-box mascot-box compact-top">
             {{ mascot("hi", 80) }}
             <div>
-              <p><strong data-vi="Chưa đọc được chữ nào từ tệp này." data-en="We couldn't read any text from this file.">We couldn't read any text from this file.</strong></p>
-              <p class="muted small-text" data-vi="Hãy mở tệp gốc và tự điền các ô bên cạnh nếu hóa đơn có ghi." data-en="Open the file and fill in the boxes yourself where the bill shows them.">Open the file and fill in the boxes yourself where the bill shows them.</p>
+              <p><strong>{{ t("Chưa đọc được chữ nào từ tệp này.", "We couldn't read any text from this file.") }}</strong></p>
+              <p class="muted small-text">{{ t("Hãy mở tệp gốc và tự điền các ô bên cạnh nếu hóa đơn có ghi.", "Open the file and fill in the boxes yourself where the bill shows them.") }}</p>
             </div>
           </div>
         {% endfor %}
