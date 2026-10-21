@@ -5473,6 +5473,10 @@ a.tile:hover {
     padding: 0.9rem 1rem;
     gap: 0.8rem;
   }
+  /* In a column its 18rem flex-basis became 18rem of HEIGHT: size it to the text. */
+  .verify-banner-content {
+    flex: 0 0 auto;
+  }
   .verify-banner-actions {
     flex-direction: column;
     align-items: stretch;
