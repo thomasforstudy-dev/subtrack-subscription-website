@@ -86,6 +86,13 @@ def create_app() -> Flask:
     app.before_request(check_csrf)
     app.jinja_env.globals["csrf_token"] = csrf_token
 
+    from app.i18n import say, t, ui_lang
+    from app.mailer import inbox_url
+
+    # One language per page: {{ t("Tiếng Việt", "English") }} in every template,
+    # {{ say(message) }} for messages the code writes in English.
+    app.jinja_env.globals.update(t=t, say=say, ui_lang=ui_lang, inbox_url=inbox_url)
+
     from app.admin import bp as admin_bp
     from app.api import bp as api_bp
     from app.api_tokens import bp as api_tokens_bp

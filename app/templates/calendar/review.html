@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Calendar: {{ item.name }} — AllOutFree{% endblock %}
+{% block title %}{{ t("Lịch", "Calendar") }}: {{ item.name }} — AllOutFree{% endblock %}
 {% block content %}
   <div class="form-shell">
     <div class="form-shell-header">
-      <a class="back-link" href="{{ url_for('calendar.index') }}" data-vi="← Tất cả lịch gia hạn đang hoạt động (All active renewals)" data-en="← All active renewals">← Tất cả lịch gia hạn đang hoạt động (All active renewals)</a>
-      <h1 data-vi="Thêm ngày gia hạn vào lịch của bạn" data-en="Add a renewal to your calendar">Add a renewal to your calendar</h1>
+      <a class="back-link" href="{{ url_for('calendar.index') }}">{{ t("← Tất cả lịch gia hạn đang hoạt động", "← All active renewals") }}</a>
+      <h1>{{ t("Thêm ngày gia hạn vào lịch của bạn", "Add a renewal to your calendar") }}</h1>
     </div>
 
     <div class="card form-card">
@@ -18,7 +18,7 @@
             </p>
           </div>
         </div>
-        <span class="pill sun-label" data-vi="Sự kiện cả ngày (All-day)" data-en="All-day event">Sự kiện cả ngày (All-day)</span>
+        <span class="pill sun-label">{{ t("Sự kiện cả ngày", "All-day event") }}</span>
       </div>
 
       <div class="honest-status-box" style="margin: 0.85rem 0;">
@@ -40,21 +40,15 @@
           target="_blank"
           rel="noopener noreferrer"
           referrerpolicy="no-referrer"
-          data-vi="📅 Kiểm tra & Lưu trên Google Calendar ↗"
-          data-en="Review in Google Calendar"
-        >Review in Google Calendar</a>
+        >{{ t("📅 Kiểm tra & Lưu trên Google Calendar ↗", "Review in Google Calendar") }}</a>
         <a
           class="button secondary"
           href="{{ url_for('calendar.export_one', item_id=item.id) }}"
-          data-vi="📥 Tải sự kiện này (.ics)"
-          data-en="Download this event (.ics)"
-        >Download this event (.ics)</a>
+        >{{ t("📥 Tải sự kiện này (.ics)", "Download this event (.ics)") }}</a>
         <a
           class="button secondary"
           href="{{ url_for('calendar.index') }}"
-          data-vi="Quay lại danh sách lịch"
-          data-en="All active renewals"
-        >All active renewals</a>
+        >{{ t("Quay lại danh sách lịch", "All active renewals") }}</a>
       </div>
     </div>
   </div>

@@ -45,8 +45,8 @@ def test_server_search_and_pager_show_rows_beyond_first_twenty(user):
     assert user.get("/dashboard.json").get_json()["projected"][0]["monthly"] == "250.00"
     assert 'name="q"' in filtered.get_data(as_text=True)
     # This must be useful before JavaScript loads, and remain account-wide on a search.
-    assert "USD 250.00 / tháng" in filtered.get_data(as_text=True)
-    assert "25 gói đang hoạt động" in filtered.get_data(as_text=True)
+    assert "USD 250.00 / month" in filtered.get_data(as_text=True)
+    assert "25 active plans" in filtered.get_data(as_text=True)
 
 
 def test_settings_survive_login_and_stay_separate_between_accounts(app):

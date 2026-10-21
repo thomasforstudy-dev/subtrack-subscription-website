@@ -66,6 +66,23 @@ def mail_ready() -> bool:
     return backend() in ("resend", "file", "memory")
 
 
+# Webmail inboxes, by the part after @, for the "Open Gmail" button next to the code box.
+INBOXES = {
+    "gmail.com": ("Gmail", "https://mail.google.com/mail/u/0/#inbox"),
+    "googlemail.com": ("Gmail", "https://mail.google.com/mail/u/0/#inbox"),
+    "outlook.com": ("Outlook", "https://outlook.live.com/mail/0/"),
+    "hotmail.com": ("Outlook", "https://outlook.live.com/mail/0/"),
+    "live.com": ("Outlook", "https://outlook.live.com/mail/0/"),
+    "yahoo.com": ("Yahoo Mail", "https://mail.yahoo.com/"),
+}
+
+
+def inbox_url(email: str) -> dict | None:
+    """{"name", "url"} of the address's webmail, or None if we don't know it."""
+    found = INBOXES.get((email or "").rpartition("@")[2].lower())
+    return {"name": found[0], "url": found[1]} if found else None
+
+
 def external_url(endpoint: str, **values) -> str:
     """A full link for emails and Google/GitHub, e.g. https://alloutdeepclean.com/...
 

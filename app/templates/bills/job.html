@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Reading your bill — AllOutFree{% endblock %}
+{% block title %}{{ t("Đang đọc hóa đơn", "Reading your bill") }} — AllOutFree{% endblock %}
 {% block content %}
   {# Styled to DESIGN.md v2/v3 (docs/CONTRACT.md → Reading bills).
      Preserves all backend routes, CSRF tokens, and status messages. #}
@@ -7,17 +7,17 @@
     <div>
       <div class="section-badges">
         {% if job.status == "queued" %}
-          <span class="pill sun-label" data-job-status="queued" data-vi="⏳ Đang chờ đọc (Queued)" data-en="⏳ Queued">⏳ Queued</span>
+          <span class="pill sun-label" data-job-status="queued">{{ t("⏳ Đang chờ đọc", "⏳ Queued") }}</span>
         {% elif job.status == "running" %}
-          <span class="pill sun-label" data-job-status="running" data-vi="⚙ Đang đọc chứng từ (Processing…)" data-en="⚙ Processing…">⚙ Processing…</span>
+          <span class="pill sun-label" data-job-status="running">{{ t("⚙ Đang đọc chứng từ (Processing…)", "⚙ Processing…") }}</span>
         {% elif job.status == "succeeded" %}
-          <span class="pill mint" data-job-status="succeeded" data-vi="✓ Đã tạo bản nháp chờ kiểm tra (Draft ready)" data-en="✓ Draft ready">✓ Draft ready</span>
+          <span class="pill mint" data-job-status="succeeded">{{ t("✓ Đã tạo bản nháp chờ kiểm tra", "✓ Draft ready") }}</span>
         {% elif job.error_code == "ocr-not-set-up" %}
-          <span class="pill sun-label" data-job-status="unavailable" data-vi="🔍 OCR chưa bật (OCR unavailable)" data-en="🔍 OCR unavailable">🔍 OCR unavailable</span>
+          <span class="pill sun-label" data-job-status="unavailable">{{ t("🔍 OCR chưa bật", "🔍 OCR unavailable") }}</span>
         {% else %}
-          <span class="pill hot-label" data-job-status="failed" data-vi="⚠ Không đọc được tự động (Failed)" data-en="⚠ Reading failed">⚠ Reading failed</span>
+          <span class="pill hot-label" data-job-status="failed">{{ t("⚠ Không đọc được tự động", "⚠ Reading failed") }}</span>
         {% endif %}
-        <span class="pill" data-vi="Chưa tạo hóa đơn cho tới khi bạn duyệt" data-en="Draft only until you accept">Draft only until you accept</span>
+        <span class="pill">{{ t("Chưa tạo hóa đơn cho tới khi bạn duyệt", "Draft only until you accept") }}</span>
       </div>
       <h1>Reading {{ job.document.original_name }}</h1>
     </div>
@@ -68,10 +68,8 @@
 
   <div class="card compact-card manual-entry-row">
     <div>
-      <strong data-vi="Bạn muốn tự nhập số liệu?" data-en="Prefer entering manually?">Bạn muốn tự nhập số liệu?</strong>
-      <p class="muted small-text compact-top-tight" data-vi="Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết." data-en="Open side-by-side view to enter fields yourself.">
-        Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết.
-      </p>
+      <strong>{{ t("Bạn muốn tự nhập số liệu?", "Prefer entering manually?") }}</strong>
+      <p class="muted small-text compact-top-tight">{{ t("Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết.", "Open side-by-side view to enter fields yourself.") }}</p>
     </div>
     <a class="button secondary btn-sm" href="{{ url_for('bills.create', document_id=job.document_id) }}">Type this bill in yourself instead</a>
   </div>

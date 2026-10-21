@@ -90,19 +90,62 @@
     requestAnimationFrame(step);
   }
 
-  // Chapter 4 interactive reminder day picker
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Chapter 4 interactive reminder day picker: the line fills up to the chosen
+  // day, and the email preview updates with a short fade (CSS .mail.swap).
   const daysText = document.querySelector("[data-days-text]");
-  document.querySelectorAll(".when[data-days]").forEach((button) => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll(".when[data-days]").forEach((b) => b.classList.remove("on"));
-      button.classList.add("on");
-      const lang = document.documentElement.lang === "en" ? "en" : "vi";
-      if (daysText) {
-        daysText.textContent =
-          lang === "en"
-            ? button.dataset.daysLabelEn || button.dataset.days + " days"
-            : button.dataset.daysLabelVi || button.dataset.days + " ngày";
-      }
+  const timeline = document.querySelector(".timeline");
+  const mail = document.querySelector(".remind .mail");
+  const whens = Array.from(document.querySelectorAll(".when[data-days]"));
+  function pick(button) {
+    whens.forEach((b) => b.classList.toggle("on", b === button));
+    if (timeline) timeline.style.setProperty("--pick", String(whens.indexOf(button)));
+    const lang = document.documentElement.lang === "en" ? "en" : "vi";
+    if (daysText) {
+      daysText.textContent =
+        lang === "en"
+          ? button.dataset.daysLabelEn || button.dataset.days + " days"
+          : button.dataset.daysLabelVi || button.dataset.days + " ngày";
+    }
+    if (mail && !calm) {
+      mail.classList.remove("swap");
+      void mail.offsetWidth; // restart the CSS animation
+      mail.classList.add("swap");
+    }
+  }
+  whens.forEach((button) => button.addEventListener("click", () => pick(button)));
+  const startWhen = whens.find((b) => b.classList.contains("on"));
+  if (timeline && startWhen) timeline.style.setProperty("--pick", String(whens.indexOf(startWhen)));
+
+  // Chapter 3 demo list: sort by due date, price or name. Each row slides from
+  // where it was to its new place ("FLIP": measure, move, then animate back).
+  const ledger = document.querySelector("[data-ledger]");
+  document.querySelectorAll(".sort-chip[data-sort]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      if (!ledger) return;
+      const key = chip.dataset.sort;
+      document.querySelectorAll(".sort-chip").forEach((c) => {
+        c.classList.toggle("on", c === chip);
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      const rows = Array.from(ledger.children);
+      const before = new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
+      rows.sort((a, b) => {
+        if (key === "name") return a.dataset.name.localeCompare(b.dataset.name);
+        if (key === "vnd") return Number(b.dataset.vnd) - Number(a.dataset.vnd);
+        return Number(a.dataset.days) - Number(b.dataset.days);
+      });
+      rows.forEach((row) => ledger.appendChild(row));
+      if (calm) return;
+      rows.forEach((row) => {
+        const shift = before.get(row) - row.getBoundingClientRect().top;
+        if (!shift) return;
+        row.animate(
+          [{ transform: `translateY(${shift}px)` }, { transform: "translateY(0)" }],
+          { duration: 520, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        );
+      });
     });
   });
 

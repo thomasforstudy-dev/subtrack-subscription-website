@@ -2,51 +2,45 @@
    Thiết kế provider-agnostic (hỗ trợ Gemini hiện tại và Phi-3.5-mini về sau) + Chế độ Giọng nói (Web Speech API). #}
 {% set face %}<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="13" r="1.6" fill="currentColor" stroke="none"/><path d="M19 12.5l3 1.5-3 1.5"/><path d="M10 20c3.5 3 8.5 3 12 0"/></svg>{% endset %}
 <div class="subby" data-subby data-ask-url="{{ url_for('subby.ask') }}" data-new-sub-url="{{ url_for('subscriptions.create') }}">
-  <p class="subby-teaser" data-teaser data-vi="Cần hỗ trợ? Hỏi Subby nhé — vui tính hơn thông báo trừ tiền ngân hàng!" data-en="Confused? Ask me. I promise I'm funnier than your bank.">
-    Cần hỗ trợ? Hỏi Subby nhé — vui tính hơn thông báo trừ tiền ngân hàng!
-  </p>
+  <p class="subby-teaser" data-teaser>{{ t("Cần hỗ trợ? Hỏi Subby nhé — vui tính hơn thông báo trừ tiền ngân hàng!", "Confused? Ask me. I promise I'm funnier than your bank.") }}</p>
 
-  <section class="subby-panel" id="subby-panel" role="dialog" aria-modal="false" aria-label="Trò chuyện với trợ lý Subby" hidden>
+  <section class="subby-panel" id="subby-panel" role="dialog" aria-modal="false" aria-label="{{ t("Trò chuyện với trợ lý Subby", "Chat with Subby") }}" hidden>
     <header class="subby-head">
       <span class="subby-avatar" data-subby-avatar>{{ face }}</span>
       <div class="subby-head-info">
         <div class="subby-title-row">
           <p class="subby-name">Subby</p>
-          <span class="subby-provider-pill" data-provider-badge title="Giao diện độc lập mô hình (Provider-agnostic: dùng API máy chủ hiện tại, không báo online giả khi mô hình chưa kết nối)">AI / FAQ</span>
+          <span class="subby-provider-pill" data-provider-badge title="{{ t("Giao diện độc lập mô hình (Provider-agnostic: dùng API máy chủ hiện tại, không báo online giả khi mô hình chưa kết nối)", "Answers come from the site's AI, or from built-in answers when the AI is offline") }}">AI / FAQ</span>
         </div>
-        <p class="subby-status" data-subby-status data-vi="Sẵn sàng · Trả lời qua máy chủ AI hoặc FAQ có sẵn" data-en="Ready · Server AI or built-in FAQ">
-          Sẵn sàng · Trả lời qua máy chủ AI hoặc FAQ có sẵn
-        </p>
+        <p class="subby-status" data-subby-status>{{ t("Sẵn sàng · Trả lời qua máy chủ AI hoặc FAQ có sẵn", "Ready · Server AI or built-in FAQ") }}</p>
       </div>
       <button
         type="button"
         class="subby-voice-toggle"
         data-voice-mode-toggle
         aria-pressed="false"
-        title="Chuyển sang giao diện Giọng nói (chỉ bật micro khi bạn bấm nút Mic)"
-        data-vi="🎙️ Voice"
-        data-en="🎙️ Voice"
-      >🎙️ Voice</button>
-      <button class="subby-close" type="button" data-close aria-label="Đóng cửa sổ chat">×</button>
+        title="{{ t("Chuyển sang giao diện Giọng nói (chỉ bật micro khi bạn bấm nút Mic)", "Switch to voice mode (the mic only turns on when you press it)") }}"
+      >{{ t("🎙️ Voice", "🎙️ Voice") }}</button>
+      <button class="subby-close" type="button" data-close aria-label="{{ t("Đóng cửa sổ chat", "Close chat") }}">×</button>
     </header>
 
     <div class="subby-toggles">
       <label>
         <input type="checkbox" data-fun checked />
-        <span data-vi="Chế độ vui nhộn 😜" data-en="Fun mode 😜">Chế độ vui nhộn 😜</span>
+        <span>{{ t("Chế độ vui nhộn 😜", "Fun mode 😜") }}</span>
       </label>
       <div class="tts-controls">
-        <label title="Chỉ đọc khi bạn bật — không tự phát tiếng bất ngờ">
+        <label title="{{ t("Chỉ đọc khi bạn bật — không tự phát tiếng bất ngờ", "Reads replies aloud only when this is on") }}">
           <input type="checkbox" data-tts-auto />
-          <span data-vi="Tự đọc câu trả lời" data-en="Auto read aloud">Tự đọc câu trả lời</span>
+          <span>{{ t("Tự đọc câu trả lời", "Auto read aloud") }}</span>
         </label>
-        <button type="button" class="tts-stop-btn" data-tts-stop hidden aria-label="Dừng đọc âm thanh" data-vi="⏹ Dừng đọc" data-en="⏹ Stop">⏹ Dừng đọc</button>
+        <button type="button" class="tts-stop-btn" data-tts-stop hidden aria-label="{{ t("Dừng đọc âm thanh", "Stop reading aloud") }}">{{ t("⏹ Dừng đọc", "⏹ Stop") }}</button>
       </div>
     </div>
 
     {# Màn hình Voice Mode theo thiết kế Stitch (docs/design/subby-voice-phone.png) #}
-    <div class="subby-voice-stage" data-voice-stage data-stage-state="idle" hidden role="region" aria-label="Chế độ trò chuyện bằng giọng nói">
-      <p class="voice-privacy-note muted small-text" data-voice-privacy-note data-vi="🔒 Chỉ bật mic khi bạn bấm chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài (external speech service), và giọng đọc trực tuyến (online TTS) cũng có thể dùng dịch vụ đó. AllOutFree không lưu âm thanh; hãy kiểm tra chữ trước khi gửi." data-en="🔒 Mic starts only when you click. Your browser may send speech to an external recognition service, and online voices for spoken replies may use one too. AllOutFree does not store audio; review the text before sending.">🔒 Chỉ bật mic khi bạn bấm chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài (external speech service), và giọng đọc trực tuyến (online TTS) cũng có thể dùng dịch vụ đó. AllOutFree không lưu âm thanh; hãy kiểm tra chữ trước khi gửi.</p>
+    <div class="subby-voice-stage" data-voice-stage data-stage-state="idle" hidden role="region" aria-label="{{ t("Chế độ trò chuyện bằng giọng nói", "Voice chat") }}">
+      <p class="voice-privacy-note muted small-text" data-voice-privacy-note>{{ t("🔒 Chỉ bật mic khi bạn bấm chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài (external speech service), và giọng đọc trực tuyến (online TTS) cũng có thể dùng dịch vụ đó. AllOutFree không lưu âm thanh; hãy kiểm tra chữ trước khi gửi.", "🔒 Mic starts only when you click. Your browser may send speech to an external recognition service, and online voices for spoken replies may use one too. AllOutFree does not store audio; review the text before sending.") }}</p>
       <div class="voice-stage-center">
         <div class="voice-orb-wrap">
           <span class="voice-orb-ring ring-1" aria-hidden="true"></span>
@@ -59,8 +53,8 @@
             class="voice-orb-btn"
             data-voice-orb
             aria-pressed="false"
-            aria-label="Bắt đầu hoặc dừng thu âm giọng nói"
-            title="Nhấn để bật/tắt micro"
+            aria-label="{{ t("Bắt đầu hoặc dừng thu âm giọng nói", "Start or stop listening") }}"
+            title="{{ t("Nhấn để bật/tắt micro", "Press to turn the mic on or off") }}"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
           </button>
@@ -68,51 +62,45 @@
             <span></span><span></span><span></span><span></span>
           </div>
         </div>
-        <span class="voice-detector-pill" data-voice-detector-label data-vi="Nhấn biểu tượng Mic ở giữa để bắt đầu nói" data-en="Tap the center Mic orb to start speaking">
-          Nhấn biểu tượng Mic ở giữa để bắt đầu nói
-        </span>
+        <span class="voice-detector-pill" data-voice-detector-label>{{ t("Nhấn biểu tượng Mic ở giữa để bắt đầu nói", "Tap the center Mic orb to start speaking") }}</span>
       </div>
 
       <div class="voice-cards-stack">
         <div class="voice-card you-card" data-voice-you-card>
           <div class="voice-card-head">
-            <span class="voice-card-label" data-vi="🗣 BẠN (YOU)" data-en="🗣 YOU">🗣 BẠN (YOU)</span>
-            <span class="voice-live-badge" data-voice-live-badge data-vi="● Chờ giọng nói" data-en="● Standby">● Chờ giọng nói</span>
+            <span class="voice-card-label">{{ t("🗣 BẠN", "🗣 YOU") }}</span>
+            <span class="voice-live-badge" data-voice-live-badge>{{ t("● Chờ giọng nói", "● Standby") }}</span>
           </div>
-          <p class="voice-transcript-text" data-voice-transcript data-vi="“Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”" data-en="“Tap the Mic to speak your question, or use the keyboard below…”">
-            “Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”
-          </p>
+          <p class="voice-transcript-text" data-voice-transcript>{{ t("“Nhấn Mic để nói câu hỏi hoặc dùng bàn phím bên dưới…”", "“Tap the Mic to speak your question, or use the keyboard below…”") }}</p>
           <div class="voice-transcript-actions" data-voice-transcript-actions hidden>
-            <button type="button" class="voice-action-pill primary" data-voice-send-now data-vi="🚀 Gửi câu hỏi này" data-en="🚀 Send question">🚀 Gửi câu hỏi này</button>
-            <button type="button" class="voice-action-pill" data-voice-to-input data-vi="✏️ Chỉnh trên ô chữ" data-en="✏️ Edit in text box">✏️ Chỉnh trên ô chữ</button>
-            <button type="button" class="voice-action-pill" data-voice-clear-draft data-vi="Xóa" data-en="Clear">Xóa</button>
+            <button type="button" class="voice-action-pill primary" data-voice-send-now>{{ t("🚀 Gửi câu hỏi này", "🚀 Send question") }}</button>
+            <button type="button" class="voice-action-pill" data-voice-to-input>{{ t("✏️ Chỉnh trên ô chữ", "✏️ Edit in text box") }}</button>
+            <button type="button" class="voice-action-pill" data-voice-clear-draft>{{ t("Xóa", "Clear") }}</button>
           </div>
         </div>
 
         <div class="voice-card reply-card" data-voice-reply-card>
           <div class="voice-card-head">
-            <span class="voice-card-label" data-vi="🤖 PHẢN HỒI CỦA SUBBY" data-en="🤖 SUBBY'S REPLY">🤖 PHẢN HỒI CỦA SUBBY</span>
-            <span class="voice-speak-pill" data-voice-speak-pill data-vi="🔈 Sẵn sàng" data-en="🔈 Ready">🔈 Sẵn sàng</span>
+            <span class="voice-card-label">{{ t("🤖 PHẢN HỒI CỦA SUBBY", "🤖 SUBBY'S REPLY") }}</span>
+            <span class="voice-speak-pill" data-voice-speak-pill>{{ t("🔈 Sẵn sàng", "🔈 Ready") }}</span>
           </div>
-          <p class="voice-reply-text" data-voice-reply-text data-vi="Câu trả lời của Subby và kết quả tra cứu tài khoản sẽ hiển thị tại đây." data-en="Subby's answer and account tool results will appear here.">
-            Câu trả lời của Subby và kết quả tra cứu tài khoản sẽ hiển thị tại đây.
-          </p>
+          <p class="voice-reply-text" data-voice-reply-text>{{ t("Câu trả lời của Subby và kết quả tra cứu tài khoản sẽ hiển thị tại đây.", "Subby's answer and account tool results will appear here.") }}</p>
           <div class="voice-tool-slot" data-voice-tool-slot></div>
         </div>
       </div>
 
-      <div class="voice-dock" role="toolbar" aria-label="Điều khiển chế độ giọng nói">
+      <div class="voice-dock" role="toolbar" aria-label="{{ t("Điều khiển chế độ giọng nói", "Voice controls") }}">
         <button type="button" class="voice-dock-btn" data-voice-mute aria-pressed="false">
           <span class="dock-icon" aria-hidden="true">🔊</span>
-          <span data-voice-mute-label data-vi="Đọc tiếng" data-en="Read aloud">Đọc tiếng</span>
+          <span data-voice-mute-label>{{ t("Đọc tiếng", "Read aloud") }}</span>
         </button>
         <button type="button" class="voice-dock-btn end-voice" data-voice-end>
           <span class="dock-icon" aria-hidden="true">📞</span>
-          <span data-vi="Kết thúc Voice" data-en="End Voice">Kết thúc Voice</span>
+          <span>{{ t("Kết thúc Voice", "End Voice") }}</span>
         </button>
         <button type="button" class="voice-dock-btn" data-voice-keyboard>
           <span class="dock-icon" aria-hidden="true">⌨️</span>
-          <span data-vi="Bàn phím" data-en="Keyboard">Bàn phím</span>
+          <span>{{ t("Bàn phím", "Keyboard") }}</span>
         </button>
       </div>
     </div>
@@ -125,26 +113,24 @@
         <span></span><span></span><span></span><span></span>
       </div>
       <div class="voice-info">
-        <strong data-voice-state data-vi="Đang nghe qua micro…" data-en="Listening via microphone…">Đang nghe qua micro…</strong>
-        <small class="muted" data-voice-preview data-vi="Trình duyệt có thể dùng dịch vụ nhận diện bên ngoài (AllOutFree không lưu âm thanh). Kiểm tra chữ trước khi gửi." data-en="Browser speech recognition may use an external service (AllOutFree does not store audio). Review text before sending.">
-          Trình duyệt có thể dùng dịch vụ nhận diện bên ngoài (AllOutFree không lưu âm thanh). Kiểm tra chữ trước khi gửi.
-        </small>
+        <strong data-voice-state>{{ t("Đang nghe qua micro…", "Listening via microphone…") }}</strong>
+        <small class="muted" data-voice-preview>{{ t("Trình duyệt có thể dùng dịch vụ nhận diện bên ngoài (AllOutFree không lưu âm thanh). Kiểm tra chữ trước khi gửi.", "Browser speech recognition may use an external service (AllOutFree does not store audio). Review text before sending.") }}</small>
       </div>
       <div class="voice-actions">
-        <button type="button" class="chip on" data-voice-stop data-vi="Dừng & Xem chữ" data-en="Stop & Review">Dừng & Xem chữ</button>
-        <button type="button" class="chip" data-voice-cancel data-vi="Hủy" data-en="Cancel">Hủy</button>
+        <button type="button" class="chip on" data-voice-stop>{{ t("Dừng & Xem chữ", "Stop & Review") }}</button>
+        <button type="button" class="chip" data-voice-cancel>{{ t("Hủy", "Cancel") }}</button>
       </div>
     </div>
 
-    <div class="subby-chips" aria-label="Câu hỏi gợi ý">
+    <div class="subby-chips" aria-label="{{ t("Câu hỏi gợi ý", "Suggested questions") }}">
       {% if current_user.is_authenticated %}
-        <button type="button" data-ask data-vi="What renews soon?" data-en="What renews soon?">Gói nào sắp gia hạn?</button>
-        <button type="button" data-ask data-vi="Summarize my recent charges" data-en="Summarize my recent charges">Tổng hợp khoản đến hạn?</button>
+        <button type="button" data-ask data-vi="Gói nào sắp gia hạn?" data-en="What renews soon?">{{ t("Gói nào sắp gia hạn?", "What renews soon?") }}</button>
+        <button type="button" data-ask data-vi="Tóm tắt các khoản trừ tiền gần đây" data-en="Summarize my recent charges">{{ t("Tóm tắt các khoản trừ tiền gần đây", "Summarize my recent charges") }}</button>
       {% endif %}
-      <button type="button" data-ask data-vi="Lời nhắc hoạt động thế nào?" data-en="How do reminders work?">Lời nhắc hoạt động thế nào?</button>
-      <button type="button" data-ask data-vi="Cách thêm gói Netflix?" data-en="How do I add Netflix?">Cách thêm gói Netflix?</button>
-      <button type="button" data-ask data-vi="Link đã ghim dùng làm gì?" data-en="What are pinned links?">Link đã ghim dùng làm gì?</button>
-      <button type="button" data-ask data-vi="App có tự hủy gói giúp tôi không?" data-en="Can you cancel for me?">App có tự hủy gói giúp tôi không?</button>
+      <button type="button" data-ask>{{ t("Lời nhắc hoạt động thế nào?", "How do reminders work?") }}</button>
+      <button type="button" data-ask>{{ t("Cách thêm gói Netflix?", "How do I add Netflix?") }}</button>
+      <button type="button" data-ask>{{ t("Link đã ghim dùng làm gì?", "What are pinned links?") }}</button>
+      <button type="button" data-ask>{{ t("App có tự hủy gói giúp tôi không?", "Can you cancel for me?") }}</button>
     </div>
 
     <form class="subby-input" data-form>
@@ -152,36 +138,34 @@
         name="q"
         maxlength="300"
         autocomplete="off"
-        placeholder="Nhập câu hỏi (hoặc bấm mic để nói)…"
-        aria-label="Câu hỏi của bạn"
+        placeholder="{{ t("Nhập câu hỏi (hoặc bấm mic để nói)…", "Type a question (or press the mic to talk)…") }}"
+        aria-label="{{ t("Câu hỏi của bạn", "Your question") }}"
       />
       <button
         type="button"
         class="mic-btn"
         data-mic
-        aria-label="Nói câu hỏi bằng giọng nói (chỉ bật mic khi bạn bấm)"
+        aria-label="{{ t("Nói câu hỏi bằng giọng nói (chỉ bật mic khi bạn bấm)", "Ask by voice (the mic only turns on when you press it)") }}"
         aria-pressed="false"
-        title="Bấm để nói câu hỏi (chỉ xin quyền micro khi bạn chọn)"
+        title="{{ t("Bấm để nói câu hỏi (chỉ xin quyền micro khi bạn chọn)", "Press to ask by voice") }}"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
       </button>
-      <button class="send" type="submit" aria-label="Gửi câu hỏi">
+      <button class="send" type="submit" aria-label="{{ t("Gửi câu hỏi", "Send question") }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2-7z"/></svg>
       </button>
     </form>
 
     {# Thẻ xác nhận thao tác khi người dùng yêu cầu thêm/sửa gói hoặc lời nhắc #}
     <template data-action-card>
-      <div class="subby-action-card" role="region" aria-label="Xác nhận thao tác dữ liệu">
-        <span class="pill sun-label" data-vi="Cần bạn xác nhận thao tác" data-en="Action confirmation required">Cần bạn xác nhận thao tác</span>
-        <strong data-action-title>Đề xuất tạo / cập nhật lời nhắc gói đăng ký</strong>
+      <div class="subby-action-card" role="region" aria-label="{{ t("Xác nhận thao tác dữ liệu", "Confirm this change") }}">
+        <span class="pill sun-label">{{ t("Cần bạn xác nhận thao tác", "Action confirmation required") }}</span>
+        <strong data-action-title>{{ t("Đề xuất thêm / sửa gói đăng ký", "Suggested change to a plan") }}</strong>
         <p class="muted small-text" data-action-detail></p>
-        <p class="small-text action-warn" data-vi="⚠ Lưu ý: Phản hồi văn bản của trợ lý AI chưa tự động ghi vào cơ sở dữ liệu. Hãy bấm nút bên dưới để mở biểu mẫu và lưu xác nhận từ máy chủ." data-en="⚠ Note: AI chat replies do not mutate database records directly. Click below to open the form and save on the server.">
-          ⚠ Lưu ý: Phản hồi văn bản của trợ lý AI chưa tự động ghi vào cơ sở dữ liệu. Hãy bấm nút bên dưới để mở biểu mẫu và lưu xác nhận từ máy chủ.
-        </p>
+        <p class="small-text action-warn">{{ t("⚠ Lưu ý: Phản hồi văn bản của trợ lý AI chưa tự động ghi vào cơ sở dữ liệu. Hãy bấm nút bên dưới để mở biểu mẫu và lưu xác nhận từ máy chủ.", "⚠ Note: AI chat replies do not mutate database records directly. Click below to open the form and save on the server.") }}</p>
         <div class="handoff-buttons">
-          <a class="button btn-sm" data-action-confirm-link href="{{ url_for('subscriptions.create') }}" data-vi="Mở biểu mẫu xác nhận" data-en="Open form to confirm">Mở biểu mẫu xác nhận</a>
-          <button type="button" class="button secondary btn-sm" data-action-dismiss data-vi="Đóng" data-en="Dismiss">Đóng</button>
+          <a class="button btn-sm" data-action-confirm-link href="{{ url_for('subscriptions.create') }}">{{ t("Mở biểu mẫu xác nhận", "Open form to confirm") }}</a>
+          <button type="button" class="button secondary btn-sm" data-action-dismiss>{{ t("Đóng", "Dismiss") }}</button>
         </div>
       </div>
     </template>
@@ -189,7 +173,7 @@
     {# Thẻ chuyển tiếp liên hệ chủ sở hữu — chỉ hiện kênh đã cấu hình hợp lệ trong .env #}
     <template data-handoff>
       <div class="handoff">
-        <strong data-vi="Liên hệ trực tiếp với chủ sở hữu 👋" data-en="Talk to the owner 👋">Liên hệ trực tiếp với chủ sở hữu 👋</strong>
+        <strong>{{ t("Liên hệ trực tiếp với chủ sở hữu 👋", "Talk to the owner 👋") }}</strong>
         {% if contact.messenger or contact.zalo %}
           <div class="handoff-buttons">
             {% if contact.messenger %}
@@ -199,17 +183,13 @@
               <a class="button zalo" href="{{ contact.zalo }}" target="_blank" rel="noopener noreferrer">Zalo</a>
             {% endif %}
           </div>
-          <p class="muted" data-vi="Chỉ mở ứng dụng khi bạn bấm chọn (không tự động gửi lịch sử trò chuyện)." data-en="Opens only when clicked (chat history is never sent automatically).">
-            Chỉ mở ứng dụng khi bạn bấm chọn (không tự động gửi lịch sử trò chuyện).
-          </p>
+          <p class="muted">{{ t("Chỉ mở ứng dụng khi bạn bấm chọn (không tự động gửi lịch sử trò chuyện).", "Opens only when clicked (chat history is never sent automatically).") }}</p>
         {% else %}
-          <p class="muted" data-vi="Kênh liên hệ trực tiếp hiện chưa được cấu hình. Vui lòng thử lại sau!" data-en="Contact links aren't set up yet. Please check back soon!">
-            Kênh liên hệ trực tiếp hiện chưa được cấu hình. Vui lòng thử lại sau!
-          </p>
+          <p class="muted">{{ t("Kênh liên hệ trực tiếp hiện chưa được cấu hình. Vui lòng thử lại sau!", "Contact links aren't set up yet. Please check back soon!") }}</p>
         {% endif %}
       </div>
     </template>
   </section>
 
-  <button class="subby-fab" type="button" data-open aria-controls="subby-panel" aria-expanded="false" aria-label="Hỏi trợ lý Subby">{{ face }}</button>
+  <button class="subby-fab" type="button" data-open aria-controls="subby-panel" aria-expanded="false" aria-label="{{ t("Hỏi trợ lý Subby", "Ask Subby") }}">{{ face }}</button>
 </div>

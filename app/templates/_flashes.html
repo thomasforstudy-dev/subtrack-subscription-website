@@ -8,7 +8,7 @@
             <span class="flash-icon" aria-hidden="true">
               {% if category in ['error', 'danger'] or is_warn %}⚠{% elif category == 'success' %}✓{% else %}ℹ{% endif %}
             </span>
-            <span>{{ message }}</span>
+            <span>{{ say(message) }}</span>
           </li>
         {% endfor %}
       </ul>

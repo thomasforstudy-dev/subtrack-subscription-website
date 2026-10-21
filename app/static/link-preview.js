@@ -2,6 +2,11 @@
 // Title box (only if it's still empty, so we never overwrite what you typed).
 // Also checks if the URL is already saved on the page to warn about duplicates.
 (function () {
+  // The page language comes from the server (<html lang>, app/i18n.py).
+  function tr(vi, en) {
+    return document.documentElement.getAttribute("lang") === "en" ? en : vi;
+  }
+
   function normalizeForCompare(raw) {
     let u = (raw || "").trim();
     if (!u) return "";
@@ -75,9 +80,9 @@
       lastUrl = url;
 
       const placeholder = titleInput.placeholder;
-      titleInput.placeholder = "Đang lấy tiêu đề trang…";
+      titleInput.placeholder = tr("Đang lấy tiêu đề trang…", "Getting the page title…");
       form.classList.add("looking-up");
-      setStatus("⏳ Đang tự động lấy tiêu đề từ trang đích…", "status-loading");
+      setStatus(tr("⏳ Đang lấy tiêu đề từ trang…", "⏳ Getting the title from the page…"), "status-loading");
 
       try {
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
@@ -92,7 +97,7 @@
         });
         if (!res.ok) {
           setStatus(
-            "ℹ Không lấy được tiêu đề tự động — bạn có thể tự nhập hoặc hệ thống sẽ dùng tên miền.",
+            tr("ℹ Không lấy được tiêu đề — bạn có thể tự nhập, hoặc AllOutFree sẽ dùng tên miền.", "ℹ Couldn't get the title — type one, or the site name will be used."),
             "status-fallback"
           );
           return;
@@ -101,10 +106,10 @@
         if (urlInput.value.trim() !== url) return;
         if (data.title && !titleInput.value.trim()) {
           titleInput.value = data.title;
-          setStatus("✓ Đã tự động điền tiêu đề trang web.", "status-ok");
+          setStatus(tr("✓ Đã điền tiêu đề trang.", "✓ Title filled in."), "status-ok");
         } else if (!titleInput.value.trim()) {
           setStatus(
-            "ℹ Trang này không cung cấp tiêu đề công khai — hãy tự nhập tiêu đề hoặc lưu để dùng tên miền.",
+            tr("ℹ Trang này không có tiêu đề công khai — hãy tự nhập, hoặc lưu để dùng tên miền.", "ℹ This page has no public title — type one, or save to use the site name."),
             "status-fallback"
           );
         }
@@ -113,7 +118,7 @@
         }
       } catch (err) {
         setStatus(
-          "ℹ Không kết nối được xem trước tiêu đề — bạn có thể tự nhập tiêu đề và lưu bình thường.",
+          tr("ℹ Không xem trước được tiêu đề — bạn vẫn có thể tự nhập và lưu.", "ℹ Couldn't preview the title — you can still type one and save."),
           "status-fallback"
         );
       } finally {

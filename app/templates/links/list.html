@@ -1,36 +1,34 @@
 {% extends "base.html" %}
 {% from "_mascot.html" import mascot %}
-{% block title %}Link đã lưu (Pinned links) — AllOutFree{% endblock %}
+{% block title %}{{ t("Link đã lưu", "Saved links") }} — AllOutFree{% endblock %}
 {% block content %}
   <div class="page-head">
     <div>
-      <h1 data-vi="Link đã lưu (Pinned links)" data-en="Pinned links">Link đã lưu (Pinned links)</h1>
-      <p class="muted" data-vi="Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, AllOutFree sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích." data-en="Save cancel pages, billing portals, or study links. Paste a URL below and AllOutFree will automatically fetch the page title and show its domain.">
-        Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, AllOutFree sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích.
-      </p>
+      <h1>{{ t("Link đã lưu", "Pinned links") }}</h1>
+      <p class="muted">{{ t("Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, AllOutFree sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích.", "Save cancel pages, billing portals, or study links. Paste a URL below and AllOutFree will automatically fetch the page title and show its domain.") }}</p>
     </div>
-    <p><a class="button secondary" href="{{ url_for('links.create') }}" data-vi="+ Thêm đầy đủ (có ghi chú)" data-en="+ Full form (with notes)">+ Thêm đầy đủ (có ghi chú)</a></p>
+    <p><a class="button secondary" href="{{ url_for('links.create') }}">{{ t("+ Thêm đầy đủ (có ghi chú)", "+ Full form (with notes)") }}</a></p>
   </div>
 
   {# Form thêm nhanh (Quick-add) giữ nguyên action, method và tên các trường url, title, tags #}
   <div class="card quick-add-card">
-    <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}" data-submitting-text="Đang lưu link…">
+    <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}" data-submitting-text="{{ t('Đang lưu link…', 'Saving link…') }}">
       {% if csrf_token is defined %}
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       {% endif %}
       <div class="qa-field">
-        <label for="qa-url" class="sr-only">Đường dẫn URL</label>
-        <input id="qa-url" name="url" placeholder="Dán đường dẫn (https://…)…" required aria-label="Link" autocomplete="url" spellcheck="false" />
+        <label for="qa-url" class="sr-only">{{ t("Đường dẫn", "Link") }}</label>
+        <input id="qa-url" name="url" placeholder="{{ t("Dán đường dẫn (https://…)…", "Paste a link (https://…)…") }}" required aria-label="Link" autocomplete="url" spellcheck="false" />
       </div>
       <div class="qa-field">
-        <label for="qa-title" class="sr-only">Tiêu đề trang</label>
-        <input id="qa-title" name="title" placeholder="Tiêu đề (tự động điền)" aria-label="Title" maxlength="200" />
+        <label for="qa-title" class="sr-only">{{ t("Tiêu đề trang", "Page title") }}</label>
+        <input id="qa-title" name="title" placeholder="{{ t("Tiêu đề (tự động điền)", "Title (fills in by itself)") }}" aria-label="Title" maxlength="200" />
       </div>
       <div class="qa-field">
-        <label for="qa-tags" class="sr-only">Thẻ phân loại (Tags)</label>
-        <input id="qa-tags" name="tags" placeholder="Thẻ (vd: huy-goi, hoa-don)" aria-label="Tags" maxlength="200" />
+        <label for="qa-tags" class="sr-only">{{ t("Thẻ", "Tags") }}</label>
+        <input id="qa-tags" name="tags" placeholder="{{ t("Thẻ (vd: huy-goi, hoa-don)", "Tags (e.g. cancel, bills)") }}" aria-label="Tags" maxlength="200" />
       </div>
-      <button type="submit" data-vi="Lưu link" data-en="Save link">Lưu link</button>
+      <button type="submit">{{ t("Lưu link", "Save link") }}</button>
     </form>
 
     {# Trạng thái tự động lấy tiêu đề (đang tải / thành công / không lấy được) #}
@@ -39,10 +37,10 @@
     {# Cảnh báo trùng URL và nút chọn sửa bản cũ #}
     <div class="duplicate-url-banner" data-duplicate-banner role="alert" hidden>
       <div>
-        <strong data-vi="⚠ Đường dẫn URL này đã có trong danh sách của bạn:" data-en="⚠ This URL is already saved in your list:">⚠ Đường dẫn URL này đã có trong danh sách của bạn:</strong>
+        <strong>{{ t("⚠ Đường dẫn URL này đã có trong danh sách của bạn:", "⚠ This URL is already saved in your list:") }}</strong>
         <span data-duplicate-title class="duplicate-title-text"></span>
       </div>
-      <a class="button secondary btn-sm" data-duplicate-edit-link href="#" data-vi="Mở sửa bản cũ" data-en="Edit existing link">Mở sửa bản cũ</a>
+      <a class="button secondary btn-sm" data-duplicate-edit-link href="#">{{ t("Mở sửa bản cũ", "Edit existing link") }}</a>
     </div>
   </div>
 
@@ -53,19 +51,19 @@
         type="search"
         name="q"
         value="{{ q }}"
-        placeholder="Tìm theo tiêu đề, tên miền, thẻ (tag) hoặc ghi chú…"
+        placeholder="{{ t("Tìm theo tiêu đề, tên miền, thẻ (tag) hoặc ghi chú…", "Search titles, sites, tags or notes…") }}"
         aria-label="Search"
       />
       {% if tag %}<input type="hidden" name="tag" value="{{ tag }}" />{% endif %}
-      <button type="submit" data-vi="Tìm kiếm" data-en="Search">Tìm kiếm</button>
+      <button type="submit">{{ t("Tìm kiếm", "Search") }}</button>
       {% if q or tag %}
-        <a class="button secondary" href="{{ url_for('links.list_links') }}" data-vi="Xóa lọc" data-en="Clear">Xóa lọc</a>
+        <a class="button secondary" href="{{ url_for('links.list_links') }}">{{ t("Xóa lọc", "Clear") }}</a>
       {% endif %}
     </form>
 
     {% if all_tags %}
       <div class="chips" role="navigation" aria-label="Lọc theo thẻ (Tags)">
-        <a class="chip {% if not tag %}on{% endif %}" href="{{ url_for('links.list_links', q=q or None) }}" data-vi="Tất cả" data-en="All">Tất cả</a>
+        <a class="chip {% if not tag %}on{% endif %}" href="{{ url_for('links.list_links', q=q or None) }}">{{ t("Tất cả", "All") }}</a>
         {% for t in all_tags %}
           <a class="chip {% if t == tag %}on{% endif %}" href="{{ url_for('links.list_links', tag=t, q=q or None) }}">#{{ t }}</a>
         {% endfor %}
@@ -106,7 +104,7 @@
               <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
               <span class="domain-pill" title="Đường dẫn trỏ tới tên miền {{ link.hostname }}">🔗 {{ link.hostname }}</span>
               {% if link.is_pinned %}
-                <span class="pill sun-label" data-vi="Đã ghim" data-en="Pinned">Đã ghim</span>
+                <span class="pill sun-label">{{ t("Đã ghim", "Pinned") }}</span>
               {% endif %}
             </div>
 
@@ -121,12 +119,12 @@
           </div>
 
           <div class="link-actions">
-            <a href="{{ url_for('links.edit', link_id=link.id) }}" data-vi="Sửa" data-en="Edit">Sửa</a>
+            <a href="{{ url_for('links.edit', link_id=link.id) }}">{{ t("Sửa", "Edit") }}</a>
             <form class="inline delete-link-form" method="post" action="{{ url_for('links.delete', link_id=link.id) }}" data-link-title="{{ link.title }}">
               {% if csrf_token is defined %}
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
               {% endif %}
-              <button type="submit" data-vi="Xóa" data-en="Delete">Xóa</button>
+              <button type="submit">{{ t("Xóa", "Delete") }}</button>
             </form>
           </div>
         </li>
@@ -137,20 +135,18 @@
       {{ mascot("look", 96) }}
       <div>
         <p>
-          <strong data-vi="Không tìm thấy link nào khớp với bộ lọc." data-en="No links match.">Không tìm thấy link nào khớp với bộ lọc.</strong>
+          <strong>{{ t("Không tìm thấy link nào khớp với bộ lọc.", "No links match.") }}</strong>
           <span class="sr-only">No links match.</span>
         </p>
-        <p class="muted"><a href="{{ url_for('links.list_links') }}" data-vi="Hiển thị toàn bộ link đã lưu" data-en="Show all">Hiển thị toàn bộ link đã lưu</a></p>
+        <p class="muted"><a href="{{ url_for('links.list_links') }}">{{ t("Hiển thị toàn bộ link đã lưu", "Show all") }}</a></p>
       </div>
     </div>
   {% else %}
     <div class="card empty-state-box mascot-box">
       {{ mascot("hi", 96) }}
       <div>
-        <p><strong data-vi="Chưa có đường dẫn nào được lưu" data-en="No links yet.">Chưa có đường dẫn nào được lưu</strong></p>
-        <p class="muted" data-vi="Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại." data-en="Paste one above — cancel pages, billing portals, course pages, or tools you want to keep.">
-          Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại.
-        </p>
+        <p><strong>{{ t("Chưa có đường dẫn nào được lưu", "No links yet.") }}</strong></p>
+        <p class="muted">{{ t("Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại.", "Paste one above — cancel pages, billing portals, course pages, or tools you want to keep.") }}</p>
       </div>
     </div>
   {% endif %}
@@ -159,17 +155,17 @@
   <dialog id="dialog-confirm-delete-link" class="legal-dialog" aria-labelledby="del-link-title">
     <div class="legal-dialog-inner">
       <header class="legal-dialog-head">
-        <h3 id="del-link-title" data-vi="Xác nhận xóa đường dẫn" data-en="Confirm deleting link">Xác nhận xóa đường dẫn</h3>
-        <button type="button" class="subby-close" data-close-dialog aria-label="Đóng">×</button>
+        <h3 id="del-link-title">{{ t("Xác nhận xóa đường dẫn", "Confirm deleting link") }}</h3>
+        <button type="button" class="subby-close" data-close-dialog aria-label="{{ t("Đóng", "Close") }}">×</button>
       </header>
       <div class="legal-dialog-body">
         <p>
-          <span data-vi="Bạn có chắc chắn muốn xóa đường dẫn" data-en="Are you sure you want to delete">Bạn có chắc chắn muốn xóa đường dẫn</span>
+          <span>{{ t("Bạn có chắc chắn muốn xóa đường dẫn", "Are you sure you want to delete") }}</span>
           <strong id="delete-link-target-name"></strong>?
         </p>
         <div class="form-actions compact-top">
-          <button type="button" class="button danger-btn" id="confirm-delete-link-btn" data-vi="Xóa vĩnh viễn" data-en="Delete">Xóa vĩnh viễn</button>
-          <button type="button" class="button secondary" data-close-dialog data-vi="Giữ lại" data-en="Cancel">Giữ lại</button>
+          <button type="button" class="button danger-btn" id="confirm-delete-link-btn">{{ t("Xóa vĩnh viễn", "Delete") }}</button>
+          <button type="button" class="button secondary" data-close-dialog>{{ t("Giữ lại", "Cancel") }}</button>
         </div>
       </div>
     </div>

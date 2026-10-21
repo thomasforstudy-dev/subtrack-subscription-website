@@ -85,7 +85,8 @@ def test_resend_is_limited(user):
 
 
 def test_unconfirmed_users_see_the_banner(user):
-    assert "Please confirm your email" in user.get("/subscriptions/").get_data(as_text=True)
+    page = user.get("/subscriptions/").get_data(as_text=True)
+    assert "Type the 6-digit code we sent to" in page and 'name="code"' in page
 
 
 # ---------- forgot / reset password -----------------------------------------

@@ -31,6 +31,7 @@ const context = { ...buttons, window: { SpeechRecognition: Speech },
   voiceState: {}, voicePreview: {}, voiceTranscriptEl: {}, voiceTranscriptActions: {},
   setVoiceModeOpen() {}, setVoiceStageState() {}, stopSpeaking() {},
   say(text) { spokenLog.push(text); },
+  tr(vi, en) { return currentUiLang === 'en' ? en : vi; },  // subby.js's language helper
   root: { classList: { toggle() {} } }, voiceModeToggleBtn: null, panel: { hidden: false },
   openBtn: { setAttribute() {}, focus() {} }, teaser: null, log: { children: [1] },
   ask(text) { sent.push(text); } };

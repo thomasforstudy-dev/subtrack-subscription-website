@@ -5493,3 +5493,138 @@ a.tile:hover {
     justify-content: center;
   }
 }
+
+/* ---------- Log in / sign up (owner's idea-fix screenshots) ---------- */
+/* Wide enough for "Google" and "GitHub" side by side. */
+.auth-card {
+  max-width: 30rem;
+}
+
+.social {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+/* The eye sits inside the password box instead of a big "Show" button. */
+.password-wrap {
+  position: relative;
+  display: block;
+}
+
+.password-wrap input {
+  width: 100%;
+  padding-right: 2.9rem;
+}
+
+.pwd-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.pwd-toggle:hover,
+.pwd-toggle:focus-visible {
+  background: var(--lilac);
+  color: var(--text);
+  transform: translateY(-50%);
+}
+
+.pwd-toggle .icon:last-child,
+.pwd-toggle[aria-pressed="true"] .icon:first-child {
+  display: none;
+}
+
+.pwd-toggle[aria-pressed="true"] .icon:last-child {
+  display: block;
+}
+
+/* Password rules: a grey circle each, a green tick once the typed password meets it. */
+.pwd-rules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem 0.8rem;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.pwd-rules li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.2s ease;
+}
+
+.pwd-rules li::before {
+  content: "";
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.pwd-rules li.rule-ok {
+  color: var(--tint-green-fg);
+}
+
+.pwd-rules li.rule-ok::before {
+  border-color: var(--tint-green-fg);
+  background: var(--tint-green-fg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 0.8rem no-repeat;
+}
+
+@media (max-width: 420px) {
+  .pwd-rules {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Footer "Ask Subby" is a <button>: the general button hover painted a solid
+   orange pill over its text. Keep it looking like the other footer links. */
+.footer-link:hover,
+.footer-link:focus-visible {
+  background: linear-gradient(var(--violet), var(--violet)) 0 100% / 100% 2px no-repeat;
+  transform: none;
+}
+
+.social .social-btn {
+  width: 100%;
+}
+
+/* Phone width (390px): the code box may shrink so "Confirm" stays inside the banner,
+   and signed-out visitors keep the logo but drop the word so "Sign up" fits. */
+.verify-code-form input {
+  min-width: 0;
+}
+
+.verify-code-form button {
+  flex-shrink: 0;
+}
+
+/* A wrapping column sizes each row to its content, so the actions could be
+   wider than the banner; one line keeps them at the banner's width. */
+@media (max-width: 640px) {
+  .verify-banner {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 430px) {
+  body:not(.has-tabbar) .shell-brand-text {
+    display: none;
+  }
+}

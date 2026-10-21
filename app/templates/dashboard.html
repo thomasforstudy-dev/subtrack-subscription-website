@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
 {% from "_mascot.html" import mascot %}
-{% block title %}Tổng quan — AllOutFree{% endblock %}
+{% block title %}{{ t("Tổng quan", "Overview") }} — AllOutFree{% endblock %}
 {% block body_class %}dashboard-page{% endblock %}
 {% block content %}
   {# Dashboard v3, after the owner's "Dashboard V14" video (DESIGN.md §10).
@@ -23,10 +23,10 @@
           <span class="reveal" style="--i: 0" data-vi="{{ greet[0] }}" data-en="{{ greet[1] }}">{{ greet[0] }}</span>
           <span class="reveal dash-name" style="--i: 1">{{ current_user.username or current_user.email }}</span>
         </h1>
-        <p class="muted" data-vi="Những gì sắp gia hạn, những gì bạn đã chi, và việc cần bạn xem lại." data-en="What renews soon, what you've spent, and what needs a look.">Những gì sắp gia hạn, những gì bạn đã chi, và việc cần bạn xem lại.</p>
+        <p class="muted">{{ t("Những gì sắp gia hạn, những gì bạn đã chi, và việc cần bạn xem lại.", "What renews soon, what you've spent, and what needs a look.") }}</p>
       </div>
       <div class="dash-hello-actions">
-        <a class="button secondary" href="{{ url_for('bills.list_bills') }}">{{ icon("upload", 16) }}<span data-vi="Tải hóa đơn" data-en="Upload a bill">Tải hóa đơn</span></a>
+        <a class="button secondary" href="{{ url_for('bills.list_bills') }}">{{ icon("upload", 16) }}<span>{{ t("Tải hóa đơn", "Upload a bill") }}</span></a>
       </div>
     </header>
 
@@ -35,9 +35,9 @@
       <article class="tile mascot-box dash-welcome" style="--i: 0">
         {{ mascot("hi", 104) }}
         <div>
-          <h2 data-vi="Chào mừng bạn đến AllOutFree!" data-en="Welcome to AllOutFree!">Chào mừng bạn đến AllOutFree!</h2>
-          <p class="muted" data-vi="Thêm gói đầu tiên, AllOutFree sẽ nhắc bạn trước ngày gia hạn để kịp giữ hoặc hủy." data-en="Add your first plan and AllOutFree will remind you before it renews, so you can keep it or cancel in time.">Thêm gói đầu tiên, AllOutFree sẽ nhắc bạn trước ngày gia hạn để kịp giữ hoặc hủy.</p>
-          <p><a class="button" href="{{ url_for('subscriptions.create') }}">{{ icon("plus", 16) }}<span data-vi="Thêm gói đầu tiên" data-en="Add your first plan">Thêm gói đầu tiên</span></a></p>
+          <h2>{{ t("Chào mừng bạn đến AllOutFree!", "Welcome to AllOutFree!") }}</h2>
+          <p class="muted">{{ t("Thêm gói đầu tiên, AllOutFree sẽ nhắc bạn trước ngày gia hạn để kịp giữ hoặc hủy.", "Add your first plan and AllOutFree will remind you before it renews, so you can keep it or cancel in time.") }}</p>
+          <p><a class="button" href="{{ url_for('subscriptions.create') }}">{{ icon("plus", 16) }}<span>{{ t("Thêm gói đầu tiên", "Add your first plan") }}</span></a></p>
         </div>
       </article>
     {% endif %}
@@ -46,7 +46,7 @@
       {# 1. Monthly cost of plans, in the main currency; other currencies below (never added together) #}
       <article class="tile tile-balance" style="--i: 0">
         <header class="tile-head">
-          <span class="tile-label" data-vi="Chi phí gói mỗi tháng" data-en="Plans per month">Chi phí gói mỗi tháng</span>
+          <span class="tile-label">{{ t("Chi phí gói mỗi tháng", "Plans per month") }}</span>
           {% if c %}<span class="chip">{{ c }}</span>{% endif %}
         </header>
         {% if main_total %}
@@ -57,15 +57,15 @@
           </p>
         {% else %}
           <p class="tile-big">0</p>
-          <p class="tile-sub" data-vi="Chưa có gói nào đang dùng." data-en="No active plans yet.">Chưa có gói nào đang dùng.</p>
+          <p class="tile-sub">{{ t("Chưa có gói nào đang dùng.", "No active plans yet.") }}</p>
         {% endif %}
         <div class="tile-actions">
-          <a class="button dark-button btn-sm" href="{{ url_for('subscriptions.create') }}">{{ icon("plus", 15) }}<span data-vi="Thêm gói" data-en="Add">Thêm gói</span></a>
-          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions') }}">{{ icon("repeat", 15) }}<span data-vi="Xem tất cả" data-en="See all">Xem tất cả</span></a>
+          <a class="button dark-button btn-sm" href="{{ url_for('subscriptions.create') }}">{{ icon("plus", 15) }}<span>{{ t("Thêm gói", "Add") }}</span></a>
+          <a class="button secondary btn-sm" href="{{ url_for('subscriptions.list_subscriptions') }}">{{ icon("repeat", 15) }}<span>{{ t("Xem tất cả", "See all") }}</span></a>
         </div>
         {% if other_totals %}
           <div class="wallets">
-            <span class="tile-label" data-vi="Tiền tệ khác" data-en="Other currencies">Tiền tệ khác</span>
+            <span class="tile-label">{{ t("Tiền tệ khác", "Other currencies") }}</span>
             <div class="wallet-row">
               {% for row in other_totals %}
                 <div class="wallet">
@@ -82,38 +82,38 @@
       {# 2. The orange card + three small figures #}
       <div class="tile-quad">
         <a class="tile tile-hero" style="--i: 1" href="{{ url_for('subscriptions.list_subscriptions') }}">
-          <span class="tile-label" data-vi="Gia hạn trong 7 ngày" data-en="Renewing in 7 days">Gia hạn trong 7 ngày</span>
+          <span class="tile-label">{{ t("Gia hạn trong 7 ngày", "Renewing in 7 days") }}</span>
           <p class="tile-big"><span data-count="{{ week | length }}">{{ week | length }}</span></p>
           <p class="tile-sub">
-            {% if week and c %}{{ week_total | money(c) }} {{ c }}{% else %}<span data-vi="Không có gì gấp" data-en="Nothing urgent">Không có gì gấp</span>{% endif %}
+            {% if week and c %}{{ week_total | money(c) }} {{ c }}{% else %}<span>{{ t("Không có gì gấp", "Nothing urgent") }}</span>{% endif %}
           </p>
         </a>
         <article class="tile tile-mini" style="--i: 2">
-          <span class="tile-label" data-vi="Gói đang dùng" data-en="Active plans">Gói đang dùng</span>
+          <span class="tile-label">{{ t("Gói đang dùng", "Active plans") }}</span>
           <p class="tile-num"><span data-count="{{ active_count }}">{{ active_count }}</span></p>
           <small class="muted" data-vi="{{ links_count }} link đã lưu" data-en="{{ links_count }} saved links">{{ links_count }} link đã lưu</small>
         </article>
         <article class="tile tile-mini" style="--i: 3">
-          <span class="tile-label" data-vi="Đã chi tháng này" data-en="Spent this month">Đã chi tháng này</span>
+          <span class="tile-label">{{ t("Đã chi tháng này", "Spent this month") }}</span>
           <p class="tile-num">{% if c %}<span data-count="{{ spent_month }}" data-currency="{{ c }}">{{ spent_month | money(c) }}</span>{% else %}0{% endif %}</p>
           <small class="muted" data-vi="biên lai đã xác nhận{% if c %}, {{ c }}{% endif %}" data-en="confirmed receipts{% if c %}, {{ c }}{% endif %}">biên lai đã xác nhận{% if c %}, {{ c }}{% endif %}</small>
         </article>
         <a class="tile tile-mini" style="--i: 4" href="{{ url_for('bills.list_bills', kind='card_bill') }}">
-          <span class="tile-label" data-vi="Sao kê thẻ chưa trả" data-en="Card bills to pay">Sao kê thẻ chưa trả</span>
+          <span class="tile-label">{{ t("Sao kê thẻ chưa trả", "Card bills to pay") }}</span>
           <p class="tile-num{% if unpaid_cards %} is-hot{% endif %}"><span data-count="{{ unpaid_cards }}">{{ unpaid_cards }}</span></p>
-          <small class="muted" data-vi="mở Hóa đơn" data-en="open Bills">mở Hóa đơn</small>
+          <small class="muted">{{ t("mở Hóa đơn", "open Bills") }}</small>
         </a>
       </div>
 
       {# 3. Chart: renewals (orange) and confirmed receipt spending (dark), per month #}
       <article class="tile tile-chart" style="--i: 5">
         <header class="tile-head">
-          <span class="tile-label" data-vi="Gia hạn & chi tiêu theo tháng" data-en="Renewals & spending by month">Gia hạn & chi tiêu theo tháng</span>
-          <span class="legend"><i class="dot dot-accent"></i><span data-vi="Gia hạn" data-en="Renewals">Gia hạn</span>
-            <i class="dot dot-ink"></i><span data-vi="Đã chi" data-en="Spent">Đã chi</span></span>
+          <span class="tile-label">{{ t("Gia hạn & chi tiêu theo tháng", "Renewals & spending by month") }}</span>
+          <span class="legend"><i class="dot dot-accent"></i><span>{{ t("Gia hạn", "Renewals") }}</span>
+            <i class="dot dot-ink"></i><span>{{ t("Đã chi", "Spent") }}</span></span>
         </header>
         {% if bars %}
-          <div class="bars" role="img" aria-label="Biểu đồ gia hạn và chi tiêu 6 tháng ({{ c }})">
+          <div class="bars" role="img" aria-label="{{ t('Biểu đồ gia hạn và chi tiêu 6 tháng', 'Renewals and spending over 6 months') }} ({{ c }})">
             {% for b in bars %}
               <div class="bar-col{% if b.this_month %} is-now{% endif %}" title="{{ b.month.strftime('%m/%Y') }}: {{ b.renewals | money(c) }} / {{ b.spent | money(c) }} {{ c }}">
                 <div class="bar-pair">
@@ -126,7 +126,7 @@
           </div>
           <p class="muted small-text" data-vi="Tính bằng {{ c }}. Tháng tới là dự kiến theo lịch gia hạn." data-en="In {{ c }}. Coming months are expected from your renewal dates.">Tính bằng {{ c }}. Tháng tới là dự kiến theo lịch gia hạn.</p>
         {% else %}
-          <p class="muted" data-vi="Thêm một gói để thấy biểu đồ." data-en="Add a plan to see the chart.">Thêm một gói để thấy biểu đồ.</p>
+          <p class="muted">{{ t("Thêm một gói để thấy biểu đồ.", "Add a plan to see the chart.") }}</p>
         {% endif %}
       </article>
     </div>
@@ -135,7 +135,7 @@
       {# 4. What renews in the next 30 days #}
       <article class="tile" style="--i: 6">
         <header class="tile-head">
-          <span class="tile-label" data-vi="Sắp gia hạn (30 ngày)" data-en="Renewing soon (30 days)">Sắp gia hạn (30 ngày)</span>
+          <span class="tile-label">{{ t("Sắp gia hạn (30 ngày)", "Renewing soon (30 days)") }}</span>
           <span class="chip">{{ upcoming | length }}</span>
         </header>
         {% if upcoming %}
@@ -146,30 +146,30 @@
                 <a href="{{ url_for('subscriptions.edit', item_id=sub.id) }}">
                   <span class="soon-mark">{{ sub.name[:1] | upper }}</span>
                   <span class="soon-text"><strong>{{ sub.name }}</strong>
-                    <small>{{ sub.next_renewal_at.strftime('%d/%m') }}, {% if days <= 0 %}<span data-vi="hôm nay" data-en="today">hôm nay</span>{% else %}<span data-vi="còn {{ days }} ngày" data-en="in {{ days }} days">còn {{ days }} ngày</span>{% endif %}</small></span>
+                    <small>{{ sub.next_renewal_at.strftime('%d/%m') }}, {% if days <= 0 %}<span>{{ t("hôm nay", "today") }}</span>{% else %}<span data-vi="còn {{ days }} ngày" data-en="in {{ days }} days">còn {{ days }} ngày</span>{% endif %}</small></span>
                   <strong class="soon-amount">{{ sub.amount | money(sub.currency) }} {{ sub.currency }}</strong>
                 </a>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <p class="muted" data-vi="Không có gì gia hạn trong 30 ngày tới." data-en="Nothing renews in the next 30 days.">Không có gì gia hạn trong 30 ngày tới.</p>
+          <p class="muted">{{ t("Không có gì gia hạn trong 30 ngày tới.", "Nothing renews in the next 30 days.") }}</p>
         {% endif %}
       </article>
 
       {# 5. Recent activity, with a quick search (filters this list only) #}
       <article class="tile tile-activity" style="--i: 7">
         <header class="tile-head">
-          <span class="tile-label" data-vi="Hoạt động gần đây" data-en="Recent activity">Hoạt động gần đây</span>
-          <input class="mini-search" type="search" data-activity-search placeholder="Tìm…" aria-label="Tìm trong hoạt động gần đây" />
+          <span class="tile-label">{{ t("Hoạt động gần đây", "Recent activity") }}</span>
+          <input class="mini-search" type="search" data-activity-search placeholder="{{ t("Tìm…", "Search…") }}" aria-label="{{ t("Tìm trong hoạt động gần đây", "Search recent activity") }}" />
         </header>
         {% if activity %}
           <div class="table-scroll">
             <table class="activity-table">
               <thead><tr>
-                <th data-vi="Mục" data-en="Item">Mục</th><th data-vi="Loại" data-en="Type">Loại</th>
-                <th data-vi="Số tiền" data-en="Amount">Số tiền</th><th data-vi="Trạng thái" data-en="Status">Trạng thái</th>
-                <th data-vi="Ngày" data-en="Date">Ngày</th>
+                <th>{{ t("Mục", "Item") }}</th><th>{{ t("Loại", "Type") }}</th>
+                <th>{{ t("Số tiền", "Amount") }}</th><th>{{ t("Trạng thái", "Status") }}</th>
+                <th>{{ t("Ngày", "Date") }}</th>
               </tr></thead>
               <tbody>
                 {% for item in activity %}
@@ -185,9 +185,9 @@
               </tbody>
             </table>
           </div>
-          <p class="muted small-text" data-activity-empty hidden data-vi="Không có mục nào khớp." data-en="Nothing matches.">Không có mục nào khớp.</p>
+          <p class="muted small-text" data-activity-empty hidden>{{ t("Không có mục nào khớp.", "Nothing matches.") }}</p>
         {% else %}
-          <p class="muted" data-vi="Chưa có hoạt động nào. Thêm một gói hoặc tải một hóa đơn để bắt đầu." data-en="Nothing yet. Add a plan or upload a bill to start.">Chưa có hoạt động nào. Thêm một gói hoặc tải một hóa đơn để bắt đầu.</p>
+          <p class="muted">{{ t("Chưa có hoạt động nào. Thêm một gói hoặc tải một hóa đơn để bắt đầu.", "Nothing yet. Add a plan or upload a bill to start.") }}</p>
         {% endif %}
       </article>
     </div>
@@ -196,10 +196,10 @@
     {% if expected %}
       <article class="tile" style="--i: 8">
         <header class="tile-head">
-          <span class="tile-label" data-vi="Đã đến hạn: bạn có bị trừ tiền không?" data-en="Passed renewals: were you charged?">Đã đến hạn: bạn có bị trừ tiền không?</span>
+          <span class="tile-label">{{ t("Đã đến hạn: bạn có bị trừ tiền không?", "Passed renewals: were you charged?") }}</span>
           <span class="chip">{{ expected | length }}</span>
         </header>
-        <p class="muted small-text" data-vi="AllOutFree không xem được ngân hàng của bạn: đây là khoản dự kiến cho tới khi bạn xác nhận." data-en="AllOutFree can't see your bank: these are expected until you confirm.">AllOutFree không xem được ngân hàng của bạn: đây là khoản dự kiến cho tới khi bạn xác nhận.</p>
+        <p class="muted small-text">{{ t("AllOutFree không xem được ngân hàng của bạn: đây là khoản dự kiến cho tới khi bạn xác nhận.", "AllOutFree can't see your bank: these are expected until you confirm.") }}</p>
         <div class="table-scroll">
           <table class="activity-table">
             <tbody>

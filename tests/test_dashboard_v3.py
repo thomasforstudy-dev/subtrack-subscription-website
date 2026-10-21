@@ -91,7 +91,7 @@ def test_greeting_follows_the_users_time_zone(user, app, monkeypatch):
 
 def test_empty_dashboard_is_friendly(user):
     page = user.get("/dashboard").get_data(as_text=True)
-    assert "Chưa có gói nào đang dùng" in page and "Thêm một gói để thấy biểu đồ" in page
+    assert "No active plans yet." in page and "Add a plan to see the chart." in page
 
 
 def test_spent_month_excludes_future_months_and_uses_transaction_date_first(user, app):

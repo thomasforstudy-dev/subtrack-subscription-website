@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if item %}Sửa gói đăng ký{% else %}Thêm gói đăng ký{% endif %} — AllOutFree{% endblock %}
+{% block title %}{% if item %}{{ t("Sửa gói đăng ký", "Edit subscription") }}{% else %}{{ t("Thêm gói đăng ký", "Add subscription") }}{% endif %} — AllOutFree{% endblock %}
 {% block content %}
   {# Khi máy chủ trả lỗi kiểm tra hợp lệ, biến `form` chứa các giá trị người dùng vừa nhập;
      nếu không có `form`, hiển thị giá trị đã lưu trong `item`. #}
@@ -7,20 +7,16 @@
 
   <div class="page-head">
     <div>
-      <p class="breadcrumb"><a href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="← Quay lại danh sách gói" data-en="← Back to subscriptions">← Quay lại danh sách gói</a></p>
-      <h1 data-vi="{% if item %}Chỉnh sửa gói đăng ký{% else %}Thêm gói đăng ký mới{% endif %}" data-en="{% if item %}Edit subscription{% else %}Add subscription{% endif %}">
-        {% if item %}Chỉnh sửa gói đăng ký{% else %}Thêm gói đăng ký mới{% endif %}
-      </h1>
-      <p class="muted" data-vi="Ghi lại chu kỳ, các mốc ngày nhắc trước (tối đa 3 mốc) và đường dẫn quản lý/hủy gói để AllOutFree nhắc bạn đúng hạn. AllOutFree không tự động hủy dịch vụ bên ngoài." data-en="Record the cycle, up to 3 reminder milestones, and the management/cancel URL so AllOutFree can remind you in time. AllOutFree never cancels external services automatically.">
-        Ghi lại chu kỳ, các mốc ngày nhắc trước (tối đa 3 mốc) và đường dẫn quản lý/hủy gói để AllOutFree nhắc bạn đúng hạn. AllOutFree không tự động hủy dịch vụ bên ngoài.
-      </p>
+      <p class="breadcrumb"><a href="{{ url_for('subscriptions.list_subscriptions') }}" >← {{ t("Quay lại danh sách gói", "Back to subscriptions") }}</a></p>
+      <h1>{% if item %}{{ t("Sửa gói đăng ký", "Edit subscription") }}{% else %}{{ t("Thêm gói đăng ký", "Add a subscription") }}{% endif %}</h1>
+      <p class="muted">{{ t("Ghi lại giá, chu kỳ, tối đa 3 mốc nhắc trước và trang quản lý/hủy gói. AllOutFree nhắc bạn đúng hạn; việc hủy gói vẫn do bạn làm.", "Add the price, cycle, up to 3 reminder days and the manage/cancel page. AllOutFree reminds you in time; cancelling is still up to you.") }}</p>
     </div>
   </div>
 
   <div class="card form-card">
     {% if not item %}
-      <div class="preset-bar" aria-label="Chọn nhanh dịch vụ phổ biến">
-        <span class="preset-label" data-vi="Điền nhanh mẫu phổ biến:" data-en="Quick presets:">Điền nhanh mẫu phổ biến:</span>
+      <div class="preset-bar" aria-label="{{ t("Chọn nhanh dịch vụ phổ biến", "Quick pick a popular service") }}">
+        <span class="preset-label">{{ t("Điền nhanh:", "Quick fill:") }}</span>
         <div class="chips">
           <button type="button" class="chip" data-preset-sub='{"name":"Netflix","amount":"260000","currency":"VND","cycle":"monthly","remind":"14, 7, 3","manage_url":"https://www.netflix.com/youraccount"}'>Netflix</button>
           <button type="button" class="chip" data-preset-sub='{"name":"Spotify Premium","amount":"59000","currency":"VND","cycle":"monthly","remind":"7, 3","manage_url":"https://www.spotify.com/account/subscription/"}'>Spotify</button>
@@ -31,26 +27,26 @@
       </div>
     {% endif %}
 
-    <form method="post" class="sub-form" id="subscription-form" data-submitting-text="Đang lưu gói đăng ký…">
+    <form method="post" class="sub-form" id="subscription-form" data-submitting-text="{{ t('Đang lưu…', 'Saving…') }}">
       {% if csrf_token is defined %}
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       {% endif %}
 
       <div class="field-group">
-        <label for="sub-name" data-vi="Tên dịch vụ / gói đăng ký" data-en="Name">Tên dịch vụ / gói đăng ký</label>
+        <label for="sub-name">{{ t("Tên dịch vụ", "Service name") }}</label>
         <input
           id="sub-name"
           name="name"
           required
           maxlength="120"
-          placeholder="Ví dụ: Netflix, Spotify, ChatGPT Plus…"
+          placeholder="{{ t("Ví dụ: Netflix, Spotify, ChatGPT Plus…", "e.g. Netflix, Spotify, ChatGPT Plus…") }}"
           value="{{ f.get('name', item.name if item else '') }}"
         />
       </div>
 
       <div class="form-row-2">
         <div class="field-group">
-          <label for="sub-amount" data-vi="Số tiền mỗi chu kỳ (Dùng dấu chấm cho phần thập phân)" data-en="Amount">Số tiền mỗi chu kỳ (Dùng dấu chấm cho phần thập phân)</label>
+          <label for="sub-amount">{{ t("Số tiền mỗi kỳ", "Price per cycle") }}</label>
           <input
             id="sub-amount"
             name="amount"
@@ -64,40 +60,40 @@
         </div>
 
         <div class="field-group">
-          <label for="sub-currency" data-vi="Tiền tệ (3 chữ cái, ví dụ USD hoặc VND)" data-en="Currency">Tiền tệ (3 chữ cái, ví dụ USD hoặc VND)</label>
+          <label for="sub-currency">{{ t("Tiền tệ", "Currency") }}</label>
           <input
             id="sub-currency"
             name="currency"
             maxlength="3"
             pattern="[A-Za-z]{3}"
-            title="3 chữ cái viết hoa, ví dụ USD, EUR hoặc VND"
+            title="{{ t("3 chữ cái viết hoa, ví dụ USD, EUR hoặc VND", "3 capital letters, e.g. USD, EUR or VND") }}"
             list="currency-list"
-            placeholder="USD hoặc VND"
+            placeholder="{{ t("USD hoặc VND", "USD or VND") }}"
             value="{{ f.get('currency', item.currency if item else 'USD') }}"
           />
           <datalist id="currency-list">
-            <option value="VND">VND — Đồng Việt Nam</option>
-            <option value="USD">USD — Đô la Mỹ</option>
+            <option value="VND">VND — {{ t("Đồng Việt Nam", "Vietnamese dong") }}</option>
+            <option value="USD">USD — {{ t("Đô la Mỹ", "US dollar") }}</option>
             <option value="EUR">EUR — Euro</option>
-            <option value="SGD">SGD — Đô la Singapore</option>
-            <option value="JPY">JPY — Yên Nhật</option>
+            <option value="SGD">SGD — {{ t("Đô la Singapore", "Singapore dollar") }}</option>
+            <option value="JPY">JPY — {{ t("Yên Nhật", "Japanese yen") }}</option>
           </datalist>
         </div>
       </div>
 
       <div class="form-row-2">
         <div class="field-group">
-          <label for="sub-cycle" data-vi="Chu kỳ gia hạn" data-en="Cycle">Chu kỳ gia hạn</label>
+          <label for="sub-cycle">{{ t("Chu kỳ", "Cycle") }}</label>
           <select id="sub-cycle" name="cycle">
             {% set cycle = f.get('cycle', item.cycle if item else 'monthly') %}
-            <option value="monthly" {% if cycle == 'monthly' %}selected{% endif %} data-vi="Hàng tháng (Monthly)" data-en="Monthly">Hàng tháng (Monthly)</option>
-            <option value="yearly" {% if cycle == 'yearly' %}selected{% endif %} data-vi="Hàng năm (Yearly)" data-en="Yearly">Hàng năm (Yearly)</option>
-            <option value="weekly" {% if cycle == 'weekly' %}selected{% endif %} data-vi="Hàng tuần (Weekly)" data-en="Weekly">Hàng tuần (Weekly)</option>
+            <option value="monthly" {% if cycle == 'monthly' %}selected{% endif %} >{{ t("Hằng tháng", "Monthly") }}</option>
+            <option value="yearly" {% if cycle == 'yearly' %}selected{% endif %} >{{ t("Hằng năm", "Yearly") }}</option>
+            <option value="weekly" {% if cycle == 'weekly' %}selected{% endif %} >{{ t("Hằng tuần", "Weekly") }}</option>
           </select>
         </div>
 
         <div class="field-group">
-          <label for="sub-renewal" data-vi="Ngày gia hạn dự kiến tiếp theo (YYYY-MM-DD)" data-en="Next renewal">Ngày gia hạn dự kiến tiếp theo (YYYY-MM-DD)</label>
+          <label for="sub-renewal">{{ t("Ngày gia hạn tiếp theo", "Next renewal date") }}</label>
           <input
             id="sub-renewal"
             type="date"
@@ -105,14 +101,12 @@
             required
             value="{{ f.get('next_renewal_at', item.next_renewal_at.isoformat() if (item and item.next_renewal_at) else '') }}"
           />
-          <small class="field-hint" data-vi="Ngày dự kiến thu phí kỳ tới (năm từ 2000–2100, không phải xác nhận đã trừ tiền)." data-en="Expected next renewal date (year 2000–2100, not a confirmed bank charge).">
-            Ngày dự kiến thu phí kỳ tới (năm từ 2000–2100, không phải xác nhận đã trừ tiền).
-          </small>
+          <small class="field-hint">{{ t("Ngày dự kiến bị trừ tiền kỳ tới.", "When the next charge is expected.") }}</small>
         </div>
       </div>
 
       <div class="field-group">
-        <label for="sub-remind" data-vi="Nhắc tôi trước (tối đa 3 mốc ngày, cách nhau bằng dấu phẩy)" data-en="Remind me (days before, up to 3)">Nhắc tôi trước (tối đa 3 mốc ngày, cách nhau bằng dấu phẩy)</label>
+        <label for="sub-remind">{{ t("Nhắc tôi trước (số ngày, tối đa 3 mốc)", "Remind me (days before, up to 3)") }}</label>
         <div class="remind-input-row">
           {% if csrf_token is defined %}
             <input
@@ -131,20 +125,18 @@
               value="{{ f.get('remind_days', item.remind_days if item else 7) }}"
             />
           {% endif %}
-          <div class="chips small" role="group" aria-label="Chọn nhanh mốc ngày nhắc trước">
-            <button type="button" class="chip" data-set-remind="{% if csrf_token is defined %}14, 7, 3{% else %}14{% endif %}">14, 7, 3 ngày</button>
-            <button type="button" class="chip" data-set-remind="{% if csrf_token is defined %}7, 3{% else %}7{% endif %}">7, 3 ngày</button>
-            <button type="button" class="chip" data-set-remind="7">7 ngày</button>
-            <button type="button" class="chip" data-set-remind="3">3 ngày</button>
+          <div class="chips small" role="group" aria-label="{{ t("Chọn nhanh mốc ngày nhắc trước", "Quick pick reminder days") }}">
+            <button type="button" class="chip" data-set-remind="{% if csrf_token is defined %}14, 7, 3{% else %}14{% endif %}">14, 7, 3 {{ t("ngày", "days") }}</button>
+            <button type="button" class="chip" data-set-remind="{% if csrf_token is defined %}7, 3{% else %}7{% endif %}">7, 3 {{ t("ngày", "days") }}</button>
+            <button type="button" class="chip" data-set-remind="7">7 {{ t("ngày", "days") }}</button>
+            <button type="button" class="chip" data-set-remind="3">3 {{ t("ngày", "days") }}</button>
           </div>
         </div>
-        <small class="field-hint" data-vi="Nhập từ 1 đến 3 số ngày (0–365), ví dụ: 14, 7, 3." data-en="Up to 3 numbers from 0 to 365, e.g. 14, 7, 3.">
-          Nhập từ 1 đến 3 số ngày (0–365), ví dụ: <code>14, 7, 3</code>.
-        </small>
+        <small class="field-hint">{{ t("1 đến 3 số từ 0 đến 365, ví dụ 14, 7, 3.", "1 to 3 numbers from 0 to 365, like 14, 7, 3.") }}</small>
       </div>
 
       <div class="field-group">
-        <label for="sub-manage-url" data-vi="Đường dẫn quản lý / hủy gói (Tùy chọn — http/https)" data-en="Manage / cancel link (optional)">Đường dẫn quản lý / hủy gói (Tùy chọn — http/https)</label>
+        <label for="sub-manage-url">{{ t("Trang quản lý / hủy gói (không bắt buộc)", "Manage / cancel page (optional)") }}</label>
         <div class="pw-field">
           <input
             id="sub-manage-url"
@@ -153,26 +145,24 @@
             placeholder="https://..."
             value="{{ f.get('manage_url', item.manage_url if (item and item.manage_url is defined and item.manage_url) else '') }}"
           />
-          <button type="button" class="pw-toggle" data-clear-input="sub-manage-url" title="Xóa đường dẫn quản lý" data-vi="Xóa" data-en="Clear">Xóa</button>
+          <button type="button" class="pw-toggle" data-clear-input="sub-manage-url" title="{{ t("Xóa đường dẫn quản lý", "Remove the manage link") }}" >{{ t("Xóa", "Clear") }}</button>
         </div>
-        <small class="field-hint" data-vi="Liên kết tới trang quản lý gói cước của nhà cung cấp. Bấm 'Xóa' hoặc để trống nếu muốn xóa đường dẫn đã lưu." data-en="Link to the provider's subscription management page. Click 'Clear' or leave empty to remove a saved link.">
-          Liên kết tới trang quản lý gói cước của nhà cung cấp. Bấm <strong>Xóa</strong> hoặc để trống nếu muốn xóa đường dẫn đã lưu.
-        </small>
+        <small class="field-hint">{{ t("Trang tài khoản của nhà cung cấp, để mở nhanh khi muốn hủy. Để trống để xóa.", "The provider's account page, to open fast when you want to cancel. Leave empty to remove it.") }}</small>
       </div>
 
       <div class="field-group">
-        <label for="sub-notes" data-vi="Ghi chú (tối đa 2000 ký tự)" data-en="Notes">Ghi chú (tối đa 2000 ký tự)</label>
+        <label for="sub-notes">{{ t("Ghi chú", "Notes") }}</label>
         <textarea
           id="sub-notes"
           name="notes"
           maxlength="2000"
-          placeholder="Ví dụ: Dùng thẻ Visa 4108, hủy trước 24h tại trang tài khoản nếu không dùng tiếp…"
+          placeholder="{{ t("Ví dụ: Dùng thẻ Visa 4108, hủy trước 24h tại trang tài khoản nếu không dùng tiếp…", "e.g. Paid with Visa 4108; cancel 24 h before on the account page if not needed…") }}"
         >{{ f.get('notes', item.notes if item else '') }}</textarea>
       </div>
 
       <div class="form-actions">
-        <button type="submit" data-vi="Lưu gói đăng ký" data-en="Save">Lưu gói đăng ký</button>
-        <a class="button secondary" href="{{ url_for('subscriptions.list_subscriptions') }}" data-vi="Hủy" data-en="Cancel">Hủy</a>
+        <button type="submit">{{ t("Lưu", "Save") }}</button>
+        <a class="button secondary" href="{{ url_for('subscriptions.list_subscriptions') }}" >{{ t("Hủy", "Cancel") }}</a>
       </div>
     </form>
   </div>

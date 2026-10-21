@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="{{ ui_lang() }}" data-ui-lang="{{ ui_lang() }}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -10,7 +10,7 @@
     {# The saved light/dark choice is applied before the page is drawn, so a dark
        page never flashes white first (static/motion.js saves it). #}
     <script>try { if (localStorage.getItem("alloutfree_theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}</script>
-    <title>{% block title %}AllOutFree — Quản lý gói đăng ký, link & hóa đơn{% endblock %}</title>
+    <title>{% block title %}AllOutFree — {{ t("Quản lý gói đăng ký, link & hóa đơn", "Subscriptions, links & bills in one place") }}{% endblock %}</title>
     {# The logo as the tab icon: SVG for modern browsers, .ico for the rest (Safari),
        a square PNG for iPhone home screens (iOS ignores SVG icons). #}
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="32x32" />
@@ -35,22 +35,22 @@
     ("calendar", "calendar.index", "/calendar", "Lịch", "Calendar", "calendar"),
   ] %}
   <body class="{% block body_class %}{% endblock %}{% if signed_in %} has-tabbar{% endif %}">
-    <a class="skip-link" href="#main-content" data-vi="Chuyển tới nội dung chính" data-en="Skip to main content">Chuyển tới nội dung chính</a>
+    <a class="skip-link" href="#main-content">{{ t("Chuyển tới nội dung chính", "Skip to main content") }}</a>
 
     <header class="topbar" role="banner" data-topbar>
       <div class="topbar-inner">
-        <a class="shell-brand" href="{{ url_for('main.index') }}" aria-label="AllOutFree — Trang chủ">
+        <a class="shell-brand" href="{{ url_for('main.index') }}" aria-label="AllOutFree — {{ t('Trang chủ', 'Home') }}">
           <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="36" height="36" alt="" />
           <span class="shell-brand-text">AllOutFree</span>
         </a>
 
         {% if signed_in %}
           {# The highlight (nav-indicator) slides under the page you point at; see static/nav.js. #}
-          <nav class="nav-pills" aria-label="Điều hướng chính" data-nav-pills>
+          <nav class="nav-pills" aria-label="{{ t('Điều hướng chính', 'Main menu') }}" data-nav-pills>
             <span class="nav-indicator" aria-hidden="true" data-nav-indicator></span>
             {% for target, endpoint, prefix, vi, en, _ in nav_items %}
               {% set active = request.path.startswith(prefix) %}
-              <a href="{{ url_for(endpoint) }}" class="nav-pill{% if active %} is-active{% endif %}" {% if active %}aria-current="page"{% endif %} data-nav-target="{{ target }}" data-vi="{{ vi }}" data-en="{{ en }}">{{ vi }}</a>
+              <a href="{{ url_for(endpoint) }}" class="nav-pill{% if active %} is-active{% endif %}" {% if active %}aria-current="page"{% endif %} data-nav-target="{{ target }}" data-vi="{{ vi }}" data-en="{{ en }}">{{ t(vi, en) }}</a>
             {% endfor %}
           </nav>
         {% endif %}
@@ -58,12 +58,12 @@
         <div class="top-actions">
           {% if signed_in %}
             <a class="button btn-sm top-add" href="{{ url_for('subscriptions.create') }}">
-              {{ icon("plus", 18) }}<span data-vi="Thêm gói" data-en="Add plan">Thêm gói</span>
+              {{ icon("plus", 18) }}<span>{{ t("Thêm gói", "Add plan") }}</span>
             </a>
           {% endif %}
-          <button type="button" class="lang-switch" data-lang-toggle aria-label="Chuyển đổi ngôn ngữ Tiếng Việt / Tiếng Anh" title="Đổi ngôn ngữ hiển thị (VI / EN)">VI</button>
+          <button type="button" class="lang-switch" data-lang-toggle aria-label="{{ t('Chuyển sang tiếng Anh', 'Switch to Vietnamese') }}" title="{{ t('Đổi ngôn ngữ (VI / EN)', 'Change language (EN / VI)') }}">{{ t('VI · EN', 'EN · VI') }}</button>
           {# Light/dark for screens without the left rail (the rail has its own sun/moon). #}
-          <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Đổi giao diện sáng / tối" title="Sáng / tối">
+          <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="{{ t('Đổi giao diện sáng / tối', 'Switch light / dark') }}" title="{{ t('Sáng / tối', 'Light / dark') }}">
             <span class="theme-icon-dark">{{ icon("moon", 18) }}</span><span class="theme-icon-light">{{ icon("sun", 18) }}</span>
           </button>
 
@@ -72,7 +72,7 @@
             {# <details> opens and closes without any JavaScript; nav.js only adds
                "close when clicking outside" and the Escape key. #}
             <details class="user-menu" data-user-menu>
-              <summary class="user-chip" aria-label="Tài khoản của bạn">
+              <summary class="user-chip" aria-label="{{ t('Tài khoản của bạn', 'Your account') }}">
                 <span class="avatar" aria-hidden="true">{{ display_name[:1] | upper }}</span>
                 <span class="user-text">
                   <strong>{{ display_name }}</strong>
@@ -82,23 +82,23 @@
               </summary>
               <div class="menu-panel">
                 <p class="menu-who">{{ current_user.email }}</p>
-                <a href="{{ url_for('settings.show') }}">{{ icon("settings", 18) }}<span data-vi="Cài đặt" data-en="Settings">Cài đặt</span></a>
-                <a href="{{ url_for('settings.show') }}#reminders">{{ icon("bell", 18) }}<span data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</span></a>
-                <a class="only-phone" href="{{ url_for('calendar.index') }}">{{ icon("calendar", 18) }}<span data-vi="Lịch" data-en="Calendar">Lịch</span></a>
+                <a href="{{ url_for('settings.show') }}">{{ icon("settings", 18) }}<span>{{ t("Cài đặt", "Settings") }}</span></a>
+                <a href="{{ url_for('settings.show') }}#reminders">{{ icon("bell", 18) }}<span>{{ t("Nhắc nhở", "Reminders") }}</span></a>
+                <a class="only-phone" href="{{ url_for('calendar.index') }}">{{ icon("calendar", 18) }}<span>{{ t("Lịch", "Calendar") }}</span></a>
                 {% if current_user.is_admin %}
-                  <a href="{{ url_for('admin.users') }}">{{ icon("shield", 18) }}<span data-vi="Quản trị" data-en="Admin">Quản trị</span></a>
+                  <a href="{{ url_for('admin.users') }}">{{ icon("shield", 18) }}<span>{{ t("Quản trị", "Admin") }}</span></a>
                 {% endif %}
                 {% if csrf_token is defined %}
                   <form method="post" action="{{ url_for('auth.logout') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit" class="menu-logout">{{ icon("logout", 18) }}<span data-vi="Đăng xuất" data-en="Log out">Đăng xuất</span></button>
+                    <button type="submit" class="menu-logout">{{ icon("logout", 18) }}<span>{{ t("Đăng xuất", "Log out") }}</span></button>
                   </form>
                 {% endif %}
               </div>
             </details>
           {% else %}
-            <a href="{{ url_for('auth.login') }}" class="top-login" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a>
-            <a class="button btn-sm" href="{{ url_for('auth.register') }}" data-vi="Đăng ký" data-en="Sign up">Đăng ký</a>
+            <a href="{{ url_for('auth.login') }}" class="top-login">{{ t("Đăng nhập", "Log in") }}</a>
+            <a class="button btn-sm" href="{{ url_for('auth.register') }}">{{ t("Đăng ký", "Sign up") }}</a>
           {% endif %}
         </div>
       </div>
@@ -115,23 +115,23 @@
         ("calendar.index", "/calendar", "calendar", "Lịch", "Calendar"),
         ("settings.show", "/settings", "settings", "Cài đặt & nhắc nhở", "Settings & reminders"),
       ] %}
-      <nav class="rail" aria-label="Công cụ nhanh">
+      <nav class="rail" aria-label="{{ t('Công cụ nhanh', 'Quick tools') }}">
         <div class="rail-group">
-          <button type="button" class="rail-btn" data-theme-set="light" aria-label="Giao diện sáng" title="Sáng">{{ icon("sun", 18) }}</button>
-          <button type="button" class="rail-btn" data-theme-set="dark" aria-label="Giao diện tối" title="Tối">{{ icon("moon", 18) }}</button>
+          <button type="button" class="rail-btn" data-theme-set="light" aria-label="{{ t('Giao diện sáng', 'Light mode') }}" title="{{ t('Sáng', 'Light') }}">{{ icon("sun", 18) }}</button>
+          <button type="button" class="rail-btn" data-theme-set="dark" aria-label="{{ t('Giao diện tối', 'Dark mode') }}" title="{{ t('Tối', 'Dark') }}">{{ icon("moon", 18) }}</button>
         </div>
         <div class="rail-group">
           {% for endpoint, prefix, icon_name, vi, en in rail_items %}
             {% set here = request.path == prefix or (prefix not in ("/subscriptions/new",) and request.path.startswith(prefix)) %}
-            <a class="rail-btn{% if here %} is-active{% endif %}" href="{{ url_for(endpoint) }}" aria-label="{{ vi }}" title="{{ vi }}" {% if here %}aria-current="page"{% endif %}>{{ icon(icon_name, 18) }}</a>
+            <a class="rail-btn{% if here %} is-active{% endif %}" href="{{ url_for(endpoint) }}" aria-label="{{ t(vi, en) }}" title="{{ t(vi, en) }}" {% if here %}aria-current="page"{% endif %}>{{ icon(icon_name, 18) }}</a>
           {% endfor %}
         </div>
         <div class="rail-group">
-          <button type="button" class="rail-btn" data-open-subby aria-label="Hỏi trợ lý Subby" title="Hỏi Subby">{{ icon("help", 18) }}</button>
+          <button type="button" class="rail-btn" data-open-subby aria-label="{{ t('Hỏi trợ lý Subby', 'Ask Subby') }}" title="{{ t('Hỏi Subby', 'Ask Subby') }}">{{ icon("help", 18) }}</button>
           {% if csrf_token is defined %}
             <form method="post" action="{{ url_for('auth.logout') }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit" class="rail-btn" aria-label="Đăng xuất" title="Đăng xuất">{{ icon("logout", 18) }}</button>
+              <button type="submit" class="rail-btn" aria-label="{{ t('Đăng xuất', 'Log out') }}" title="{{ t('Đăng xuất', 'Log out') }}">{{ icon("logout", 18) }}</button>
             </form>
           {% endif %}
         </div>
@@ -141,33 +141,36 @@
     {% block main %}
       <main id="main-content" tabindex="-1">
         <div id="offline-banner" class="status-banner warn offline-banner" role="status" aria-live="polite" hidden>
-          <span data-vi="Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến." data-en="You are currently offline. To protect your personal data, bills and account records are not cached offline.">
-            Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến.
-          </span>
+          <span>{{ t("Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến.", "You are currently offline. To protect your personal data, bills and account records are not cached offline.") }}</span>
         </div>
         {% include "_flashes.html" %}
         {% if signed_in and (current_user.email_verified is defined and not current_user.email_verified) %}
           {# Confirm with the 6-digit code from the email (or its link), or ask for a new email. #}
-          <div class="verify-banner" role="region" aria-label="Xác nhận email">
+          <div class="verify-banner" role="region" aria-label="{{ t('Xác nhận email', 'Confirm your email') }}">
             <div class="verify-banner-content">
               <span class="verify-banner-icon" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
               </span>
-              <span class="verify-banner-text" data-vi="Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn." data-en="Please confirm your email ({{ current_user.email }}) so we can send your reminders.">
-                Vui lòng xác nhận email (<strong>{{ current_user.email }}</strong>) để nhận lời nhắc đúng hạn.
+              <span class="verify-banner-text">
+                {{ t("Nhập mã 6 số đã gửi tới", "Type the 6-digit code we sent to") }} <strong>{{ current_user.email }}</strong>{{ t(" để nhận lời nhắc đúng hạn.", " so your reminders can reach you.") }}
               </span>
             </div>
             <div class="verify-banner-actions">
               <form class="verify-code-form" method="post" action="{{ url_for('auth.verify_code') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="next" value="{{ request.path }}" />
-                <label class="sr-only" for="verify-code">Mã 6 số trong email</label>
-                <input id="verify-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="Mã 6 số" required />
-                <button type="submit" class="button btn-sm" data-vi="Xác nhận" data-en="Confirm">Xác nhận</button>
+                <label class="sr-only" for="verify-code">{{ t('Mã 6 số trong email', '6-digit code from the email') }}</label>
+                <input id="verify-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="{{ t('Mã 6 số', '6-digit code') }}" required />
+                <button type="submit" class="button btn-sm">{{ t("Xác nhận", "Confirm") }}</button>
               </form>
+              {% set inbox = inbox_url(current_user.email) %}
+              {% if inbox %}
+                {# Opens their mailbox (Gmail, Outlook, Yahoo) in a new tab, to find the code. #}
+                <a class="button secondary btn-sm" href="{{ inbox.url }}" target="_blank" rel="noopener noreferrer">{{ t("Mở " ~ inbox.name, "Open " ~ inbox.name) }}</a>
+              {% endif %}
               <form class="verify-resend-form" method="post" action="{{ url_for('auth.resend_verification') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="submit" class="link verify-resend-link" data-vi="Gửi lại email xác nhận" data-en="Send the email again">Gửi lại email xác nhận</button>
+                <button type="submit" class="link verify-resend-link">{{ t("Gửi lại email xác nhận", "Send the email again") }}</button>
               </form>
             </div>
           </div>
@@ -183,54 +186,54 @@
               <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="32" height="32" alt="" />
               <span class="shell-brand-text">AllOutFree</span>
             </a>
-            <p data-vi="Gói đăng ký, hóa đơn và link quan trọng ở cùng một chỗ. Gia hạn có chủ đích, hủy kịp lúc." data-en="Subscriptions, bills and important links in one place. Renew on purpose, cancel in time.">Gói đăng ký, hóa đơn và link quan trọng ở cùng một chỗ. Gia hạn có chủ đích, hủy kịp lúc.</p>
+            <p>{{ t("Gói đăng ký, hóa đơn và link quan trọng ở cùng một chỗ. Gia hạn có chủ đích, hủy kịp lúc.", "Subscriptions, bills and important links in one place. Renew on purpose, cancel in time.") }}</p>
           </div>
 
-          <nav class="footer-cols" aria-label="Liên kết cuối trang">
+          <nav class="footer-cols" aria-label="{{ t('Liên kết cuối trang', 'Footer links') }}">
             <div>
-              <p class="footer-heading" data-vi="Ứng dụng" data-en="App">Ứng dụng</p>
+              <p class="footer-heading">{{ t("Ứng dụng", "App") }}</p>
               <ul>
                 {% for target, endpoint, prefix, vi, en, _ in nav_items %}
-                  <li><a href="{{ url_for(endpoint) }}" data-vi="{{ vi }}" data-en="{{ en }}">{{ vi }}</a></li>
+                  <li><a href="{{ url_for(endpoint) }}" data-vi="{{ vi }}" data-en="{{ en }}">{{ t(vi, en) }}</a></li>
                 {% endfor %}
               </ul>
             </div>
             <div>
-              <p class="footer-heading" data-vi="Tài khoản" data-en="Account">Tài khoản</p>
+              <p class="footer-heading">{{ t("Tài khoản", "Account") }}</p>
               <ul>
                 {% if signed_in %}
-                  <li><a href="{{ url_for('settings.show') }}" data-vi="Cài đặt" data-en="Settings">Cài đặt</a></li>
-                  <li><a href="{{ url_for('settings.show') }}#reminders" data-vi="Nhắc nhở" data-en="Reminders">Nhắc nhở</a></li>
-                  <li><a href="{{ url_for('subscriptions.create') }}" data-vi="Thêm gói mới" data-en="Add a plan">Thêm gói mới</a></li>
+                  <li><a href="{{ url_for('settings.show') }}">{{ t("Cài đặt", "Settings") }}</a></li>
+                  <li><a href="{{ url_for('settings.show') }}#reminders">{{ t("Nhắc nhở", "Reminders") }}</a></li>
+                  <li><a href="{{ url_for('subscriptions.create') }}">{{ t("Thêm gói mới", "Add a plan") }}</a></li>
                 {% else %}
-                  <li><a href="{{ url_for('auth.login') }}" data-vi="Đăng nhập" data-en="Log in">Đăng nhập</a></li>
-                  <li><a href="{{ url_for('auth.register') }}" data-vi="Tạo tài khoản" data-en="Create an account">Tạo tài khoản</a></li>
-                  <li><a href="{{ url_for('auth.forgot_password') }}" data-vi="Quên mật khẩu" data-en="Forgot password">Quên mật khẩu</a></li>
+                  <li><a href="{{ url_for('auth.login') }}">{{ t("Đăng nhập", "Log in") }}</a></li>
+                  <li><a href="{{ url_for('auth.register') }}">{{ t("Tạo tài khoản", "Create an account") }}</a></li>
+                  <li><a href="{{ url_for('auth.forgot_password') }}">{{ t("Quên mật khẩu", "Forgot password") }}</a></li>
                 {% endif %}
               </ul>
             </div>
             <div>
-              <p class="footer-heading" data-vi="Trợ giúp" data-en="Help">Trợ giúp</p>
+              <p class="footer-heading">{{ t("Trợ giúp", "Help") }}</p>
               <ul>
-                <li><button type="button" class="footer-link" data-open-subby data-vi="Hỏi trợ lý Subby" data-en="Ask Subby">Hỏi trợ lý Subby</button></li>
-                <li><a href="https://github.com/thomasforstudy-dev/subtrack-subscription-website" target="_blank" rel="noopener noreferrer" data-vi="Mã nguồn trên GitHub" data-en="Source code on GitHub">Mã nguồn trên GitHub</a></li>
+                <li><button type="button" class="footer-link" data-open-subby>{{ t("Hỏi trợ lý Subby", "Ask Subby") }}</button></li>
+                <li><a href="https://github.com/thomasforstudy-dev/subtrack-subscription-website" target="_blank" rel="noopener noreferrer">{{ t("Mã nguồn trên GitHub", "Source code on GitHub") }}</a></li>
               </ul>
             </div>
           </nav>
         </div>
         <div class="footer-bottom">
           <span>© 2026 AllOutFree</span>
-          <span data-vi="Dự án portfolio sinh viên, làm bằng Flask và Python" data-en="A student portfolio project, built with Flask and Python">Dự án portfolio sinh viên, làm bằng Flask và Python</span>
+          <span>{{ t("Dự án portfolio sinh viên, làm bằng Flask và Python", "A student portfolio project, built with Flask and Python") }}</span>
         </div>
       </footer>
     {% endblock %}
 
     {% if signed_in %}
       {# Phone only (hidden on wide screens by CSS): the bottom tab bar with a raised + button. #}
-      <nav class="tabbar" aria-label="Điều hướng nhanh">
+      <nav class="tabbar" aria-label="{{ t('Điều hướng nhanh', 'Quick menu') }}">
         {% for target, endpoint, prefix, vi, en, icon_name in nav_items %}
           {% if loop.index == 3 %}
-            <a class="tab-fab" href="{{ url_for('subscriptions.create') }}" aria-label="Thêm gói đăng ký">{{ icon("plus", 26) }}</a>
+            <a class="tab-fab" href="{{ url_for('subscriptions.create') }}" aria-label="{{ t('Thêm gói đăng ký', 'Add a plan') }}">{{ icon("plus", 26) }}</a>
           {% endif %}
           {% if target != "calendar" %}
             {% set active = request.path.startswith(prefix) %}
