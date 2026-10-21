@@ -1,30 +1,78 @@
 {% extends "base.html" %}
 {% block title %}Reading your bill — AllOutFree{% endblock %}
 {% block content %}
-  {# Plain page from the backend lane; the UI lane styles it (docs/CONTRACT.md → Reading bills). #}
-  <h1>Reading {{ job.document.original_name }}</h1>
-
-  <div class="card">
-    {% if job.status == "queued" %}
-      <p><strong>Waiting to be read.</strong> Reading starts the next time the reader runs.
-        {% if job.error_code %}The last try didn't work: {{ message }}{% endif %}</p>
-    {% elif job.status == "running" %}
-      <p><strong>Reading now…</strong> This page doesn't update by itself: reload it in a moment.</p>
-    {% elif job.status == "succeeded" %}
-      <p><strong>Done.</strong> We found what we could. Nothing is saved as a bill until you check it.</p>
-      {% if draft %}
-        <p><a class="button" href="{{ url_for('bill_review.draft_page', draft_id=draft.id) }}">Check the draft</a></p>
-      {% endif %}
-    {% else %}
-      <p><strong>Couldn't read this file.</strong> {{ message }}</p>
-      <form method="post" action="{{ url_for('bill_review.retry_job', job_id=job.id) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button class="button secondary" type="submit">Try again</button>
-      </form>
-    {% endif %}
-    <p class="muted">Tries so far: {{ job.attempts }}</p>
+  {# Styled to DESIGN.md v2/v3 (docs/CONTRACT.md → Reading bills).
+     Preserves all backend routes, CSRF tokens, and status messages. #}
+  <div class="section-head">
+    <div>
+      <div class="section-badges">
+        {% if job.status == "queued" %}
+          <span class="pill sun-label" data-job-status="queued" data-vi="⏳ Đang chờ đọc (Queued)" data-en="⏳ Queued">⏳ Queued</span>
+        {% elif job.status == "running" %}
+          <span class="pill sun-label" data-job-status="running" data-vi="⚙ Đang đọc chứng từ (Processing…)" data-en="⚙ Processing…">⚙ Processing…</span>
+        {% elif job.status == "succeeded" %}
+          <span class="pill mint" data-job-status="succeeded" data-vi="✓ Đã tạo bản nháp chờ kiểm tra (Draft ready)" data-en="✓ Draft ready">✓ Draft ready</span>
+        {% elif job.error_code == "ocr-not-set-up" %}
+          <span class="pill sun-label" data-job-status="unavailable" data-vi="🔍 OCR chưa bật (OCR unavailable)" data-en="🔍 OCR unavailable">🔍 OCR unavailable</span>
+        {% else %}
+          <span class="pill hot-label" data-job-status="failed" data-vi="⚠ Không đọc được tự động (Failed)" data-en="⚠ Reading failed">⚠ Reading failed</span>
+        {% endif %}
+        <span class="pill" data-vi="Chưa tạo hóa đơn cho tới khi bạn duyệt" data-en="Draft only until you accept">Draft only until you accept</span>
+      </div>
+      <h1>Reading {{ job.document.original_name }}</h1>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('bills.list_bills') }}">Back to bills</a>
+    </div>
   </div>
 
-  <p><a href="{{ url_for('bills.create', document_id=job.document_id) }}">Type this bill in yourself instead</a></p>
-  <p><a href="{{ url_for('bills.list_bills') }}">Back to bills</a></p>
+  <div class="reading-stage-card" role="region" aria-label="Reading progress stage">
+    {% if job.status == "queued" %}
+      <div class="reading-orb" aria-hidden="true">⏳</div>
+      <div class="reading-meta-box">
+        <h2>Waiting to be read</h2>
+        <p><strong>Waiting to be read.</strong> Reading starts the next time the reader runs.
+          {% if job.error_code %}The last try didn't work: {{ message }}{% endif %}</p>
+      </div>
+    {% elif job.status == "running" %}
+      <div class="reading-orb running" aria-hidden="true">⚙</div>
+      <div class="reading-meta-box">
+        <h2>Reading document now…</h2>
+        <p><strong>Reading now…</strong> This page doesn't update by itself: reload it in a moment.</p>
+      </div>
+    {% elif job.status == "succeeded" %}
+      <div class="reading-orb succeeded" aria-hidden="true">✓</div>
+      <div class="reading-meta-box">
+        <h2>Extraction complete</h2>
+        <p><strong>Done.</strong> We found what we could. Nothing is saved as a bill until you check it.</p>
+        {% if draft %}
+          <p class="compact-top">
+            <a class="button" href="{{ url_for('bill_review.draft_page', draft_id=draft.id) }}">Check the draft</a>
+          </p>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="reading-orb failed" aria-hidden="true">⚠</div>
+      <div class="reading-meta-box">
+        <h2>Couldn't read this file</h2>
+        <p><strong>Couldn't read this file.</strong> {{ message }}</p>
+        <form method="post" action="{{ url_for('bill_review.retry_job', job_id=job.id) }}" class="compact-top">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="button secondary" type="submit">Try again</button>
+        </form>
+      </div>
+    {% endif %}
+
+    <p class="muted small-text compact-top">Tries so far: {{ job.attempts }}</p>
+  </div>
+
+  <div class="card compact-card manual-entry-row">
+    <div>
+      <strong data-vi="Bạn muốn tự nhập số liệu?" data-en="Prefer entering manually?">Bạn muốn tự nhập số liệu?</strong>
+      <p class="muted small-text compact-top-tight" data-vi="Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết." data-en="Open side-by-side view to enter fields yourself.">
+        Mở màn hình đối chiếu 2 cột và tự nhập các trường cần thiết.
+      </p>
+    </div>
+    <a class="button secondary btn-sm" href="{{ url_for('bills.create', document_id=job.document_id) }}">Type this bill in yourself instead</a>
+  </div>
 {% endblock %}

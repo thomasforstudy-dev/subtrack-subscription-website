@@ -24,10 +24,26 @@
 
   <div class="{% if document %}review-grid{% endif %}">
     {% if document %}
+      {% set doc_status = document.status or 'uploaded' %}
       <aside class="card review-col source-col" aria-label="Tệp chứng từ đính kèm">
         <div class="source-toolbar">
           <div>
-            <span class="pill mint">{{ document.kind|upper }}{% if document.page_count %} · {{ document.page_count }} page{{ 's' if document.page_count != 1 }}{% endif %}</span>
+            <div class="bill-merchant-row">
+              <span class="pill mint">{{ document.kind|upper }}{% if document.page_count %} · {{ document.page_count }} page{{ 's' if document.page_count != 1 }}{% endif %}</span>
+              {% if doc_status == 'queued' %}
+                <span class="pill sun-label" data-doc-status="queued" data-vi="⏳ Trạng thái: Đang chờ đọc (Queued)" data-en="⏳ Status: Queued for reading">⏳ Status: Queued for reading</span>
+              {% elif doc_status in ('running', 'processing') %}
+                <span class="pill sun-label" data-doc-status="processing" data-vi="⚙ Trạng thái: Đang xử lý (Processing…)" data-en="⚙ Status: Processing…">⚙ Status: Processing…</span>
+              {% elif doc_status == 'failed' %}
+                <span class="pill hot-label" data-doc-status="failed" data-vi="⚠ Trạng thái: Đọc tự động thất bại — Nhập đối chiếu thủ công" data-en="⚠ Status: Automated read failed — Manual review">⚠ Status: Automated read failed — Manual review</span>
+              {% elif doc_status == 'needs_review' %}
+                <span class="pill mint" data-doc-status="needs_review" data-vi="✓ Trạng thái: Có bản nháp chờ đối chiếu" data-en="✓ Status: Draft ready for review">✓ Status: Draft ready for review</span>
+              {% elif document.kind in ('png', 'jpeg', 'webp') %}
+                <span class="pill sun-label" data-doc-status="unavailable" data-vi="🔍 OCR chưa bật — Đối chiếu ảnh & nhập thủ công" data-en="🔍 OCR unavailable — Manual side-by-side review">🔍 OCR unavailable — Manual side-by-side review</span>
+              {% else %}
+                <span class="pill" data-doc-status="uploaded" data-vi="📄 Đã tải lên — Đối chiếu bên cạnh tệp gốc" data-en="📄 Uploaded — Side-by-side review">📄 Uploaded — Side-by-side review</span>
+              {% endif %}
+            </div>
             <p class="compact-top">
               From your file: <strong>{{ document.original_name }}</strong>
               (<a href="{{ url_for('bills.download', document_id=document.id) }}">download</a>)
@@ -39,7 +55,7 @@
           <div class="source-viewport compact-top">
             <img
               src="{{ url_for('bills.download', document_id=document.id, view=1) }}"
-              alt="Your uploaded bill"
+              alt="Your uploaded bill ({{ document.original_name }})"
               style="max-width:100%;height:auto;border-radius:12px"
               loading="lazy"
               referrerpolicy="no-referrer"
@@ -57,7 +73,15 @@
           </div>
         {% endif %}
 
-        <p class="muted small-text compact-top">Type in only what the bill shows. Leave a box empty if it isn't on the bill.</p>
+        <div class="honest-status-box compact-top" role="note" aria-label="Quy tắc bằng chứng và giá trị chưa xác định">
+          <p><strong data-vi="📌 Bằng chứng & Giá trị chưa biết (Evidence & Unknowns):" data-en="📌 Evidence & Unknown Values:">📌 Evidence & Unknown Values:</strong></p>
+          <p class="muted small-text" data-vi="• Nguồn chứng từ: source = upload (liên kết tệp #{{ document.id }}). Các giá trị bạn tự nhập được đánh dấu do người dùng xác nhận (không bao giờ tự bịa tọa độ hay điểm tin cậy OCR)." data-en="• Source: upload (linked to file #{{ document.id }}). Typed fields are recorded as human-verified (evidence: null — never fabricated).">
+            • <strong>Source:</strong> <code>upload</code> (file #{{ document.id }}). Typed fields are recorded as human-verified (<code>evidence: null</code> — never fabricated).
+          </p>
+          <p class="muted small-text" data-vi="• Trường không in trên hóa đơn: Hãy để trống. Máy chủ lưu và xuất chính xác là null (tuyệt đối không tự điền giờ 00:00)." data-en="• Unknown fields: Leave blank if not printed on the bill. Exported as null (never guessed or filled with 00:00).">
+            • <strong>Unknowns:</strong> Type in only what the bill shows. Leave a box empty if it isn't on the bill (stored as <code>null</code>, never <code>00:00</code>).
+          </p>
+        </div>
       </aside>
     {% endif %}
 
@@ -162,7 +186,10 @@
         </div>
 
         <div class="field-group">
-          <label for="bill-txtime-input" data-vi="Giờ giao dịch (Time — để trống nếu không có)" data-en="Time">Time</label>
+          <label for="bill-txtime-input">
+            <span data-vi="Giờ giao dịch (Time)" data-en="Time">Time</span>
+            <span class="missing-badge" data-vi="Trống = null (không điền 00:00)" data-en="Blank = null (never 00:00)">Blank = null (never 00:00)</span>
+          </label>
           <input
             id="bill-txtime-input"
             name="transaction_time"
@@ -298,12 +325,13 @@
         </p>
         <div class="table-scroll compact-top">
           <table class="compact-table">
+            <caption class="sr-only">Danh sách mặt hàng trên hóa đơn (Bill line items)</caption>
             <thead>
               <tr>
-                <th data-vi="Tên mặt hàng (Item)" data-en="Item">Item</th>
-                <th data-vi="Số lượng (Qty)" data-en="Qty">Qty</th>
-                <th data-vi="Đơn giá (Unit price)" data-en="Unit price">Unit price</th>
-                <th>Actions</th>
+                <th scope="col" data-vi="Tên mặt hàng (Item)" data-en="Item">Item</th>
+                <th scope="col" data-vi="Số lượng (Qty)" data-en="Qty">Qty</th>
+                <th scope="col" data-vi="Đơn giá (Unit price)" data-en="Unit price">Unit price</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody data-bill-lines data-max-lines="{{ max_lines }}">
@@ -350,6 +378,13 @@
       <div class="field-group">
         <label for="bill-notes-input" data-vi="Ghi chú thêm (Notes — tối đa 2000 ký tự)" data-en="Notes">Notes</label>
         <textarea id="bill-notes-input" name="notes" maxlength="2000" rows="3">{{ val('notes', item.notes if item else '') }}</textarea>
+      </div>
+
+      <div class="honest-status-box" role="region" aria-label="Xác nhận trước khi lưu hóa đơn">
+        <p><strong data-vi="✓ Kiểm tra & Xác nhận trước khi lưu (Confirm before saving):" data-en="✓ Review & Confirm before saving:">✓ Review & Confirm before saving:</strong></p>
+        <p class="muted small-text" data-vi="Khi bạn bấm 'Save bill', chứng từ sẽ được lưu ở trạng thái Đã xác nhận (confirmed). Biên lai (Receipt) được tính vào Chi tiêu thực tế (Spent) theo đúng loại tiền tệ; Sao kê thẻ (Credit card bill) được theo dõi riêng theo hạn thanh toán (due date). Các trường để trống được giữ nguyên là null." data-en="Pressing 'Save bill' records this as a confirmed bill in your account. Receipts count toward Spent per currency; Credit card bills are tracked separately by due date. Blank fields stay null.">
+          Khi bạn bấm <strong>Save bill</strong>, chứng từ được lưu ở trạng thái <code>confirmed</code>. <strong>Receipt</strong> được tính vào <em>Spent</em> theo đúng đồng tiền; <strong>Credit card bill</strong> được theo dõi riêng theo <code>due_date</code>. Các ô trống giữ nguyên là <code>null</code>.
+        </p>
       </div>
 
       <div class="form-actions">

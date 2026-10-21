@@ -139,25 +139,37 @@
     {% endif %}
 
     {% block main %}
-      <main id="main-content">
+      <main id="main-content" tabindex="-1">
+        <div id="offline-banner" class="status-banner warn offline-banner" role="status" aria-live="polite" hidden>
+          <span data-vi="Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến." data-en="You are currently offline. To protect your personal data, bills and account records are not cached offline.">
+            Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến.
+          </span>
+        </div>
         {% include "_flashes.html" %}
         {% if signed_in and (current_user.email_verified is defined and not current_user.email_verified) %}
           {# Confirm with the 6-digit code from the email (or its link), or ask for a new email. #}
-          <div class="verify-banner">
-            <span data-vi="Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn." data-en="Please confirm your email ({{ current_user.email }}) so we can send your reminders.">
-              Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn. <span class="sr-only">Please confirm your email ({{ current_user.email }}) so we can send your reminders.</span>
-            </span>
-            <form class="verify-code-form" method="post" action="{{ url_for('auth.verify_code') }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <input type="hidden" name="next" value="{{ request.path }}" />
-              <label class="sr-only" for="verify-code">Mã 6 số trong email</label>
-              <input id="verify-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="Mã 6 số" required />
-              <button type="submit" class="btn-sm" data-vi="Xác nhận" data-en="Confirm">Xác nhận</button>
-            </form>
-            <form method="post" action="{{ url_for('auth.resend_verification') }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit" class="link" data-vi="Gửi lại email xác nhận" data-en="Send the email again">Gửi lại email xác nhận</button>
-            </form>
+          <div class="verify-banner" role="region" aria-label="Xác nhận email">
+            <div class="verify-banner-content">
+              <span class="verify-banner-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </span>
+              <span class="verify-banner-text" data-vi="Vui lòng xác nhận email ({{ current_user.email }}) để nhận lời nhắc đúng hạn." data-en="Please confirm your email ({{ current_user.email }}) so we can send your reminders.">
+                Vui lòng xác nhận email (<strong>{{ current_user.email }}</strong>) để nhận lời nhắc đúng hạn.
+              </span>
+            </div>
+            <div class="verify-banner-actions">
+              <form class="verify-code-form" method="post" action="{{ url_for('auth.verify_code') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="next" value="{{ request.path }}" />
+                <label class="sr-only" for="verify-code">Mã 6 số trong email</label>
+                <input id="verify-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="Mã 6 số" required />
+                <button type="submit" class="button btn-sm" data-vi="Xác nhận" data-en="Confirm">Xác nhận</button>
+              </form>
+              <form class="verify-resend-form" method="post" action="{{ url_for('auth.resend_verification') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="link verify-resend-link" data-vi="Gửi lại email xác nhận" data-en="Send the email again">Gửi lại email xác nhận</button>
+              </form>
+            </div>
           </div>
         {% endif %}
         {% block content %}{% endblock %}
