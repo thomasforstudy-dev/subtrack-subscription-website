@@ -18,7 +18,11 @@
 #>
 
 [CmdletBinding()]
-param()
+param(
+    # Reminder emails go to real people, so they are switched on only when the
+    # owner asks for it (deploy/RELEASE-GATE.md): install_tasks.ps1 -WithReminders
+    [switch]$WithReminders
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -128,20 +132,59 @@ Register-ScheduledTask `
 
 Write-Host "      Task 'SubTrack-Tunnel' registered successfully." -ForegroundColor Green
 
-# 4. Start both tasks immediately
-Write-Host "[4/4] Starting tasks now..." -ForegroundColor Yellow
+# 4. Register SubTrack-Reminders task (every 30 minutes) - only with -WithReminders
+if ($WithReminders) {
+Write-Host "[4/5] Registering Task: SubTrack-Reminders..." -ForegroundColor Yellow
+$remindersBat = Join-Path $projectRoot "deploy\run_reminders.bat"
+$remindersAction = New-ScheduledTaskAction `
+    -Execute "cmd.exe" `
+    -Argument "/c `"$remindersBat`"" `
+    -WorkingDirectory $projectRoot
+
+$remindersTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 30)
+
+$remindersSettings = New-ScheduledTaskSettingsSet `
+    -AllowStartIfOnBatteries `
+    -DontStopIfGoingOnBatteries `
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 15) `
+    -MultipleInstances IgnoreNew `
+    -Priority 5
+
+Register-ScheduledTask `
+    -TaskName "SubTrack-Reminders" `
+    -Description "AllOutFree scheduled reminder job running every 30 minutes" `
+    -Action $remindersAction `
+    -Trigger $remindersTrigger `
+    -Settings $remindersSettings `
+    -Principal $systemPrincipal `
+    -Force | Out-Null
+
+Write-Host "      Task 'SubTrack-Reminders' registered successfully." -ForegroundColor Green
+} else {
+Write-Host "[4/5] Reminder emails stay OFF (run with -WithReminders once the owner approves)." -ForegroundColor Yellow
+}
+
+# 5. Start the tasks immediately
+Write-Host "[5/5] Starting tasks now..." -ForegroundColor Yellow
 Start-ScheduledTask -TaskName "SubTrack-Server"
 Start-ScheduledTask -TaskName "SubTrack-Tunnel"
+if ($WithReminders) { Start-ScheduledTask -TaskName "SubTrack-Reminders" }
 Start-Sleep -Seconds 3
 
 # Check status
 $serverTask = Get-ScheduledTask -TaskName "SubTrack-Server"
 $tunnelTask = Get-ScheduledTask -TaskName "SubTrack-Tunnel"
+$remindersTask = Get-ScheduledTask -TaskName "SubTrack-Reminders" -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "Status Summary:" -ForegroundColor Cyan
 Write-Host "  SubTrack-Server: $($serverTask.State)" -ForegroundColor $(if ($serverTask.State -eq 'Running') { 'Green' } else { 'Yellow' })
 Write-Host "  SubTrack-Tunnel: $($tunnelTask.State)" -ForegroundColor $(if ($tunnelTask.State -eq 'Running') { 'Green' } else { 'Yellow' })
+if ($remindersTask) {
+    Write-Host "  SubTrack-Reminders: $($remindersTask.State)" -ForegroundColor $(if ($remindersTask.State -in @('Running', 'Ready')) { 'Green' } else { 'Yellow' })
+} else {
+    Write-Host "  SubTrack-Reminders: not installed (reminder emails off)" -ForegroundColor Yellow
+}
 
 # Test local endpoint
 try {
