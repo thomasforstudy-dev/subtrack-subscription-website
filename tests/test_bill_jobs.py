@@ -7,7 +7,7 @@ import io
 import json
 import multiprocessing
 import zipfile
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
@@ -17,12 +17,15 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from app import bill_jobs, db
 from app.extract_fields import ExtractionError, check_extraction, extract, to_amount
-from app.models import Bill, BillDraft, BillDraftRevision, Document, DocumentJob, DocumentPage
+from app.models import Bill, BillDraft, BillDraftRevision, Document, DocumentJob, DocumentPage, utcnow
 from app.ocr import FakeOcr, OcrUnavailable, check_reply
 
 from .conftest import sign_up
 
-NOW = datetime(2026, 10, 20, 9, 0)
+# The worker's clock in these tests: one hour after the real clock. Jobs made
+# during a test are stamped with the real time, so they are always due "now".
+# (A fixed date here broke every test once the real clock passed it.)
+NOW = utcnow().replace(microsecond=0) + timedelta(hours=1)
 RECEIPT_LINES = [
     "HIGHLANDS COFFEE",
     "Takashimaya Saigon",

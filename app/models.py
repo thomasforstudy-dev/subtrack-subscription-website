@@ -458,3 +458,65 @@ class BillDraftRevision(db.Model):
     changed = db.Column(db.Unicode(400), default="", nullable=False)  # "total, merchant"
     values_json = db.Column(db.UnicodeText, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
+class ApiToken(db.Model):
+    """A secret the Chrome extension sends instead of the login cookie.
+
+    Like AuthToken, only a SHA-256 hash of the secret is stored. Each active
+    token sits in one of five numbered slots. The unique index on
+    (user_id, slot) is what stops a sixth token, even when two "create"
+    requests arrive at the same moment. Revoked and expired tokens give their
+    slot back (slot = NULL) and stay in the list; they are never deleted.
+    """
+
+    __tablename__ = "api_tokens"
+    __table_args__ = (
+        db.UniqueConstraint("token_hash", name="UQ_api_tokens_hash"),
+        db.Index(
+            "UX_api_tokens_user_slot", "user_id", "slot", unique=True,
+            sqlite_where=db.text("slot IS NOT NULL"), mssql_where=db.text("slot IS NOT NULL"),
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name = db.Column(db.Unicode(60), nullable=False)  # the owner's label, e.g. "Chrome on laptop"
+    token_hash = db.Column(db.Unicode(64), nullable=False)
+    prefix = db.Column(db.Unicode(12), nullable=False)  # first characters, to recognise it in the list
+    scopes = db.Column(db.Unicode(200), nullable=False)  # comma list, e.g. "renewals:read"
+    slot = db.Column(db.Integer)  # 1-5 while active, NULL once revoked or expired
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    last_used_at = db.Column(db.DateTime)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    revoked_at = db.Column(db.DateTime)
+
+    user = db.relationship("User")
+
+    @property
+    def scope_list(self) -> list[str]:
+        return [s for s in (self.scopes or "").split(",") if s]
+
+
+class EmailCode(db.Model):
+    """The 6-digit code in the "confirm your email" email (app/email_codes.py).
+
+    Kept apart from AuthToken on purpose: a short code must never work as a
+    link. Only a SHA-256 hash of "user id:code" is stored; it works once,
+    for 30 minutes, and only for the address it was sent to.
+    """
+
+    __tablename__ = "email_codes"
+    __table_args__ = (db.Index("IX_email_codes_user", "user_id", "used_at"),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    code_hash = db.Column(db.Unicode(64), nullable=False)
+    email = db.Column(db.Unicode(255), nullable=False)  # the address it was sent to
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used_at = db.Column(db.DateTime)  # set when used or cancelled

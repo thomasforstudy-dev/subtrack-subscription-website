@@ -50,10 +50,16 @@ Now **POST only** (a plain link answers 405). Use a small form:
 |---|---|---|
 | `GET /verify-email/<token>` | — | `auth/verify.html` (gets `valid: bool`) shows a "Confirm my email" button |
 | `POST /verify-email/<token>` | `csrf_token` | — (redirects) |
+| `POST /verify-email/code` (logged in, since 21 Oct) | `csrf_token`, `code` (6 digits, spaces ok), `next` (a path on this site) | — (redirects to `next`) |
 | `POST /verify-email/resend` (logged in) | `csrf_token` | — (redirects back) |
 
 The link is valid for 24 hours and works once. Clicking only *opens* the page;
 the button press confirms, so email scanners that open links can't use it up.
+
+The same email also holds a **6-digit code** (subject "123456 is your AllOutFree code"),
+typed into the yellow banner in `base.html` (`autocomplete="one-time-code"`). It works once,
+for 30 minutes, only for the address it was sent to; each new email cancels the older code;
+5 wrong codes cancel it. Codes are a separate table (`email_codes`), so a code is never a link.
 
 ### Forgot / reset password
 
@@ -381,6 +387,49 @@ job fail with `bad-extraction`. The one allowed translation: a statement word �
 Word files with text still work); `got` = GOT-OCR on the owner's PC at `OCR_BASE_URL` with
 `OCR_API_KEY`. Its reply must be `{"model", "revision", "pages": [{"page", "text", "truncated"}]}`.
 
+## Extension API tokens (since 20 Oct; contract agreed with Codex)
+
+Code: `app/api_tokens.py` (owner pages + checks), `app/api.py` (API). Agreed in
+`docs/proposals/2026-10-20-codex-extension-token-response.md`.
+
+### Owner pages (login cookie + CSRF, template `api_tokens.html`)
+
+| Route | Form fields | What |
+|---|---|---|
+| `GET /settings/tokens` | | List: name, prefix (`st_xxxxx…`), scopes, created, last used, expires, state (`active` / `expired` / `revoked`). Linked from `/settings` (`#extension-tokens`). |
+| `POST /settings/tokens` | `name` (1–60), `days` (1–365, default 90), `scopes` (checkboxes; V1 only `renewals:read`) | Creates a token and shows its secret **once** in the answer (`new_secret` in the template; never in a flash, never again). Bad form → 400; already 5 active → 409. |
+| `POST /settings/tokens/<id>/revoke` | | Revoke now (owner only, else 404). Kept in the list; repeating is harmless. |
+
+Both pages send `Cache-Control: no-store`. At most **5 active tokens**; revoked and expired
+ones don't count. A **password reset revokes every token**.
+
+### The API (token only; the login cookie is never used)
+
+Header `Authorization: Bearer st_<43 characters>`, exactly that shape, one credential. A token
+in the address, a form or a cookie is never read. Every request re-checks owner, scope,
+expiry and revocation. Answers are JSON with `Cache-Control: no-store`.
+
+| Route | Scope | Answer |
+|---|---|---|
+| `GET /api/v1/renewals?days=7` (`days` 1–31, default 7) | `renewals:read` | `{"today": "2026-10-21", "timezone": "Asia/Ho_Chi_Minh", "days": 7, "count": 2, "items": [{"id", "name", "amount": "260000.00", "currency": "VND", "next_renewal_at": "2026-10-23", "days_left": 2}]}` |
+| `GET /api/v1/me` | any | `{"username", "timezone", "scopes": ["renewals:read"], "expires_at": "2027-01-18T07:12:09Z"}` |
+
+- **Window**: the owner's active plans with `today <= next_renewal_at < today + days`, where
+  `today` is the owner's local date. A saved date in the past is moved to its next real date
+  for the answer (read-only). Sorted by date, then name, then id; **no limit**, so a badge
+  from `count` never undercounts. Amounts are Decimal strings; currencies are never added.
+  No `manage_url` in V1: open the website for that.
+- **Errors**: `401 {"error": "missing-token" | "bad-token" | "expired" | "revoked"}` (with
+  `WWW-Authenticate: Bearer`), `403 {"error": "missing-scope"}`, `400 {"error": "bad-days"}`,
+  `404 {"error": "not-found"}`, `429 {"error": "slow-down"}` with `Retry-After` (seconds). On
+  401 the extension clears its cache and badge and asks the owner to reconnect.
+- **Limits** (in memory, one waitress process, so not multiplied by workers): 120 requests per
+  hour per token; 20 failed token checks per 10 minutes per address (then even a good token
+  waits). `last_used_at` is written at most once a minute.
+- **CORS**: only the exact `EXTENSION_ORIGIN` (`chrome-extension://` + 32 letters a–p) gets
+  `Access-Control-Allow-Origin`; preflight allows `GET` and the `Authorization` header, never
+  credentials, never a wildcard. CORS is not the login: the token is.
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:
@@ -401,3 +450,4 @@ Removing the last admin is refused.
 | `MAIL_BACKEND` | `resend`, `file` (saves emails in `instance/outbox/`), `memory` (tests) or `none`. Default: `resend` if `RESEND_API_KEY` is set, `file` in development, otherwise `none`. |
 | `RESEND_API_KEY`, `MAIL_FROM`, `MAIL_REPLY_TO` | Real sending through Resend. |
 | `DEFAULT_TIMEZONE` | Time zone for new accounts, e.g. `Asia/Ho_Chi_Minh` (default `UTC`). |
+| `EXTENSION_ORIGIN` | The Chrome extension's exact origin `chrome-extension://<id>` for CORS on `/api/v1/`. Empty = none. Not a secret. |
