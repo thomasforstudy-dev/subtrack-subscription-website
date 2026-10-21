@@ -7,8 +7,11 @@ never be put on the internet. Cloudflare Tunnel forwards the domain to here.
 from waitress import serve
 
 from app import create_app
+from deploy.health import install_readiness
 
 if __name__ == "__main__":
     # 127.0.0.1 = only this PC can reach it directly; visitors come in
     # through Cloudflare Tunnel.
-    serve(create_app(), host="127.0.0.1", port=8000, threads=8)
+    app = create_app()
+    install_readiness(app)
+    serve(app, host="127.0.0.1", port=8000, threads=8)
