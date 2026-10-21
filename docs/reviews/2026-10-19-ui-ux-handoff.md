@@ -95,3 +95,93 @@
 | **2. Kiểm thử Runtime Đã Chạy (Integrated Runtime Checks)** | **`375 passed` (trên nhánh kết hợp P0 + Voice V1)** | Chạy bộ kiểm thử hợp nhất trên Python 3.14.8 / SQLite + Node VM (`test_voice_lifecycle.py` + `voice_lifecycle.cjs`, `test_bills.py`, `test_bills_integration.py`, `test_ui_contracts.py`, `test_pages.py`, v.v.). |
 | **3. Phần Mô phỏng / Phụ thuộc Bên ngoài (Demos & External Dependencies)** | **Đánh dấu trung thực trên UI** | - **OCR tự động (`GOT-OCR`) & gắn nguồn từng dòng**: Khung đối chiếu tự động trong `subscriptions/_bills_section.html` giữ nhãn `Demo` cho tới khi lát cắt OCR của nhánh Backend hoàn tất (việc tải tệp thật và nhập đối chiếu thủ công bên cạnh tệp gốc tại `/bills/new?document_id=…` đã hoạt động thật).<br>- **Đồng bộ hóa đơn Gmail OAuth**: Đánh dấu rõ `Chuẩn bị UI (UI Preparation)` tại `/settings`.<br>- **Chrome Extension**: Đánh dấu rõ `Chưa phát hành (Unreleased)`.<br>- **PWA (`manifest.webmanifest`)**: Chỉ cung cấp biểu tượng màn hình chính, không lưu đệm dữ liệu riêng tư hay hóa đơn vào bộ nhớ dùng chung. |
 
+---
+
+## 4. Báo cáo Nghiệm thu Nghiêm ngặt Ưu tiên 1–3 & Cài đặt Nhắc nhở (2026-10-20)
+
+- **Commit cơ sở kiểm thử:** `antigravity/ui-ux` (kế thừa commit tích hợp `25d2ecd` kết hợp `main` `766d729` và `codex/bills-voice-validation` `6918df8`)
+- **Môi trường chạy kiểm thử:** Microsoft Windows 11, Python 3.14.8, Node.js v22.12.0, Microsoft Edge `155.0.4283.62`.
+- **Tổng số ca kiểm thử tự động:** `383 passed` (toàn bộ kiểm thử pytest backend) + `voice lifecycle: edit/send/stop/cancel/end/error/duplicate passed` (Node CDP & life-cycle runner).
+
+### Ưu tiên 1 (Priority 1) — Hành vi Nhận diện & Đọc giọng nói Thực tế (Voice Behavior)
+1. **Khảo sát Năng lực Trình duyệt (Browser Capabilities & Edge 155 Probe):**
+   - Microsoft Edge Headless/Desktop 155 trên Windows phát hiện `SpeechRecognition = true`, `webkitSpeechRecognition = true`, `speechSynthesis = true`.
+   - Có tổng cộng **324 giọng đọc (voices)** có sẵn trong Edge trên máy tính này.
+   - **Tiếng Việt (`vi-VN`):** Phát hiện 2 giọng đọc trực tuyến gồm `"Microsoft Hoài My Online (Natural) - Vietnamese (Vietnam)"` và `"Microsoft Nam Minh Online (Natural) - Vietnamese (Vietnam)"` với thuộc tính `localService: false`. Do là giọng đọc trực tuyến (Online Neural Voice), văn bản được gửi về máy chủ dịch vụ của Microsoft/trình duyệt để tổng hợp âm thanh.
+   - **Tiếng Anh (`en-US`):** Phát hiện giọng đọc cục bộ `"Microsoft David - English (United States)"` (`localService: true`, giọng SAPI nội bộ) cùng các giọng đọc mở rộng trực tuyến (`localService: false`).
+   - Nhận diện giọng nói trình duyệt (`webkitSpeechRecognition`) sử dụng dịch vụ đám mây của nhà cung cấp trình duyệt.
+   - **Khuyến cáo bảo mật rõ ràng trên UI:** Giao diện Voice Mode (`_subby.html` & `subby.js`) hiển thị thông báo bảo mật rõ ràng: *"🔒 Chỉ bật mic khi bạn bấm chọn. Trình duyệt có thể gửi âm thanh nhận diện (SpeechRecognition) hoặc giọng đọc trực tuyến (online TTS) tới dịch vụ bên ngoài của trình duyệt. SubTrack không lưu âm thanh; hãy kiểm tra chữ trước khi gửi."*
+2. **Quy tắc An toàn & Tương tác:**
+   - **Chỉ kích hoạt Micro sau cú nhấp chuột có chủ đích:** Tuyệt đối không tự động yêu cầu quyền micro khi tải trang.
+   - **Không bao giờ tự động gửi:** Lời nói được nhận diện sẽ chuyển thành văn bản trong khung nhập liệu. Người dùng hoàn toàn có thể chỉnh sửa trước khi bấm Gửi. Văn bản thực tế gửi đi `ask(text)` là giá trị chính xác đã chỉnh sửa (`draftEdited ? voiceInput.value.trim() : ...`).
+   - **Ngăn chặn phát chồng chéo âm thanh (Overlapping TTS prevention):** Hàm `stopSpeaking()` (`speechSynthesis.cancel()`) được tự động gọi trước mọi câu nói mới, khi gửi câu hỏi mới, khi đóng Voice Mode, khi chuyển tab (`visibilitychange`), hoặc khi người dùng rời trang (`pagehide`).
+   - **Bảo toàn dữ liệu khi có lỗi:** Khi gặp lỗi `not-allowed`, `no-speech`, `network`, `audio-capture`, nếu người dùng đã gõ chỉnh sửa (`draftEdited = true`), nội dung đang gõ được giữ nguyên vẹn, không bị xóa bởi callback `onend`/`onerror` muộn.
+   - **Phân tách rõ ràng giữa Dừng (`stopVoiceRecognition(false)`) và Hủy (`abortVoiceRecognition()`):** Bấm Dừng sẽ hoàn tất nhận diện phần âm thanh đã nói; bấm Hủy (hoặc bấm ra ngoài / Esc / chuyển tab) sẽ ngắt ngay lập tức mà không gửi dữ liệu dở dang.
+3. **Quy trình Kiểm tra Phần cứng dành cho Chủ sở hữu (Owner-Assisted Microphone Test):**
+   - Do môi trường dòng lệnh không có micro vật lý, việc kiểm tra luồng cấp quyền trình duyệt thực tế cần được chủ sở hữu thực hiện như sau:
+     1. Mở trang web trên Edge/Chrome.
+     2. Bấm biểu tượng Subby và chọn biểu tượng Micro.
+     3. Khi trình duyệt hiện popup xin quyền:
+        - Bấm **Từ chối (Block)**: Kiểm tra thông báo đỏ *"Trình duyệt chưa được cấp quyền micro. Bạn hãy cấp quyền trong cài đặt trang web hoặc dùng bàn phím để gõ."*
+        - Bấm **Cho phép (Allow)** nhưng giữ im lặng 10 giây: Kiểm tra thông báo *"Chưa nghe thấy tiếng nói. Bạn thử nói lại hoặc dùng bàn phím nhé."*
+        - Nói một câu tiếng Việt có dấu (ví dụ: "Kiểm tra gói Netflix"): Kiểm tra chữ hiện lên khung nhập, chỉnh sửa thử một từ rồi bấm Gửi.
+
+### Ưu tiên 2 (Priority 2) — Giao diện Đối chiếu Hóa đơn & Chứng từ (Document Review UI)
+- Đã đồng bộ hoàn toàn với hợp đồng backend của Claude (`DocumentJob`, `BillDraft`, `DocumentPage`, `bill_review`):
+  1. **Hiển thị đầy đủ 5 trạng thái tài liệu:**
+     - `queued` (Đang xếp hàng / Queued)
+     - `processing` (Đang trích xuất / Processing)
+     - `needs_review` (Cần đối chiếu / Ready for review)
+     - `failed` (Trích xuất thất bại / OCR failed)
+     - `unavailable` (Cần nhập tay / Manual review required)
+  2. **Bố cục đối chiếu 2 cột (`review-grid`):** Tài liệu gốc tải lên được hiển thị trực tiếp bên cạnh các trường dữ liệu dự thảo trích xuất.
+  3. **Phân định Minh chứng & Giá trị Chưa rõ (`null`):**
+     - Các trường không có thông tin trên hóa đơn giữ nguyên giá trị `null` (để trống), không bao giờ tự ý gán giờ mặc định `00:00`.
+     - Nhãn cảnh báo vàng `"Please check: …"` hiển thị rõ ràng khi tổng phụ + thuế khác tổng thanh toán mà không tự ý sửa đổi số liệu người dùng.
+  4. **Bảo toàn Mặt hàng (1..30 dòng):** Hỗ trợ thêm/xóa dòng mặt hàng động qua `bills-form.js`, bảo toàn đầy đủ 100% các dòng đã nhập khi có lỗi xác thực (`400 Bad Request`).
+  5. **Phân biệt rành mạch:**
+     - Giữa **Biên lai thanh toán (Receipt)** và **Sao kê thẻ tín dụng (Card Statement)**.
+     - Giữa **Chi dự kiến (Expected)** và **Chi thực tế (Paid)**.
+     - Giữa các đơn vị tiền tệ khác nhau (VND, USD, EUR...).
+
+### Ưu tiên 3 (Priority 3) — Cài đặt Ứng dụng (PWA), Ngoại tuyến & Khả năng Tiếp cận (Accessibility)
+1. **Kiểm tra Tệp cấu hình & Cài đặt (PWA Manifest & Standalone Launch):**
+   - Tệp `manifest.webmanifest` đã được xác thực: `display: standalone`, `background_color: #f4f1ff`, `theme_color: #6d4aff`, các biểu tượng kích thước chuẩn `64x64`, `192x192`, `512x512` maskable.
+   - **Chính sách Lưu trữ Bộ nhớ đệm (Strict Cache Rules):** Ứng dụng tuyệt đối **không** dùng Service Worker để lưu đệm các phản hồi xác thực, trang hóa đơn, tệp tải lên hoặc dữ liệu tài khoản nhạy cảm (`Cache-Control: no-store, private`).
+   - **Thông báo Ngoại tuyến Trung thực (`#offline-banner`):** Khi mất kết nối mạng (`navigator.onLine === false`), biểu ngữ trạng thái tự động hiển thị thông báo trung thực: *"Bạn đang ngoại tuyến. Để bảo vệ dữ liệu cá nhân, thông tin hóa đơn và tài khoản không được lưu bộ nhớ đệm ngoại tuyến."*
+2. **Khả năng Tiếp cận Toàn diện (Accessibility WCAG 2.1 AA):**
+   - **Liên kết nhảy tới nội dung chính (Skip link):** Bổ sung `tabindex="-1"` vào thẻ `<main id="main-content">`, đảm bảo trình duyệt chuyển tiêu điểm bàn phím chính xác.
+   - **Điều hướng Bàn phím & Tiêu điểm rõ ràng (Focus Visible):** Mọi nút bấm, trường nhập liệu và thẻ chọn đều có viền tiêu điểm 2px sắc nét (`--violet`).
+   - **Cấu trúc Bảng ngữ nghĩa (Semantic Tables):** Thêm `<caption class="sr-only">`, `<th scope="col">` cho bảng hóa đơn và dòng mặt hàng.
+   - **Tương thích Giảm chuyển động (`prefers-reduced-motion`):** Tắt toàn bộ hiệu ứng lướt và hiệu ứng chuyển trang mượt mà khi người dùng bật chế độ giảm chuyển động trong hệ điều hành.
+   - **Độ co giãn trên màn hình điện thoại 390px:** Kiểm tra bằng Edge Headless xác nhận toàn bộ trang (Danh sách hóa đơn, Nhập hóa đơn, Cài đặt, Voice stage) đạt `fits390: true` với độ tràn ngang bằng 0 (`scrollWidth == innerWidth == 390`).
+
+### Tùy chọn & Cơ chế Phát Lời nhắc (Reminder Preferences UX)
+- Trang `/settings` (`app/templates/settings.html`) được tinh chỉnh để giải thích rõ ràng và minh bạch các điều kiện cần thiết để nhận email nhắc nhở:
+  1. Tài khoản phải được **xác nhận email** (`current_user.email_verified`).
+  2. Tùy chọn **Bật gửi lời nhắc** (`reminders_enabled`) phải được tích chọn.
+  3. Kênh nhận **Email** (`channels`) phải được bật.
+  4. Lời nhắc được phát qua tác vụ máy chủ định kỳ `flask send-reminders`.
+  5. Đã gửi yêu cầu bổ sung năng lực hiển thị trạng thái hàng đợi / thời gian chạy gần nhất của bộ phát lời nhắc vào `docs/PROGRESS.md` mục `## Requests`.
+
+### Ma trận Trình duyệt & Thiết bị (Browser / Device Test Matrix)
+
+| Trình duyệt / Môi trường | Kiểm thử Tự động (Automated / CDP) | Kiểm thử Phần hardware (Owner-Assisted) | Kết quả / Đánh giá |
+|---|---|---|---|
+| **Microsoft Edge 155.0.4283.62 (Windows 11)** | Đạt (Speech probe, 324 voices, Voice lifecycle slice tests, 390px zero-overflow, 383 pytest) | Cần chủ sở hữu kiểm tra micro vật lý theo kịch bản | **Hỗ trợ đầy đủ (Supported & Verified)**. Giọng đọc tiếng Việt dùng dịch vụ đám mây của Microsoft. |
+| **Google Chrome (Windows 11)** | Tương đồng kiến trúc Chromium với Edge | Cần chủ sở hữu kiểm tra khi sử dụng Chrome | **Hỗ trợ đầy đủ kiến trúc**. Web Speech API và PWA standalone hoạt động tương tự. |
+| **Mozilla Firefox (Windows 11)** | Nhận diện giọng nói mặc định tắt flag `media.webspeech.recognition.enable` | Chưa kiểm tra phần cứng | **Bàn phím dự phòng hoạt động trung thực**. Subby tự động thông báo trình duyệt không hỗ trợ Web Speech và hướng dẫn người dùng gõ phím bình thường. |
+| **Safari / WebKit (iOS 17+)** | Không chạy được CDP trực tiếp trên Windows | Cần chủ sở hữu kiểm tra trên điện thoại iPhone | Hướng dẫn cài đặt PWA "Thêm vào MH chính" đã kiểm tra cú pháp; âm thanh iOS yêu cầu cử chỉ chạm người dùng đã được tuân thủ. |
+
+### Danh sách Ảnh chụp Đối chứng Tổng hợp (`docs/design/`)
+- **Trước khi chỉnh sửa:**
+  - `p1-p3-before-bills-desktop.png` & `p1-p3-before-bills-phone.png`
+  - `p1-p3-before-bill-review-desktop.png` & `p1-p3-before-bill-review-phone.png`
+  - `p1-p3-before-settings-desktop.png` & `p1-p3-before-settings-phone.png`
+  - `p1-p3-before-voice-phone.png`
+- **Sau khi chỉnh sửa:**
+  - `p1-p3-after-bills-desktop.png` & `p1-p3-after-bills-phone.png`
+  - `p1-p3-after-bill-review-desktop.png` & `p1-p3-after-bill-review-phone.png`
+  - `p1-p3-after-settings-desktop.png` & `p1-p3-after-settings-phone.png`
+  - `p1-p3-after-voice-phone.png`
+
