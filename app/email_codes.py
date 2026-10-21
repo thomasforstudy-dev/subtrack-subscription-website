@@ -40,16 +40,23 @@ def issue(user: User) -> str:
 
 
 def use(user: User, code: str) -> bool:
-    """True if the code is right, still valid, and for the current address.
+    """True if the code is right, still valid, for the current address, and the
+    newest code this account was sent.
 
+    "Newest" is checked here, not only by cancelling old codes in issue(): two
+    "send again" clicks at the same moment could each cancel and then each add
+    a code, leaving two unused ones. Only the last one counts.
     The UPDATE only succeeds while used_at is still empty, so a code used
     twice at the same moment works only once.
     """
     now = utcnow()
+    newest = EmailCode.query.filter_by(user_id=user.id).order_by(EmailCode.id.desc()).first()
+    if newest is None or newest.code_hash != _hash(user, code):
+        return False
     won = (
         EmailCode.query.filter(
-            EmailCode.user_id == user.id, EmailCode.code_hash == _hash(user, code),
-            EmailCode.email == user.email, EmailCode.used_at.is_(None), EmailCode.expires_at > now,
+            EmailCode.id == newest.id, EmailCode.email == user.email,
+            EmailCode.used_at.is_(None), EmailCode.expires_at > now,
         ).update({"used_at": now}, synchronize_session=False)
     )
     db.session.commit()

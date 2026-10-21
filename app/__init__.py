@@ -206,6 +206,6 @@ def create_app() -> Flask:
                 fg="yellow",
             )
             raise SystemExit(1)
-        click.secho("OK: connected; required tables, bill columns and indexes exist.", fg="green")
+        click.secho("OK: connected; required tables, columns and indexes exist.", fg="green")
 
     return app

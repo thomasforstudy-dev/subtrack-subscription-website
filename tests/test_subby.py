@@ -132,6 +132,12 @@ def test_fake_cloudflare_header_is_ignored(client, monkeypatch):
     assert ask_from(client, "203.0.113.9", "198.51.100.200").status_code == 429
 
 
-def test_facts_dont_promise_reminders_that_arent_sent_yet():
-    assert "not being sent yet" in subby.FACTS
+def test_facts_match_what_the_site_really_has():
+    # Live: reminders, dashboard, calendar, bills, voice. Not yet: extension, Gmail, photo OCR.
+    facts = subby.FACTS
+    assert "Coming soon" not in facts and "not being sent yet" not in facts
+    for live in ("Reminder emails are on", "Dashboard:", "Calendar:", "Bills:", "microphone"):
+        assert live in facts, live
+    assert "Not available yet: the Chrome extension" in facts and "Gmail" in facts
+    assert "OCR) is not switched on yet" in facts
 

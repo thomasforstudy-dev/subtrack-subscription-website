@@ -25,24 +25,32 @@ LIMIT_PER_HOUR = 30  # questions per visitor, to protect the free model quota
 
 FACTS = """
 AllOutFree is a website that tracks your subscriptions so you can renew or
-cancel in time. Reminder emails before each renewal are being built and are
-not being sent yet.
+cancel in time, and emails you a reminder before each renewal.
 - Sign up with a username, email + password, or with Google or GitHub. Signing
-  up is free. You can reset a forgotten password by email.
+  up is free. Confirm your email with the 6-digit code or the link in the
+  email. You can reset a forgotten password by email.
 - Add a subscription: name, price, currency, cycle (weekly, monthly or yearly),
-  next renewal date, how many days before to remind you, and notes.
-  You can edit or archive it later.
-- Each subscription already has its own "remind days before" number (for
-  example 14, 7 or 3); reminder emails will use it once they are switched on.
+  next renewal date, how many days before to remind you (for example 14, 7, 3),
+  and notes. You can edit or archive it later.
+- Reminder emails are on. They go out at the hour you pick in Settings, in your
+  time zone, if your email is confirmed and reminders are switched on there.
 - Credit card payments: add the card's payment due date like a subscription,
-  so it gets the same early reminder once reminders are switched on.
+  so it gets the same early reminder.
+- Dashboard: monthly cost per currency (never added across currencies), what
+  renews in the next 7 and 30 days, spending by month, recent activity.
+- Calendar: "Add to Google Calendar" buttons and an .ics file of renewal dates.
+- Bills: type in a receipt or card statement, or upload a photo, PDF or Word
+  file; AllOutFree can read text from PDFs and Word files and shows what it
+  found for you to check. Reading photos (OCR) is not switched on yet.
 - Pinned links: save any http/https link, the page title fills in by itself,
   add tags and notes, search them, and pin important ones to the top.
   Good for cancel pages, billing pages and support chats.
+- Subby (me) can also listen and talk back: press the microphone button.
+- Light and dark mode: the sun / moon button.
+- Not available yet: the Chrome extension (Settings already has its tokens)
+  and reading invoices from Gmail.
 - AllOutFree cannot cancel subscriptions for you, cannot see your bank, cannot
   give refunds, and never asks for card numbers or passwords.
-- Coming soon: reminder emails, a dashboard, Google Calendar buttons, a Chrome
-  extension, voice chat.
 """
 
 
