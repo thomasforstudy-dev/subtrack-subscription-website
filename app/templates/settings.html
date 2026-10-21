@@ -99,10 +99,10 @@
           </p>
         </fieldset>
 
-        <div class="status-banner info compact">
-          <strong data-vi="Cơ chế phát thông báo & gửi email nhắc nhở" data-en="Reminder delivery requirements">Cơ chế phát thông báo &amp; gửi email nhắc nhở</strong>
-          <p class="muted small-text" data-vi="Hệ thống gửi email thông qua lệnh máy chủ 'flask send-reminders' chạy định kỳ mỗi giờ. Để nhận email thành công: (1) Tài khoản phải được xác nhận email; (2) Tùy chọn 'Bật gửi lời nhắc' phải được kích hoạt; (3) Kênh Email được tích chọn; (4) Từng gói đăng ký cần có số ngày nhắc trước (lead_days, ví dụ 14, 7, 3) phù hợp." data-en="Reminders are dispatched by the server job 'flask send-reminders' running hourly. Delivery requires: (1) Confirmed email address; (2) 'Send me reminders' active; (3) Email channel checked; (4) Valid lead_days set on each subscription.">
-            Hệ thống gửi email thông qua lệnh máy chủ <code>flask send-reminders</code> chạy định kỳ mỗi giờ. Để nhận email thành công:
+        <div class="status-banner warn compact">
+          <strong data-vi="Trạng thái email nhắc nhở: Chưa bật (Đang chờ phê duyệt)" data-en="Reminder email status: Not switched on yet (Awaiting schedule approval)">Trạng thái email nhắc nhở: Chưa bật (Đang chờ phê duyệt)</strong>
+          <p class="muted small-text" data-vi="Email nhắc nhở hiện chưa được bật (đang chờ phê duyệt lịch gửi tự động). Khi được bật, hệ thống gửi email qua lệnh máy chủ 'flask send-reminders' chạy định kỳ mỗi 30 phút. Để nhận email thành công: (1) Tài khoản phải được xác nhận email; (2) Tùy chọn 'Bật gửi lời nhắc' phải được kích hoạt; (3) Kênh Email được tích chọn; (4) Từng gói đăng ký cần có số ngày nhắc trước (lead_days, ví dụ 14, 7, 3) phù hợp." data-en="Reminder emails are not switched on yet until the owner approves the schedule. Once active, reminders are dispatched by the server job 'flask send-reminders' (every 30 minutes). Delivery requires: (1) Confirmed email address; (2) 'Send me reminders' active; (3) Email channel checked; (4) Valid lead_days set on each subscription.">
+            Email nhắc nhở hiện <strong>chưa được bật</strong> (đang chờ phê duyệt lịch gửi tự động). Khi được bật, hệ thống gửi email qua lệnh máy chủ <code>flask send-reminders</code> (mỗi 30 phút). Để nhận email thành công:
             (1) Tài khoản phải được <strong>xác nhận email</strong>;
             (2) Tùy chọn <strong>Bật gửi lời nhắc</strong> phải được kích hoạt;
             (3) Kênh <strong>Email</strong> được tích chọn;
@@ -157,6 +157,13 @@
         </div>
         <button type="button" class="link small-text" data-dismiss-pwa data-vi="Ẩn hướng dẫn" data-en="Dismiss">Ẩn hướng dẫn</button>
       </div>
+    </div>
+
+    {# 3. Tokens for the Chrome extension (app/api_tokens.py) #}
+    <div class="card" id="extension-tokens">
+      <h2 class="card-title" data-vi="3. Kết nối tiện ích Chrome" data-en="3. Chrome extension tokens">3. Kết nối tiện ích Chrome</h2>
+      <p class="muted small-text" data-vi="Tạo một mã riêng cho tiện ích: nó chỉ xem được các gói sắp gia hạn, và bạn thu hồi được bất cứ lúc nào." data-en="Make a separate token for the extension: it can only see plans that renew soon, and you can revoke it any time.">Tạo một mã riêng cho tiện ích: nó chỉ xem được các gói sắp gia hạn, và bạn thu hồi được bất cứ lúc nào.</p>
+      <p><a class="button secondary btn-sm" href="{{ url_for('api_tokens.list_tokens') }}" data-vi="Quản lý mã tiện ích" data-en="Manage extension tokens">Quản lý mã tiện ích</a></p>
     </div>
   </div>
 {% endblock %}

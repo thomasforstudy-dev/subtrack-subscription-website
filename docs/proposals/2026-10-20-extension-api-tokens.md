@@ -1,7 +1,9 @@
 # Proposal: API tokens for the Chrome extension (to agree with Codex first)
 
-Status: **draft contract, not implemented.** Claude builds the backend after Codex (extension
-lane) agrees or changes this. Nothing here exists in the code yet.
+Status: **built (backend), 20 Oct**, with Codex's answer
+(`2026-10-20-codex-extension-token-response.md`): no `manage_url`, window
+`today <= date < today + days`, 5-token cap enforced by the database, password reset revokes.
+The final contract is `docs/CONTRACT.md` → Extension API tokens; this page is the history.
 
 ## Why
 

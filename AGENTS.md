@@ -41,6 +41,7 @@ helper, and install a Chrome extension for reminders.
 | `app/subby.py`, `app/ai_providers.py` | Help bot endpoint; which AI model answers (Gemini / Phi / fake) |
 | `app/links.py`, `app/link_preview.py` | Pinned links + automatic page titles |
 | `app/admin.py` | Admin user list |
+| `app/api_tokens.py`, `app/api.py` | Extension tokens (Settings page) and the token-only `/api/v1/` API |
 | `app/templates/` | HTML pages |
 | `database/01_schema.sql` | **T-SQL schema: the source of truth for SQL Server** |
 | `tests/` | Automated tests (pytest) |
