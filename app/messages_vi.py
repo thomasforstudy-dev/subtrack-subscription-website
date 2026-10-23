@@ -123,6 +123,12 @@ VI = {
     "This draft is already closed.": "Bản nháp này đã đóng.",
     # extension tokens
     "Pick what the token may see.": "Chọn những gì mã được xem.",
+    # read aloud
+    "Please upload a Word (.docx) file or a PDF.": "Vui lòng tải lên tệp Word (.docx) hoặc PDF.",
+    "We couldn't read the text in that file.": "Không đọc được chữ trong tệp này.",
+    "That file has no text we can read (a scanned PDF needs OCR).":
+        "Tệp này không có chữ để đọc (PDF dạng ảnh quét cần OCR).",
+    "Upload a file or paste some text first.": "Hãy tải tệp lên hoặc dán đoạn chữ trước.",
 }
 
 # Messages with a changing part. {0}, {1} ... are the parts in brackets.

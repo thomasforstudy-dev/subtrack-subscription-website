@@ -57,7 +57,8 @@ def wrong_language(html: str, lang: str) -> list[str]:
 
 PAGES_SIGNED_OUT = ["/", "/login", "/register", "/forgot-password", "/no-such-page"]
 PAGES_SIGNED_IN = ["/dashboard", "/subscriptions/", "/subscriptions/new", "/bills/", "/bills/new", "/links/",
-                   "/calendar/", "/settings", "/settings/tokens"]
+                   "/calendar/", "/settings", "/settings/tokens", "/tools/", "/tools/forecast/",
+                   "/tools/read-aloud/", "/tools/food-roulette/"]
 
 
 @pytest.mark.parametrize("lang", ["en", "vi"])

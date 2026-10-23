@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "_mascot.html" import mascot %}
+{% block title %}{{ t("Dự đoán chi tiêu", "Spending forecast") }} — AllOutFree{% endblock %}
+{% set words = {"day": (t("Ngày mai", "Tomorrow"), t("cùng thứ trong tuần", "same weekdays")),
+                "week": (t("Tuần tới", "Next week"), t("tuần", "weeks")),
+                "month": (t("Tháng tới", "Next month"), t("tháng", "months"))} %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1>{{ t("Dự đoán chi tiêu", "Spending forecast") }}</h1>
+      <p class="muted">{{ t("Đoán bạn sẽ mua gì dựa trên hóa đơn đã lưu: càng nhiều hóa đơn, dự đoán càng chính xác.", "A guess at what you'll buy, based on your saved receipts: the more receipts, the better the guess.") }}</p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
+    </div>
+  </div>
+
+  <nav class="period-switch" aria-label="{{ t('Chọn khoảng thời gian', 'Pick a period') }}">
+    {% for p in periods %}
+      <a class="button btn-sm{% if p != result.period %} secondary{% endif %}" href="{{ url_for('forecast.show', period=p) }}" {% if p == result.period %}aria-current="page"{% endif %}>{{ words[p][0] }}</a>
+    {% endfor %}
+  </nav>
+
+  {% if not result.counted %}
+    <div class="card empty-state-card">
+      {{ mascot() }}
+      <h2>{{ t("Chưa có hóa đơn để dự đoán", "No receipts to learn from yet") }}</h2>
+      <p class="muted">{{ t("Thêm vài hóa đơn mua sắm (có ngày và tổng tiền), rồi quay lại đây.", "Add a few shopping receipts (with a date and a total), then come back here.") }}</p>
+      <a class="button" href="{{ url_for('bills.list_bills') }}">{{ t("Thêm hóa đơn", "Add a receipt") }}</a>
+    </div>
+  {% else %}
+    <div class="card forecast-summary">
+      <div class="card-head-row">
+        <h2 class="card-title">
+          {{ words[result.period][0] }}
+          ·
+          {% if result.period == "day" %}{{ result.target.strftime('%d/%m/%Y') }}
+          {% elif result.period == "week" %}{{ t("tuần từ", "week of") }} {{ result.target.strftime('%d/%m') }}
+          {% else %}{{ result.target.strftime('%m/%Y') }}{% endif %}
+        </h2>
+        <span class="pill {{ {'good': 'mint', 'medium': 'sun-label', 'low': 'hot-label'}[result.confidence] }}">
+          {{ {"good": t("Khá chắc", "Fairly sure"), "medium": t("Tạm được", "So-so"), "low": t("Còn ít dữ liệu", "Little data")}[result.confidence] }}
+        </span>
+      </div>
+      <div class="forecast-totals">
+        {% for row in result.expected %}
+          <p><span class="muted small-text">{{ t("Dự kiến chi", "Expected spend") }} ({{ row.currency }})</span><strong>{{ row.currency }} {{ row.amount|money(row.currency) }}</strong></p>
+        {% else %}
+          <p class="muted">{{ t("Những lần trước vào khoảng này bạn không mua gì.", "You bought nothing in this kind of period before.") }}</p>
+        {% endfor %}
+      </div>
+      <p class="muted small-text">{{ t("Học từ", "Learned from") }} {{ result.counted }} {{ words[result.period][1] }} {{ t("gần nhất. Phần trăm = số lần có mua / số lần xem xét.", "back. Percent = periods you bought in / periods looked at.") }}</p>
+    </div>
+
+    <div class="forecast-grid">
+      <div class="card">
+        <h2 class="card-title">{{ t("Nơi bạn có thể mua", "Where you'll probably buy") }}</h2>
+        {% if result.shops %}
+          <ul class="chance-list">
+            {% for shop in result.shops %}
+              <li>
+                <div class="chance-row"><strong>{{ shop.name }}</strong><span>{{ shop.chance }}%</span></div>
+                <div class="chance-bar" aria-hidden="true"><i style="width: {{ shop.chance }}%"></i></div>
+                <small class="muted">{{ t("Thường", "Usually") }} {{ shop.currency }} {{ shop.typical|money(shop.currency) }}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">{{ t("Chưa có nơi nào lặp lại.", "No place shows up yet.") }}</p>
+        {% endif %}
+      </div>
+      <div class="card">
+        <h2 class="card-title">{{ t("Món bạn có thể mua", "What you'll probably buy") }}</h2>
+        {% if result.things %}
+          <ul class="chance-list">
+            {% for item in result.things %}
+              <li>
+                <div class="chance-row"><strong>{{ item.name }}</strong><span>{{ item.chance }}%</span></div>
+                <div class="chance-bar" aria-hidden="true"><i style="width: {{ item.chance }}%"></i></div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">{{ t("Thêm các dòng món hàng vào hóa đơn để thấy phần này.", "Add item lines to your receipts to see this part.") }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card forecast-ai">
+      <h2 class="card-title">✨ {{ t("Hỏi Gemini", "Ask Gemini") }}</h2>
+      <p class="muted small-text">{{ t("Gemini (AI của Google) viết dự đoán bằng lời và một mẹo tiết kiệm. Chỉ các con số ở trên (tên quán, phần trăm, số tiền) được gửi cho Google, không gửi hóa đơn.", "Gemini (Google's AI) writes the forecast in words, plus one money tip. Only the numbers above (place names, percents, amounts) go to Google, never your bills.") }}</p>
+      {% if advice %}
+        <p class="forecast-advice">{{ advice }}</p>
+      {% elif problem %}
+        <p class="status-banner warn compact">
+          {{ {"too-many": t("Bạn đã hỏi nhiều lần trong giờ này. Thử lại sau nhé.", "You've asked a lot this hour. Try again later."),
+              "ai-down": t("Gemini đang bận hoặc hết lượt miễn phí. Các con số ở trên vẫn đúng.", "Gemini is busy or out of free quota. The numbers above are still right."),
+              "no-data": t("Chưa có đủ dữ liệu để hỏi.", "Not enough data to ask about yet.")}[problem] }}
+        </p>
+      {% endif %}
+      <form method="post" action="{{ url_for('forecast.show') }}" data-submitting-text="{{ t('Gemini đang viết…', 'Gemini is writing…') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="period" value="{{ result.period }}" />
+        <button type="submit">{{ t("Hỏi Gemini", "Ask Gemini") if not advice else t("Hỏi lại", "Ask again") }}</button>
+      </form>
+    </div>
+  {% endif %}
+{% endblock %}

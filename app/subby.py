@@ -47,6 +47,13 @@ cancel in time, and emails you a reminder before each renewal.
   Good for cancel pages, billing pages and support chats.
 - Subby (me) can also listen and talk back: press the microphone button.
 - Light and dark mode: the sun / moon button.
+- AI tools (menu "AI tools", for logged-in users):
+  Spending forecast: what you'll probably buy and spend tomorrow, next week or
+  next month, counted from your saved receipts; "Ask Gemini" explains it.
+  Read aloud: upload a Word (.docx) file or a PDF with text, or paste text,
+  and Gemini reads it out loud paragraph by paragraph (or the browser voice).
+  Food roulette: a wheel of the places on your food receipts, to pick where
+  to eat; "My usual" or "Something different".
 - Not available yet: the Chrome extension (Settings already has its tokens)
   and reading invoices from Gmail.
 - AllOutFree cannot cancel subscriptions for you, cannot see your bank, cannot

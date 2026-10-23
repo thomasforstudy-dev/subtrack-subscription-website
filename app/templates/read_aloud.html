@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Đọc to tài liệu", "Read aloud") }} — AllOutFree{% endblock %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1>{{ t("Đọc to tài liệu", "Read aloud") }}</h1>
+      <p class="muted">{{ t("Tải lên tệp Word (.docx) hoặc PDF có chữ, hoặc dán đoạn văn, rồi nghe AI đọc to.", "Upload a Word (.docx) file or a PDF with text, or paste some text, then listen to the AI read it.") }}</p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
+    </div>
+  </div>
+
+  <form class="card sub-form read-form" method="post" action="{{ url_for('read_aloud.show') }}" enctype="multipart/form-data" data-submitting-text="{{ t('Đang đọc tệp…', 'Reading the file…') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <div class="field-group">
+      <label for="read-file">{{ t("Tệp Word hoặc PDF (tối đa 10 MB, PDF tối đa 5 trang)", "Word file or PDF (up to 10 MB, PDFs up to 5 pages)") }}</label>
+      <input id="read-file" type="file" name="document" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    </div>
+    <div class="field-group">
+      <label for="read-text">{{ t("Hoặc dán đoạn văn", "Or paste text") }}</label>
+      <textarea id="read-text" name="text" rows="4" maxlength="30000" placeholder="{{ t('Dán chữ vào đây…', 'Paste text here…') }}"></textarea>
+    </div>
+    <p class="muted small-text">🔒 {{ t("Tệp chỉ được đọc một lần và không được lưu. Khi bấm nghe, từng đoạn được gửi cho Gemini của Google để tạo giọng đọc.", "The file is read once and not saved. When you press play, each paragraph is sent to Gemini (Google) to make the voice.") }}</p>
+    <div class="form-actions"><button type="submit">{{ t("Chuẩn bị đọc", "Get it ready") }}</button></div>
+  </form>
+
+  {% if paragraphs %}
+    <section class="card reader" data-reader data-speak-url="{{ url_for('read_aloud.speak') }}" aria-label="{{ t('Trình đọc', 'Reader') }}">
+      <div class="reader-bar">
+        <button type="button" data-reader-play>▶ {{ t("Nghe", "Play") }}</button>
+        <button type="button" class="secondary" data-reader-prev aria-label="{{ t('Đoạn trước', 'Previous paragraph') }}">⏮</button>
+        <button type="button" class="secondary" data-reader-next aria-label="{{ t('Đoạn sau', 'Next paragraph') }}">⏭</button>
+        <button type="button" class="secondary" data-reader-stop>■ {{ t("Dừng", "Stop") }}</button>
+        <label class="reader-pick">{{ t("Giọng", "Voice") }}
+          <select data-reader-voice>
+            {% for voice in voices %}<option value="{{ voice }}">Gemini · {{ voice }}</option>{% endfor %}
+            <option value="browser">{{ t("Giọng của trình duyệt (miễn phí)", "Browser voice (free)") }}</option>
+          </select>
+        </label>
+        <label class="reader-pick">{{ t("Tốc độ", "Speed") }}
+          <select data-reader-speed>
+            <option value="0.75">0.75×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.25">1.25×</option>
+            <option value="1.5">1.5×</option>
+          </select>
+        </label>
+      </div>
+      <p class="muted small-text" data-reader-status aria-live="polite">{{ t("Bấm Nghe, hoặc bấm vào một đoạn để bắt đầu từ đó.", "Press Play, or click a paragraph to start there.") }}</p>
+      {% if title %}<h2 class="card-title">{{ title }}</h2>{% endif %}
+      <div class="reader-text">
+        {% for paragraph in paragraphs %}
+          <p data-reader-part="{{ loop.index0 }}" tabindex="0">{{ paragraph }}</p>
+        {% endfor %}
+      </div>
+      {% if cut %}<p class="muted small-text">{{ t("Tài liệu dài nên chỉ đọc khoảng 30.000 ký tự đầu.", "The document is long, so only about the first 30,000 characters are read.") }}</p>{% endif %}
+    </section>
+  {% endif %}
+{% endblock %}
+{% block scripts %}
+  {% if paragraphs %}<script src="{{ url_for('static', filename='read-aloud.js') }}" defer></script>{% endif %}
+{% endblock %}

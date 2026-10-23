@@ -102,13 +102,17 @@ def create_app() -> Flask:
     from app.bills import bp as bills_bp
     from app.calendar import bp as calendar_bp
     from app.dashboard import bp as dashboard_bp
+    from app.forecast import bp as forecast_bp
     from app.links import bp as links_bp
     from app.main import bp as main_bp
     from app.oauth import bp as oauth_bp
+    from app.read_aloud import bp as read_aloud_bp
     from app.reminders import send_reminders_command
+    from app.roulette import bp as roulette_bp
     from app.settings import bp as settings_bp
     from app.subby import bp as subby_bp
     from app.subscriptions import bp as subscriptions_bp
+    from app.tools import bp as tools_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -124,6 +128,10 @@ def create_app() -> Flask:
     app.register_blueprint(bill_review_bp)
     app.register_blueprint(api_tokens_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(tools_bp)
+    app.register_blueprint(forecast_bp)
+    app.register_blueprint(read_aloud_bp)
+    app.register_blueprint(roulette_bp)
     app.cli.add_command(send_reminders_command)
     app.cli.add_command(process_documents_command)
 
@@ -162,6 +170,9 @@ def create_app() -> Flask:
         if request.path == "/bills/upload":
             flash("That file is bigger than 10 MB. Please upload a smaller one.")
             return redirect(url_for("bills.list_bills"))
+        if request.path == "/tools/read-aloud/":
+            flash("That file is bigger than 10 MB. Please upload a smaller one.")
+            return redirect(url_for("read_aloud.show"))
         return error
 
     @app.context_processor
