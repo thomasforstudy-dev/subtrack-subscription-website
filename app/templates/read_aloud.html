@@ -4,33 +4,33 @@
   <div class="section-head">
     <div>
       <h1>{{ t("Đọc to tài liệu", "Read aloud") }}</h1>
-      <p class="muted">{{ t("Tải lên tệp Word (.docx) hoặc PDF có chữ, hoặc dán đoạn văn, rồi nghe AI đọc to.", "Upload a Word (.docx) file or a PDF with text, or paste some text, then listen to the AI read it.") }}</p>
+      <p class="muted">{{ t("Tải lên tệp PDF (tối đa 300 trang) hoặc Word, hoặc dán đoạn văn, rồi nghe AI đọc to.", "Upload a PDF (up to 300 pages) or a Word file, or paste some text, then listen to the AI read it.") }}</p>
     </div>
     <div class="head-actions">
       <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
     </div>
   </div>
 
-  <form class="card sub-form read-form" method="post" action="{{ url_for('read_aloud.show') }}" enctype="multipart/form-data" data-submitting-text="{{ t('Đang đọc tệp…', 'Reading the file…') }}">
+  <form class="card sub-form read-form" method="post" action="{{ url_for('read_aloud.show') }}" enctype="multipart/form-data" data-submitting-text="{{ t('Đang đọc tệp… (tệp dài có thể mất một phút)', 'Reading the file… (a long file can take a minute)') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <div class="field-group">
-      <label for="read-file">{{ t("Tệp Word hoặc PDF (tối đa 10 MB, PDF tối đa 5 trang)", "Word file or PDF (up to 10 MB, PDFs up to 5 pages)") }}</label>
-      <input id="read-file" type="file" name="document" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+      <label for="read-file">{{ t("Tệp PDF (tối đa 40 MB, 300 trang) hoặc Word (tối đa 10 MB)", "PDF (up to 40 MB, 300 pages) or Word file (up to 10 MB)") }}</label>
+      <input id="read-file" type="file" name="document" accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
     </div>
     <div class="field-group">
       <label for="read-text">{{ t("Hoặc dán đoạn văn", "Or paste text") }}</label>
-      <textarea id="read-text" name="text" rows="4" maxlength="30000" placeholder="{{ t('Dán chữ vào đây…', 'Paste text here…') }}"></textarea>
+      <textarea id="read-text" name="text" rows="4" maxlength="100000" placeholder="{{ t('Dán chữ vào đây…', 'Paste text here…') }}"></textarea>
     </div>
-    <p class="muted small-text">🔒 {{ t("Tệp chỉ được đọc một lần và không được lưu. Khi bấm nghe, từng đoạn được gửi cho Gemini của Google để tạo giọng đọc.", "The file is read once and not saved. When you press play, each paragraph is sent to Gemini (Google) to make the voice.") }}</p>
+    <p class="muted small-text">🔒 {{ t("Tệp chỉ được đọc một lần và không được lưu. Khi bấm nghe, từng đoạn được gửi cho Gemini của Google để tạo giọng đọc. Tài liệu rất dài có thể dùng hết lượt miễn phí của Gemini; khi đó trang tự chuyển sang giọng của trình duyệt.", "The file is read once and not saved. When you press play, each part is sent to Google's Gemini to make the voice. A very long document can use up Gemini's free quota; the page then switches to the browser voice by itself.") }}</p>
     <div class="form-actions"><button type="submit">{{ t("Chuẩn bị đọc", "Get it ready") }}</button></div>
   </form>
 
-  {% if paragraphs %}
-    <section class="card reader" data-reader data-speak-url="{{ url_for('read_aloud.speak') }}" aria-label="{{ t('Trình đọc', 'Reader') }}">
+  {% if doc %}
+    <section class="card reader" data-reader data-speak-url="{{ url_for('read_aloud.speak') }}" data-doc-key="{{ title }}:{{ doc.count }}" aria-label="{{ t('Trình đọc', 'Reader') }}">
       <div class="reader-bar">
         <button type="button" data-reader-play>▶ {{ t("Nghe", "Play") }}</button>
-        <button type="button" class="secondary" data-reader-prev aria-label="{{ t('Đoạn trước', 'Previous paragraph') }}">⏮</button>
-        <button type="button" class="secondary" data-reader-next aria-label="{{ t('Đoạn sau', 'Next paragraph') }}">⏭</button>
+        <button type="button" class="secondary" data-reader-prev aria-label="{{ t('Đoạn trước', 'Previous part') }}">⏮</button>
+        <button type="button" class="secondary" data-reader-next aria-label="{{ t('Đoạn sau', 'Next part') }}">⏭</button>
         <button type="button" class="secondary" data-reader-stop>■ {{ t("Dừng", "Stop") }}</button>
         <label class="reader-pick">{{ t("Giọng", "Voice") }}
           <select data-reader-voice>
@@ -44,20 +44,37 @@
             <option value="1" selected>1×</option>
             <option value="1.25">1.25×</option>
             <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
           </select>
         </label>
+        {% if doc.sections|length > 1 and doc.sections[0].page %}
+          <label class="reader-pick">{{ t("Tới trang", "Go to page") }}
+            <select data-reader-page>
+              {% for section in doc.sections %}<option value="{{ section.parts[0][0] }}">{{ section.page }}</option>{% endfor %}
+            </select>
+          </label>
+        {% endif %}
       </div>
-      <p class="muted small-text" data-reader-status aria-live="polite">{{ t("Bấm Nghe, hoặc bấm vào một đoạn để bắt đầu từ đó.", "Press Play, or click a paragraph to start there.") }}</p>
+      <div class="reader-progress" aria-hidden="true"><i data-reader-progress></i></div>
+      <p class="muted small-text" data-reader-status aria-live="polite">{{ t("Bấm Nghe, hoặc bấm vào một đoạn để bắt đầu từ đó.", "Press Play, or click a part to start there.") }}</p>
+      <button type="button" class="button secondary btn-sm" data-reader-resume hidden></button>
       {% if title %}<h2 class="card-title">{{ title }}</h2>{% endif %}
+      <p class="muted small-text">{{ doc.count }} {{ t("đoạn", "parts") }}{% if doc.sections[0].page %} · {{ doc.sections|length }} {{ t("trang có chữ", "pages with text") }}{% endif %}</p>
+      {% if doc.skipped %}
+        <p class="muted small-text">{{ t("Bỏ qua các trang không có chữ (ảnh quét):", "Skipped pages with no text (scans):") }} {{ doc.skipped|join(", ") }}</p>
+      {% endif %}
       <div class="reader-text">
-        {% for paragraph in paragraphs %}
-          <p data-reader-part="{{ loop.index0 }}" tabindex="0">{{ paragraph }}</p>
+        {% for section in doc.sections %}
+          {% if section.page %}<h3 class="reader-page" id="page-{{ section.page }}">{{ t("Trang", "Page") }} {{ section.page }}</h3>{% endif %}
+          {% for index, part in section.parts %}
+            <p data-reader-part="{{ index }}" data-page="{{ section.page or '' }}" tabindex="0">{{ part }}</p>
+          {% endfor %}
         {% endfor %}
       </div>
-      {% if cut %}<p class="muted small-text">{{ t("Tài liệu dài nên chỉ đọc khoảng 30.000 ký tự đầu.", "The document is long, so only about the first 30,000 characters are read.") }}</p>{% endif %}
+      {% if doc.cut %}<p class="muted small-text">{{ t("Tài liệu rất dài nên chỉ đọc khoảng 600.000 ký tự đầu.", "The document is very long, so only about the first 600,000 characters are read.") }}</p>{% endif %}
     </section>
   {% endif %}
 {% endblock %}
 {% block scripts %}
-  {% if paragraphs %}<script src="{{ url_for('static', filename='read-aloud.js') }}" defer></script>{% endif %}
+  {% if doc %}<script src="{{ url_for('static', filename='read-aloud.js') }}" defer></script>{% endif %}
 {% endblock %}

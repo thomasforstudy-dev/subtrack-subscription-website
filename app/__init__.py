@@ -81,7 +81,15 @@ def create_app() -> Flask:
             return user
         return None
 
+    from app.read_aloud import MAX_PDF_BYTES
     from app.security import check_csrf, csrf_token
+
+    @app.before_request
+    def bigger_upload_limit():
+        # Read aloud takes book-sized PDFs; every other form keeps the 11 MB limit.
+        # This must run before check_csrf, which reads the form (and so the upload).
+        if request.endpoint == "read_aloud.show":
+            request.max_content_length = MAX_PDF_BYTES + 1024 * 1024  # + room for the form fields
 
     app.before_request(check_csrf)
     app.jinja_env.globals["csrf_token"] = csrf_token
@@ -171,7 +179,7 @@ def create_app() -> Flask:
             flash("That file is bigger than 10 MB. Please upload a smaller one.")
             return redirect(url_for("bills.list_bills"))
         if request.path == "/tools/read-aloud/":
-            flash("That file is bigger than 10 MB. Please upload a smaller one.")
+            flash("That PDF is bigger than 40 MB.")
             return redirect(url_for("read_aloud.show"))
         return error
 

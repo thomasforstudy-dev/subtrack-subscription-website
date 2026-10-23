@@ -178,7 +178,32 @@
     }
   }
 
+  // Gemini's voice (/subby/speak) is tried first; the browser's voice is the backup.
+  let geminiAudio = null;
+  let speakRun = 0; // bumps on every start/stop, so a late Gemini answer is ignored
+  let geminiVoiceOff = false; // after Gemini fails once, this page uses the browser voice
+
+  function csrfHeaders(extra) {
+    const headers = Object.assign({}, extra || {});
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.content) headers["X-CSRF-Token"] = meta.content;
+    return headers;
+  }
+
+  function finishSpeaking() {
+    if (ttsStopBtn) ttsStopBtn.hidden = true;
+    resetActiveSpeakBtn();
+    if (voiceStage && voiceStage.dataset.stageState === "speaking") {
+      setVoiceStageState("idle");
+    }
+  }
+
   function stopSpeaking() {
+    speakRun += 1;
+    if (geminiAudio) {
+      geminiAudio.pause();
+      geminiAudio = null;
+    }
     if ("speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
@@ -186,11 +211,7 @@
         // ignore
       }
     }
-    if (ttsStopBtn) ttsStopBtn.hidden = true;
-    resetActiveSpeakBtn();
-    if (voiceStage && voiceStage.dataset.stageState === "speaking") {
-      setVoiceStageState("idle");
-    }
+    finishSpeaking();
   }
 
   let cachedVoices = [];
@@ -227,12 +248,60 @@
   }
 
   function speakText(text, triggerBtn) {
-    if (!("speechSynthesis" in window) || !text) return;
+    if (!text) return;
     if (triggerBtn && triggerBtn === activeSpeakBtn) {
       stopSpeaking();
       return;
     }
     stopSpeaking();
+    if (!root.dataset.speakUrl || geminiVoiceOff || !window.fetch) {
+      speakWithBrowser(text, triggerBtn);
+      return;
+    }
+    const run = speakRun;
+    if (ttsStopBtn) ttsStopBtn.hidden = false;
+    if (triggerBtn) {
+      activeSpeakBtn = triggerBtn;
+      triggerBtn.textContent = tr("⏹ Dừng đọc", "⏹ Stop");
+      triggerBtn.classList.add("is-speaking");
+      triggerBtn.setAttribute("aria-pressed", "true");
+    }
+    setVoiceStageState("speaking");
+    if (voiceSpeakPill) voiceSpeakPill.textContent = tr("🔊 Gemini đang chuẩn bị giọng…", "🔊 Gemini is getting the voice ready…");
+    fetch(root.dataset.speakUrl, {
+      method: "POST",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ text: text }),
+    })
+      .then((res) => (res.ok ? res.blob() : Promise.reject(new Error(String(res.status)))))
+      .then((blob) => {
+        if (run !== speakRun) return;
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        geminiAudio = audio;
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          if (run === speakRun) {
+            geminiAudio = null;
+            finishSpeaking();
+          }
+        };
+        if (voiceSpeakPill) voiceSpeakPill.textContent = tr("🔊 Đang đọc (giọng Gemini)", "🔊 Speaking (Gemini voice)");
+        return audio.play();
+      })
+      .catch((error) => {
+        if (run !== speakRun) return;
+        // A number = the server said no (busy, quota, limit): stop asking Gemini on this page.
+        if (error && /^\d+$/.test(error.message)) geminiVoiceOff = true;
+        speakWithBrowser(text, triggerBtn);
+      });
+  }
+
+  function speakWithBrowser(text, triggerBtn) {
+    if (!("speechSynthesis" in window)) {
+      finishSpeaking();
+      return;
+    }
     const utter = new SpeechSynthesisUtterance(text);
     const uiLang = String(
       document.documentElement.getAttribute("data-ui-lang") || document.documentElement.lang || "vi"
@@ -302,7 +371,7 @@
     p.textContent = text;
     wrap.append(p);
 
-    if (who.includes("bot") && !who.includes("typing") && "speechSynthesis" in window) {
+    if (who.includes("bot") && !who.includes("typing") && ("speechSynthesis" in window || root.dataset.speakUrl)) {
       const footer = document.createElement("div");
       footer.className = "msg-tools";
       const speakBtn = document.createElement("button");
@@ -714,7 +783,97 @@
     });
   }
 
+  // ---------- Recording for Gemini (browsers without speech recognition, like Firefox) ----------
+  let recorder = null;
+  let recordTimer = null;
+  const RECORD_SECONDS = 30;
+
+  function canRecord() {
+    return Boolean(
+      root.dataset && root.dataset.listenUrl &&
+      typeof navigator !== "undefined" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+      typeof MediaRecorder !== "undefined"
+    );
+  }
+
+  function pickRecordingType() {
+    const types = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"];
+    return types.find((type) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) || "";
+  }
+
+  function stopRecording(cancel) {
+    if (!recorder) return;
+    const active = recorder;
+    recorder = null;
+    active.cancelled = Boolean(cancel);
+    clearTimeout(recordTimer);
+    try {
+      active.stop();
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  async function startRecording() {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      const reason = tr("Micro bị chặn hoặc không có. Hãy cho phép micro, hoặc nhập câu hỏi nhé.", "The microphone is blocked or missing. Allow it, or type your question.");
+      setVoiceStageState("idle", "⚠ " + reason);
+      say("🎤 " + reason, "bot", { badge: tr("Trạng thái Micro", "Microphone status") });
+      return;
+    }
+    const type = pickRecordingType();
+    const chunks = [];
+    const active = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream);
+    recorder = active;
+    active.ondataavailable = (event) => {
+      if (event.data && event.data.size) chunks.push(event.data);
+    };
+    active.onstop = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      syncMicButtons(false);
+      if (voiceBar) voiceBar.hidden = true;
+      if (active.cancelled || !chunks.length) {
+        setVoiceStageState("idle");
+        return;
+      }
+      const mime = (active.mimeType || type || "audio/webm").split(";")[0];
+      sendRecording(new Blob(chunks, { type: mime }), mime);
+    };
+    active.start();
+    syncMicButtons(true);
+    setVoiceStageState("listening", tr("🎤 Đang ghi âm… bấm Mic lần nữa để dừng", "🎤 Recording… press the mic again to stop"));
+    if (voiceBar && (!voiceStage || voiceStage.hidden)) voiceBar.hidden = false;
+    if (voiceState) voiceState.textContent = tr("🎤 Đang ghi âm… bấm Dừng khi nói xong", "🎤 Recording… press Stop when you're done");
+    if (voicePreview) voicePreview.textContent = tr("Gemini sẽ viết lại câu bạn nói sau khi bạn dừng.", "Gemini writes down what you said after you stop.");
+    if (voiceTranscriptActions) voiceTranscriptActions.hidden = true;
+    recordTimer = setTimeout(() => stopRecording(false), RECORD_SECONDS * 1000);
+  }
+
+  function sendRecording(blob, mime) {
+    setVoiceStageState("thinking", tr("✍️ Gemini đang viết lại câu bạn nói…", "✍️ Gemini is writing down what you said…"));
+    fetch(root.dataset.listenUrl, { method: "POST", headers: csrfHeaders({ "Content-Type": mime }), body: blob })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((data) => {
+        const text = String((data && data.text) || "").trim();
+        if (!text) {
+          setVoiceStageState("idle", "⚠ " + tr("Chưa nghe rõ, bạn nói lại nhé.", "I couldn't hear anything, please try again."));
+          return;
+        }
+        input.value = text;
+        draftEdited = false;
+        stopVoiceRecognition(false); // shows the words with the "Send" button, like speech recognition
+      })
+      .catch(() => {
+        setVoiceStageState("idle", "⚠ " + tr("Không chuyển được giọng nói thành chữ. Hãy nhập câu hỏi nhé.", "Couldn't turn your voice into text. Please type your question."));
+        input.focus();
+      });
+  }
+
   function stopVoiceRecognition(cancelled) {
+    if (recorder) stopRecording(cancelled);
     if (recognition) {
       const active = recognition;
       try {
@@ -763,7 +922,7 @@
     if (openStageToo && voiceStage && voiceStage.hidden) {
       setVoiceModeOpen(true);
     }
-    if (recognition) {
+    if (recognition || recorder) {
       stopVoiceRecognition(false);
       return;
     }
@@ -775,6 +934,10 @@
     const isEn = uiLang.startsWith("en");
 
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec && canRecord()) {
+      startRecording();
+      return;
+    }
     if (!SpeechRec) {
       const unsupportedMsg = isEn
         ? "🔇 This browser does not support Web Speech API — please type your question in the box below."

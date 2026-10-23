@@ -8,10 +8,10 @@ answer list (static/subby.js).
 
 import logging
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 from flask_login import current_user
 
-from app.ai_providers import ProviderUnavailable, Turn, chat_provider, fallback_provider
+from app.ai_providers import AUDIO_TYPES, ProviderUnavailable, Turn, chat_provider, fallback_provider, speak as gemini_speak, transcribe
 from app.security import RateLimiter, client_ip
 from app.subby_tools import TOOL_HELP, ToolError, find_tool_call, run_tool
 
@@ -45,13 +45,15 @@ cancel in time, and emails you a reminder before each renewal.
 - Pinned links: save any http/https link, the page title fills in by itself,
   add tags and notes, search them, and pin important ones to the top.
   Good for cancel pages, billing pages and support chats.
-- Subby (me) can also listen and talk back: press the microphone button.
+- Subby (me) can also listen and talk back: press the microphone button. My
+  answers are read out with Gemini's voice.
 - Light and dark mode: the sun / moon button.
 - AI tools (menu "AI tools", for logged-in users):
   Spending forecast: what you'll probably buy and spend tomorrow, next week or
   next month, counted from your saved receipts; "Ask Gemini" explains it.
-  Read aloud: upload a Word (.docx) file or a PDF with text, or paste text,
-  and Gemini reads it out loud paragraph by paragraph (or the browser voice).
+  Read aloud: upload a PDF with text (up to 300 pages, 40 MB), a Word (.docx)
+  file, or paste text, and Gemini reads it out loud part by part (or the
+  browser voice); jump to a page, change speed, continue where you stopped.
   Food roulette: a wheel of the places on your food receipts, to pick where
   to eat; "My usual" or "Something different".
 - Not available yet: the Chrome extension (Settings already has its tokens)
@@ -87,6 +89,11 @@ Facts:
 
 # Kept in memory: it resets when the server restarts, which is fine for a simple limit.
 questions = RateLimiter(LIMIT_PER_HOUR, 3600)
+spoken = RateLimiter(40, 3600)  # answers read out by Gemini's voice, per visitor
+heard = RateLimiter(LIMIT_PER_HOUR, 3600)  # recordings written down by Gemini, per visitor
+MAX_SPOKEN = 600  # characters: Subby's answers are 1-3 sentences
+MAX_RECORDING = 2 * 1024 * 1024  # about a minute of speech from the browser
+SUBBY_VOICE = "Puck"  # an upbeat Gemini voice
 
 
 def clean_history(raw) -> list[Turn]:
@@ -161,6 +168,43 @@ def ask():
     if not answer:
         return jsonify(answer=None, reason="empty", provider=used.name), 502
     return jsonify(answer=answer, handoff=handoff, **meta)
+
+
+@bp.post("/speak")
+def speak():
+    """Subby's answer as Gemini's voice (.wav). The page uses the browser's
+    voice instead if this fails. Needs the page's CSRF header, so other sites
+    can't spend our free quota."""
+    data = request.get_json(silent=True)
+    text = " ".join(str(data.get("text", "")).split())[:MAX_SPOKEN] if isinstance(data, dict) else ""
+    if not text:
+        return jsonify(error="empty"), 400
+    if not spoken.hit(client_ip()):
+        return jsonify(error="too-many"), 429
+    try:
+        audio = gemini_speak(text, SUBBY_VOICE)
+    except ProviderUnavailable as problem:
+        log.info("Subby voice unavailable: %s", problem)
+        return jsonify(error="voice-unavailable"), 503
+    return Response(audio, mimetype="audio/wav", headers={"Cache-Control": "no-store"})
+
+
+@bp.post("/listen")
+def listen():
+    """A short recording from the mic -> the words said (Gemini writes them down).
+    Only used in browsers that can't recognise speech themselves."""
+    if (request.mimetype or "").lower() not in AUDIO_TYPES:
+        return jsonify(error="not-audio"), 400
+    if not request.content_length or request.content_length > MAX_RECORDING:
+        return jsonify(error="too-long"), 413
+    if not heard.hit(client_ip()):
+        return jsonify(error="too-many"), 429
+    try:
+        text = transcribe(request.get_data(), request.mimetype.lower())
+    except ProviderUnavailable as problem:
+        log.info("Subby listening unavailable: %s", problem)
+        return jsonify(error="listen-unavailable"), 503
+    return jsonify(text=text[:MAX_QUESTION])
 
 
 def answer_with_tool(call: dict, meta: dict):

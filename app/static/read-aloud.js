@@ -15,6 +15,10 @@
   var status = root.querySelector("[data-reader-status]");
   var voiceSelect = root.querySelector("[data-reader-voice]");
   var speedSelect = root.querySelector("[data-reader-speed]");
+  var pageSelect = root.querySelector("[data-reader-page]");
+  var progress = root.querySelector("[data-reader-progress]");
+  var resumeBtn = root.querySelector("[data-reader-resume]");
+  var saveKey = "read-aloud:" + (root.dataset.docKey || "");
   var csrf = document.querySelector('meta[name="csrf-token"]');
   var audio = new Audio();
   var cache = {}; // paragraph number -> Promise of an audio URL
@@ -33,9 +37,34 @@
     playBtn.textContent = state === "playing" ? "⏸ " + tr("Tạm dừng", "Pause") : "▶ " + tr("Nghe", "Play");
   }
 
+  function where(i) {
+    var page = parts[i].dataset.page;
+    return tr("đoạn ", "part ") + (i + 1) + "/" + parts.length + (page ? " · " + tr("trang ", "page ") + page : "");
+  }
+
   function mark(i) {
-    parts.forEach(function (p, n) { p.classList.toggle("is-reading", n === i); });
-    parts[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
+    var old = root.querySelector(".is-reading");
+    if (old) old.classList.remove("is-reading");
+    parts[i].classList.add("is-reading");
+    parts[i].scrollIntoView({ block: "center", behavior: "smooth" });
+    if (progress) progress.style.width = (100 * (i + 1) / parts.length) + "%";
+    if (pageSelect) {
+      // The page menu shows the page being read: the last page that starts at or before i.
+      for (var k = pageSelect.options.length - 1; k >= 0; k--) {
+        if (parseInt(pageSelect.options[k].value, 10) <= i) { pageSelect.selectedIndex = k; break; }
+      }
+    }
+    try { localStorage.setItem(saveKey, String(i)); } catch (e) { /* private mode: no resume */ }
+  }
+
+  function forgetOldAudio(i) {
+    // A long book has hundreds of parts: free the audio of parts already read.
+    Object.keys(cache).forEach(function (k) {
+      if (Number(k) < i - 1) {
+        cache[k].then(function (url) { URL.revokeObjectURL(url); }, function () {});
+        delete cache[k];
+      }
+    });
   }
 
   function fetchAudio(i) {
@@ -69,6 +98,7 @@
     } else {
       stop();
       say(tr("Đã đọc xong.", "Finished reading."));
+      try { localStorage.removeItem(saveKey); } catch (e) { /* ignore */ }
     }
   }
 
@@ -85,7 +115,7 @@
     u.onend = function () { finished(myRun); };
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
-    say(tr("Đang đọc bằng giọng trình duyệt: đoạn ", "Reading with the browser voice: paragraph ") + (i + 1) + "/" + parts.length);
+    say(tr("Đang đọc bằng giọng trình duyệt: ", "Reading with the browser voice: ") + where(i));
   }
 
   function playFrom(i) {
@@ -95,20 +125,23 @@
     state = "playing";
     setButton();
     mark(i);
+    if (resumeBtn) resumeBtn.hidden = true;
     audio.pause();
     if (browserPicked()) {
       speakWithBrowser(i, myRun);
       return;
     }
-    say(tr("Gemini đang tạo giọng đọc cho đoạn ", "Gemini is making the voice for paragraph ") + (i + 1) + "…");
+    forgetOldAudio(i);
+    say(tr("Gemini đang tạo giọng đọc: ", "Gemini is making the voice: ") + where(i) + "…");
     fetchAudio(i).then(function (url) {
       if (myRun !== run) return;
       audio.src = url;
       audio.playbackRate = speed();
       audio.onended = function () { finished(myRun); };
       return audio.play().then(function () {
-        say(tr("Gemini đang đọc: đoạn ", "Gemini is reading: paragraph ") + (i + 1) + "/" + parts.length);
-        if (i + 1 < parts.length) fetchAudio(i + 1).catch(function () {}); // get the next one ready
+        say(tr("Gemini đang đọc: ", "Gemini is reading: ") + where(i));
+        // Get the next two parts ready, so there is no pause between them.
+        for (var n = i + 1; n <= i + 2 && n < parts.length; n++) fetchAudio(n).catch(function () {});
       });
     }).catch(function (error) {
       if (myRun !== run) return;
@@ -168,6 +201,19 @@
     clearCache();
     if (state === "playing") playFrom(index);
   });
+  if (pageSelect) {
+    pageSelect.addEventListener("change", function () { playFrom(parseInt(pageSelect.value, 10) || 0); });
+  }
+
+  // "Continue where you stopped": the last part started on this browser, for this file.
+  var saved = null;
+  try { saved = parseInt(localStorage.getItem(saveKey), 10); } catch (e) { saved = null; }
+  if (resumeBtn && saved > 0 && saved < parts.length) {
+    resumeBtn.textContent = "↻ " + tr("Đọc tiếp từ ", "Continue from ") + where(saved);
+    resumeBtn.hidden = false;
+    resumeBtn.addEventListener("click", function () { playFrom(saved); });
+  }
+
   speedSelect.addEventListener("change", function () {
     audio.playbackRate = speed();
     if (state === "playing" && browserPicked()) playFrom(index); // the browser voice can't change speed mid-sentence

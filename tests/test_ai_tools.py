@@ -12,12 +12,12 @@ from app import db
 from app.ai_providers import FakeProvider, ProviderUnavailable, gemini_audio
 from app.forecast import forecast
 from app.models import Bill, BillLine, User
-from app.read_aloud import MAX_CHUNK, split_paragraphs
+from app.read_aloud import MAX_CHUNK, pdf_page_parts, split_paragraphs
 from app.roulette import food_places
 from app.schedule import local_now
 
 from .conftest import sign_up
-from .test_bill_jobs import docx
+from .test_bill_jobs import docx, pdf
 
 
 def add_bill(email, merchant, total, day, category="other", currency="VND", lines=(), kind="receipt"):
@@ -119,7 +119,7 @@ def test_ai_tools_need_login(client):
 def test_upload_word_file_shows_its_paragraphs(user):
     data = {"document": (io.BytesIO(docx(["Chương 1", "Ngày xưa có một chú mèo."])), "story.docx")}
     page = user.post("/tools/read-aloud/", data=data, content_type="multipart/form-data").get_data(as_text=True)
-    assert 'data-reader-part="0" tabindex="0">Chương 1</p>' in page
+    assert 'data-reader-part="0" data-page="" tabindex="0">Chương 1</p>' in page
     assert "Ngày xưa có một chú mèo." in page and "story.docx" in page and "read-aloud.js" in page
 
 
@@ -150,7 +150,7 @@ def test_speak_returns_wav_from_gemini(user, monkeypatch):
     monkeypatch.setattr("app.read_aloud.gemini_speak", fake_speak)
     token = user.csrf_token()
     res = user.post("/tools/read-aloud/speak", json={"text": "  Xin   chào ", "voice": "Hacker"},
-                    headers={"X-CSRF-Token": token})
+                    headers={"X-CSRF-Token": token}, csrf=False)
     assert res.status_code == 200 and res.mimetype == "audio/wav" and res.data == b"RIFF....WAVE"
     assert asked == {"text": "Xin chào", "voice": "Kore"}  # unknown voice -> the default
     # Without the CSRF header another website could spend our quota.
@@ -211,3 +211,60 @@ def test_tools_page_links_all_three(user):
     page = user.get("/tools/").get_data(as_text=True)
     for path in ("/tools/forecast/", "/tools/read-aloud/", "/tools/food-roulette/"):
         assert f'href="{path}"' in page
+
+
+def test_long_pdf_is_read_page_by_page_and_scans_are_skipped(user):
+    pages = [[f"Page {n} starts here.", "It has a second line."] for n in range(1, 13)]
+    pages[4] = []  # page 5 is a scan: no text layer
+    data = {"document": (io.BytesIO(pdf(pages)), "report.pdf")}
+    page = user.post("/tools/read-aloud/", data=data, content_type="multipart/form-data").get_data(as_text=True)
+    assert 'id="page-12"' in page and "Page 12 starts here. It has a second line." in page
+    assert "Skipped pages with no text (scans): 5" in page and 'data-reader-page' in page
+    assert 'data-page="12"' in page and "11 pages with text" in page
+
+
+def test_pdf_lines_are_joined_into_sentences():
+    assert pdf_page_parts("A hyphen-\nated word and a line\nbreak.\n\nNew paragraph.") == [
+        "A hyphenated word and a line break.", "New paragraph."]
+    long = pdf_page_parts(("Sentence number one is here. " * 100).strip())
+    assert all(len(part) <= 900 for part in long) and len(long) > 2
+
+
+def test_read_aloud_takes_files_bigger_than_the_site_limit(user):
+    # 12 MB: over the 11 MB the rest of the site allows, so this checks the
+    # bigger limit really reaches Read aloud (a Word file is still 10 MB max).
+    big = io.BytesIO(b"PK" + b"0" * (12 * 1024 * 1024))
+    page = user.post("/tools/read-aloud/", data={"document": (big, "huge.docx")},
+                     content_type="multipart/form-data", follow_redirects=True).get_data(as_text=True)
+    assert "Word files can be up to 10 MB. A PDF can be up to 40 MB." in page
+    # Other forms keep the normal limit.
+    res = user.post("/links/new", data={"url": "https://example.com", "notes": "x" * (12 * 1024 * 1024)})
+    assert res.status_code == 413
+
+
+# ---------- Subby's voice -----------------------------------------------------
+
+def test_subby_speaks_with_gemini_voice(client, monkeypatch):
+    monkeypatch.setattr("app.subby.gemini_speak", lambda text, voice: b"RIFF-subby")
+    token = client.csrf_token()
+    res = client.post("/subby/speak", json={"text": "Hi there"}, headers={"X-CSRF-Token": token}, csrf=False)
+    assert res.status_code == 200 and res.mimetype == "audio/wav" and res.data == b"RIFF-subby"
+    assert client.post("/subby/speak", json={"text": "Hi"}, csrf=False).status_code == 400  # no CSRF header
+
+
+def test_subby_writes_down_a_recording(client, monkeypatch):
+    seen = {}
+
+    def fake_transcribe(audio, mime):
+        seen.update(audio=audio, mime=mime)
+        return "When does Netflix renew?"
+
+    monkeypatch.setattr("app.subby.transcribe", fake_transcribe)
+    token = client.csrf_token()
+    res = client.post("/subby/listen", data=b"OggS-audio", content_type="audio/ogg;codecs=opus",
+                      headers={"X-CSRF-Token": token}, csrf=False)
+    assert res.get_json() == {"text": "When does Netflix renew?"}
+    assert seen == {"audio": b"OggS-audio", "mime": "audio/ogg"}
+    assert client.post("/subby/listen", data=b"x", content_type="text/plain", headers={"X-CSRF-Token": token}, csrf=False).status_code == 400
+    too_long = b"0" * (2 * 1024 * 1024 + 1)
+    assert client.post("/subby/listen", data=too_long, content_type="audio/webm", headers={"X-CSRF-Token": token}, csrf=False).status_code == 413

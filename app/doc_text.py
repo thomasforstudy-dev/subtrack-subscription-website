@@ -5,6 +5,8 @@
 - Word (.docx): paragraphs and table rows from word/document.xml, as one
   "page". Same size limits as the upload check; nothing it links to is fetched.
 - Photos: no text layer at all, so every photo needs OCR.
+- "long-pdf": a book-sized PDF for Read aloud (up to LONG_PDF_PAGES pages,
+  more time), read the same way as a bill PDF.
 
 Long card numbers are masked except the last 4 digits ("•••• •••• •••• 1234"),
 keeping the same length, so positions in the text (evidence) still line up.
@@ -33,6 +35,8 @@ ZIP_MAX_FILES = 1000
 ZIP_MAX_UNPACKED = 50 * 1024 * 1024
 ZIP_MAX_RATIO = 100
 READ_SECONDS = 15
+LONG_PDF_PAGES = 300  # Read aloud: a whole book or report, not just a bill
+LONG_READ_SECONDS = 120
 SCRIPT = Path(__file__).resolve()
 
 WORD = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
@@ -73,7 +77,7 @@ def usable(text: str) -> bool:
     return sum(ch.isalnum() for ch in text) >= MIN_USABLE_CHARS
 
 
-def pdf_pages(data: bytes) -> list[dict]:
+def pdf_pages(data: bytes, max_pages: int = MAX_PAGES) -> list[dict]:
     from pypdf import PdfReader  # imported here: photos and Word files don't need it
     from pypdf.errors import PyPdfError
 
@@ -81,7 +85,7 @@ def pdf_pages(data: bytes) -> list[dict]:
     broken = (PyPdfError, ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError, OSError)
     try:
         reader = PdfReader(io.BytesIO(data))
-        if reader.is_encrypted or not 1 <= len(reader.pages) <= MAX_PAGES:
+        if reader.is_encrypted or not 1 <= len(reader.pages) <= max_pages:
             raise TextError("bad-document")
         pages = []
         for number, pdf_page in enumerate(reader.pages, start=1):
@@ -149,6 +153,8 @@ def paragraph_text(paragraph) -> str:
 def read_text(data: bytes, kind: str) -> list[dict]:
     if kind == "pdf":
         return pdf_pages(data)
+    if kind == "long-pdf":
+        return pdf_pages(data, LONG_PDF_PAGES)
     if kind == "docx":
         return docx_pages(data)
     if kind in ("png", "jpeg", "webp"):
@@ -156,11 +162,11 @@ def read_text(data: bytes, kind: str) -> list[dict]:
     raise TextError("bad-document")
 
 
-def read_text_bounded(data: bytes, kind: str) -> list[dict]:
+def read_text_bounded(data: bytes, kind: str, seconds: float | None = None) -> list[dict]:
     """read_text in a child process with a deadline. Raises TextError."""
     try:
         result = subprocess.run([sys.executable, "-I", str(SCRIPT), kind], input=data,
-                                capture_output=True, timeout=READ_SECONDS)
+                                capture_output=True, timeout=seconds or READ_SECONDS)
     except subprocess.TimeoutExpired:
         raise TextError("timeout") from None
     if result.returncode:
