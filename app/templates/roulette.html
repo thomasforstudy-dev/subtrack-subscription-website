@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_mascot.html" import mascot %}
+{% block title %}{{ t("Vòng quay ăn gì", "Food roulette") }} — AllOutFree{% endblock %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1>{{ t("Vòng quay ăn gì", "Food roulette") }}</h1>
+      <p class="muted">{{ t("Mỗi ô là một quán trong hóa đơn ăn uống của bạn. Quay để chọn bữa này ăn ở đâu.", "Each slice is a place from your food receipts. Spin to pick where to eat this time.") }}</p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
+    </div>
+  </div>
+
+  {% if places|length < 2 %}
+    <div class="card empty-state-card">
+      {{ mascot() }}
+      <h2>{{ t("Cần ít nhất 2 quán ăn", "You need at least 2 places to eat") }}</h2>
+      <p class="muted">{{ t("Thêm hóa đơn ăn uống và chọn danh mục \"Ăn uống\" (food). Mỗi quán khác nhau thành một ô trên vòng quay.", "Add food receipts and pick the \"food\" category. Each different place becomes a slice on the wheel.") }}</p>
+      <a class="button" href="{{ url_for('bills.list_bills') }}">{{ t("Thêm hóa đơn", "Add a receipt") }}</a>
+    </div>
+  {% else %}
+    <div class="roulette" data-roulette>
+      <div class="card roulette-stage">
+        <fieldset class="roulette-mode">
+          <legend class="sr-only">{{ t("Cách quay", "How to spin") }}</legend>
+          <label><input type="radio" name="mode" value="usual" checked /> {{ t("Quán quen", "My usual") }}</label>
+          <label><input type="radio" name="mode" value="different" /> {{ t("Đổi gió", "Something different") }}</label>
+        </fieldset>
+        <div class="wheel-wrap">
+          <span class="wheel-pointer" aria-hidden="true"></span>
+          <div class="wheel" data-wheel aria-hidden="true"></div>
+        </div>
+        <button type="button" class="spin-button" data-spin>🎲 {{ t("Quay!", "Spin!") }}</button>
+        <div class="roulette-result" data-result aria-live="polite"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">{{ t("Các quán trên vòng quay", "Places on the wheel") }}</h2>
+        <p class="muted small-text">{{ t("Quán quen: quán bạn ghé nhiều có ô to hơn. Đổi gió: quán lâu rồi chưa ghé có ô to hơn.", "My usual: places you visit often get a bigger slice. Something different: places you haven't been to for a while get a bigger slice.") }}</p>
+        <ul class="mini-list">
+          {% for place in places %}
+            <li>
+              <strong>{{ place.name }}</strong>
+              <small class="muted">
+                {{ place.visits }} {{ t("lần", "visits") }}{% if place.days_ago is not none %} · {{ t("lần cuối", "last") }} {{ place.days_ago }} {{ t("ngày trước", "days ago") }}{% endif %}{% if place.average %} · {{ t("khoảng", "about") }} {{ place.currency }} {{ place.average|money(place.currency) }}{% endif %}
+              </small>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {# Data for static/roulette.js; tojson escapes it safely inside a script tag. #}
+    <script type="application/json" id="roulette-data">{{ {"places": places, "words": {
+      "visits": t("lần ghé", "visits"), "last": t("lần cuối", "last visit"), "daysAgo": t("ngày trước", "days ago"),
+      "about": t("thường khoảng", "usually about"), "go": t("Bữa này ăn ở", "This time, eat at")}}|tojson }}</script>
+  {% endif %}
+{% endblock %}
+{% block scripts %}
+  {% if places|length >= 2 %}<script src="{{ url_for('static', filename='roulette.js') }}" defer></script>{% endif %}
+{% endblock %}

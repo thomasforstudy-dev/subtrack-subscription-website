@@ -5628,3 +5628,247 @@ a.tile:hover {
     display: none;
   }
 }
+
+/* ---------- AI tools (tools/index.html, forecast, read aloud, food roulette) ---------- */
+.tools-grid,
+.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tool-card {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.tool-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.tool-emoji {
+  font-size: 2rem;
+}
+
+.period-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.forecast-summary {
+  margin-bottom: 1rem;
+}
+
+.forecast-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.forecast-totals p {
+  display: grid;
+  margin: 0.5rem 0;
+}
+
+.forecast-totals strong {
+  font-size: 1.6rem;
+}
+
+.chance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.chance-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.chance-bar {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+  margin: 0.3rem 0;
+}
+
+.chance-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--violet);
+}
+
+.forecast-advice {
+  white-space: pre-line;
+  line-height: 1.6;
+  padding: 0.9rem 1rem;
+  border-left: 4px solid var(--violet);
+  background: var(--lilac);
+  color: var(--text);
+  border-radius: 0 12px 12px 0;
+}
+
+.read-form {
+  margin-bottom: 1rem;
+}
+
+.reader-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.reader-pick {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.reader-text p {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  line-height: 1.65;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.reader-text p:hover {
+  background: var(--lilac);
+}
+
+.reader-text p.is-reading {
+  background: var(--accent-soft);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+.roulette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.roulette-stage {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+}
+
+.roulette-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.wheel-wrap {
+  position: relative;
+  width: min(22rem, 80vw);
+  aspect-ratio: 1;
+}
+
+.wheel {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 6px solid var(--surface);
+  box-shadow: 0 10px 30px rgba(14, 11, 43, 0.25);
+  overflow: hidden;
+  transition: transform 4.5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+/* A label runs from the centre to the edge of its slice. */
+.wheel-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46%;
+  padding-right: 8%;
+  transform-origin: 0 50%;
+  margin-top: -0.6em;
+  text-align: right;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 0.8rem solid transparent;
+  border-right: 0.8rem solid transparent;
+  border-top: 1.4rem solid var(--text);
+}
+
+.spin-button {
+  min-width: 10rem;
+  font-size: 1.1rem;
+}
+
+.roulette-result {
+  min-height: 3.2rem;
+  display: grid;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.roulette-result strong {
+  font-size: 1.25rem;
+}
+
+.roulette-result.pop {
+  animation: roulette-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes roulette-pop {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel { transition-duration: 0.01s; }
+  .roulette-result.pop { animation: none; }
+  .tool-card:hover { transform: none; }
+}
+
+.roulette-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.read-form {
+  max-width: 44rem;
+}
+
+.read-form input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}

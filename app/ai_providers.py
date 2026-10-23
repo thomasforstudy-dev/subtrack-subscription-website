@@ -1,11 +1,14 @@
-"""The AI models behind Subby, swappable without changing any page.
+"""The AI models behind Subby, the spending forecast and Read aloud,
+swappable without changing any page.
 
-SUBBY_PROVIDER in .env picks the model:
-  gemini  -> Google Gemini in the cloud (today's temporary choice, the default)
+SUBBY_PROVIDER in .env picks the chat model:
+  gemini  -> Google Gemini in the cloud (Google AI Studio key; the default)
   phi     -> Phi-3.5-mini on our own laptop, through a small private chat
              server (llama.cpp / Ollama / LM Studio speak the same
-             "OpenAI-style" chat API). The planned long-term choice.
+             "OpenAI-style" chat API). Kept as an option.
   fake    -> canned answers, for tests and demos only (labelled as fake)
+
+Read aloud's voice always comes from Gemini (speak() below).
 
 If Phi is chosen but switched off, Subby says it's offline. It does NOT
 quietly send the question to the cloud instead. Only if the owner sets
@@ -15,7 +18,11 @@ SUBBY_FALLBACK=gemini does it use Gemini, and then the reply says so
 Nothing here downloads or starts a model.
 """
 
+import base64
+import io
 import os
+import re
+import wave
 from dataclasses import dataclass
 
 import requests
@@ -200,6 +207,78 @@ class FakeProvider(ChatProvider, ExtractionProvider):
 
 
 PROVIDERS = {"gemini": GeminiProvider, "phi": PhiProvider, "fake": FakeProvider}
+
+
+# ---------- Gemini voice (Read aloud) -----------------------------------------
+
+# GEMINI_TTS_MODEL can list backups, like GEMINI_MODEL.
+DEFAULT_TTS_MODELS = "gemini-3.8-flash-lite-tts,gemini-2.5-flash-preview-tts"
+VOICES = ("Kore", "Puck", "Charon", "Aoede")  # Gemini's built-in voices we offer
+TTS_TIMEOUT = 60  # seconds: making audio takes longer than a text answer
+
+
+def speak(text: str, voice: str = "Kore") -> bytes:
+    """Turn text into a .wav file with Gemini. Raises ProviderUnavailable."""
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not key:
+        raise ProviderUnavailable("not-set-up")
+    models = [m.strip() for m in (os.getenv("GEMINI_TTS_MODEL", "") or DEFAULT_TTS_MODELS).split(",") if m.strip()]
+    payload = {
+        "contents": [{"parts": [{"text": text}]}],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}},
+        },
+    }
+    for model in models:
+        try:
+            res = requests.post(GEMINI_URL.format(model=model), headers={"x-goog-api-key": key},
+                                json=payload, timeout=TTS_TIMEOUT)
+        except requests.RequestException as exc:
+            raise ProviderUnavailable("unreachable") from exc
+        if res.status_code == 429 or res.status_code >= 500:
+            continue  # quota used up or Google busy: try the next model
+        if not res.ok:
+            raise ProviderUnavailable(f"http-{res.status_code}")
+        return gemini_audio(read_json(res))
+    raise ProviderUnavailable("busy")
+
+
+def gemini_audio(data: object) -> bytes:
+    """Pull the audio out of Gemini's reply and return it as a .wav file.
+
+    Newer voice models send a ready .wav; older ones send raw 16-bit samples
+    ("audio/L16;codec=pcm;rate=24000"), which only need a .wav header.
+    """
+    candidates = data.get("candidates") if isinstance(data, dict) else None
+    first = candidates[0] if isinstance(candidates, list) and candidates else None
+    content = first.get("content") if isinstance(first, dict) else None
+    parts = content.get("parts") if isinstance(content, dict) else None
+    part = parts[0] if isinstance(parts, list) and parts else None
+    inline = part.get("inlineData") if isinstance(part, dict) else None
+    if not isinstance(inline, dict) or not isinstance(inline.get("data"), str):
+        raise ProviderUnavailable("bad-reply")
+    try:
+        audio = base64.b64decode(inline["data"], validate=True)
+    except ValueError as exc:
+        raise ProviderUnavailable("bad-reply") from exc
+    mime = str(inline.get("mimeType", "")).lower()
+    if mime.startswith(("audio/wav", "audio/x-wav")):
+        return audio
+    if mime.startswith("audio/l16"):
+        rate = re.search(r"rate=(\d+)", mime)
+        return pcm_to_wav(audio, int(rate.group(1)) if rate else 24000)
+    raise ProviderUnavailable("bad-reply")
+
+
+def pcm_to_wav(samples: bytes, rate: int) -> bytes:
+    out = io.BytesIO()
+    with wave.open(out, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)  # 16-bit
+        wav.setframerate(rate)
+        wav.writeframes(samples)
+    return out.getvalue()
 
 
 def chat_provider(name: str | None = None) -> ChatProvider:

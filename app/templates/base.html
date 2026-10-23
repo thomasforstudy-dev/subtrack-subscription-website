@@ -33,6 +33,7 @@
     ("bills", "bills.list_bills", "/bills", "Hóa đơn", "Bills", "receipt"),
     ("links", "links.list_links", "/links", "Link đã lưu", "Links", "link"),
     ("calendar", "calendar.index", "/calendar", "Lịch", "Calendar", "calendar"),
+    ("tools", "tools.index", "/tools", "Công cụ AI", "AI tools", "sparkles"),
   ] %}
   <body class="{% block body_class %}{% endblock %}{% if signed_in %} has-tabbar{% endif %}">
     <a class="skip-link" href="#main-content">{{ t("Chuyển tới nội dung chính", "Skip to main content") }}</a>
@@ -85,6 +86,7 @@
                 <a href="{{ url_for('settings.show') }}">{{ icon("settings", 18) }}<span>{{ t("Cài đặt", "Settings") }}</span></a>
                 <a href="{{ url_for('settings.show') }}#reminders">{{ icon("bell", 18) }}<span>{{ t("Nhắc nhở", "Reminders") }}</span></a>
                 <a class="only-phone" href="{{ url_for('calendar.index') }}">{{ icon("calendar", 18) }}<span>{{ t("Lịch", "Calendar") }}</span></a>
+                <a class="only-phone" href="{{ url_for('tools.index') }}">{{ icon("sparkles", 18) }}<span>{{ t("Công cụ AI", "AI tools") }}</span></a>
                 {% if current_user.is_admin %}
                   <a href="{{ url_for('admin.users') }}">{{ icon("shield", 18) }}<span>{{ t("Quản trị", "Admin") }}</span></a>
                 {% endif %}
@@ -113,6 +115,7 @@
         ("subscriptions.create", "/subscriptions/new", "plus", "Thêm gói", "Add a plan"),
         ("bills.list_bills", "/bills", "upload", "Tải hóa đơn", "Upload a bill"),
         ("calendar.index", "/calendar", "calendar", "Lịch", "Calendar"),
+        ("tools.index", "/tools", "sparkles", "Công cụ AI", "AI tools"),
         ("settings.show", "/settings", "settings", "Cài đặt & nhắc nhở", "Settings & reminders"),
       ] %}
       <nav class="rail" aria-label="{{ t('Công cụ nhanh', 'Quick tools') }}">
@@ -235,7 +238,7 @@
           {% if loop.index == 3 %}
             <a class="tab-fab" href="{{ url_for('subscriptions.create') }}" aria-label="{{ t('Thêm gói đăng ký', 'Add a plan') }}">{{ icon("plus", 26) }}</a>
           {% endif %}
-          {% if target != "calendar" %}
+          {% if target not in ("calendar", "tools") %}
             {% set active = request.path.startswith(prefix) %}
             <a class="tab{% if active %} is-active{% endif %}" href="{{ url_for(endpoint) }}" {% if active %}aria-current="page"{% endif %}>
               {% if active %}<i class="tab-dot" aria-hidden="true"></i>{% endif %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ t("Công cụ AI", "AI tools") }} — AllOutFree{% endblock %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1>{{ t("Công cụ AI", "AI tools") }}</h1>
+      <p class="muted">{{ t("Ba công cụ dùng hóa đơn của bạn và AI Gemini của Google.", "Three tools that use your bills and Google's Gemini AI.") }}</p>
+    </div>
+  </div>
+
+  <div class="tools-grid">
+    <a class="card tool-card" href="{{ url_for('forecast.show') }}">
+      <span class="tool-emoji" aria-hidden="true">🔮</span>
+      <strong>{{ t("Dự đoán chi tiêu", "Spending forecast") }}</strong>
+      <span class="muted small-text">{{ t("Ngày mai, tuần tới hay tháng tới bạn có thể mua gì, ở đâu và hết khoảng bao nhiêu, dựa trên hóa đơn của bạn.", "What you'll probably buy tomorrow, next week or next month, where, and roughly how much, based on your bills.") }}</span>
+    </a>
+    <a class="card tool-card" href="{{ url_for('read_aloud.show') }}">
+      <span class="tool-emoji" aria-hidden="true">🔊</span>
+      <strong>{{ t("Đọc to tài liệu", "Read aloud") }}</strong>
+      <span class="muted small-text">{{ t("Tải lên tệp Word hoặc PDF và nghe AI đọc từng đoạn, như tính năng đọc to của Microsoft Edge.", "Upload a Word file or a PDF and listen to the AI read it paragraph by paragraph, like Read aloud in Microsoft Edge.") }}</span>
+    </a>
+    <a class="card tool-card" href="{{ url_for('roulette.show') }}">
+      <span class="tool-emoji" aria-hidden="true">🎡</span>
+      <strong>{{ t("Vòng quay ăn gì", "Food roulette") }}</strong>
+      <span class="muted small-text">{{ t("Không biết ăn ở đâu? Quay vòng quay làm từ các quán trong hóa đơn ăn uống của bạn.", "Can't decide where to eat? Spin a wheel made from the places on your food receipts.") }}</span>
+    </a>
+  </div>
+{% endblock %}
