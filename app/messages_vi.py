@@ -124,10 +124,14 @@ VI = {
     # extension tokens
     "Pick what the token may see.": "Chọn những gì mã được xem.",
     # read aloud
-    "Please upload a Word (.docx) file or a PDF.": "Vui lòng tải lên tệp Word (.docx) hoặc PDF.",
-    "We couldn't read the text in that file.": "Không đọc được chữ trong tệp này.",
-    "That file has no text we can read (a scanned PDF needs OCR).":
-        "Tệp này không có chữ để đọc (PDF dạng ảnh quét cần OCR).",
+    "That PDF is bigger than 40 MB.": "Tệp PDF lớn hơn 40 MB.",
+    "Word files can be up to 10 MB. A PDF can be up to 40 MB.": "Tệp Word tối đa 10 MB. Tệp PDF tối đa 40 MB.",
+    "Please upload a PDF or a Word (.docx) file.": "Vui lòng tải lên tệp PDF hoặc Word (.docx).",
+    "That PDF took too long to read. Try a smaller part of it.": "Đọc tệp PDF quá lâu. Hãy thử một phần nhỏ hơn.",
+    "We couldn't read that file. A PDF must not be locked and can have up to 300 pages.":
+        "Không đọc được tệp này. PDF không được khóa mật khẩu và tối đa 300 trang.",
+    "There is no text to read. A scanned PDF needs OCR, which isn't switched on yet.":
+        "Không có chữ để đọc. PDF dạng ảnh quét cần OCR, tính năng này chưa bật.",
     "Upload a file or paste some text first.": "Hãy tải tệp lên hoặc dán đoạn chữ trước.",
 }
 

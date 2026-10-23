@@ -5872,3 +5872,35 @@ a.tile:hover {
   max-width: 100%;
   box-sizing: border-box;
 }
+
+/* Long documents: the controls stay in view (under the sticky top bar) while you scroll. */
+.reader-bar {
+  position: sticky;
+  top: 4.75rem;
+  z-index: 5;
+  padding: 0.5rem 0;
+  background: var(--surface);
+}
+
+.reader-progress {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+
+.reader-progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--violet);
+  transition: width 0.3s ease;
+}
+
+.reader-page {
+  margin: 1.25rem 0 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: none;
+}

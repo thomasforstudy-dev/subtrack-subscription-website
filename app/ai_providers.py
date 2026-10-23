@@ -271,6 +271,37 @@ def gemini_audio(data: object) -> bytes:
     raise ProviderUnavailable("bad-reply")
 
 
+AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/wav", "audio/mpeg")  # what browsers record
+
+
+def transcribe(audio: bytes, mime: str) -> str:
+    """Write down what is said in a short recording (Subby's mic in browsers
+    without speech recognition, like Firefox). Raises ProviderUnavailable."""
+    gemini = GeminiProvider()
+    if not gemini.key:
+        raise ProviderUnavailable("not-set-up")
+    payload = {
+        "contents": [{"role": "user", "parts": [
+            {"inline_data": {"mime_type": mime, "data": base64.b64encode(audio).decode()}},
+            {"text": "Write down exactly what is said, in the language spoken. "
+                     "Reply with the words only. If nobody speaks, reply with nothing."},
+        ]}],
+        "generationConfig": {"temperature": 0, "maxOutputTokens": 256},
+    }
+    for model in gemini.models:
+        try:
+            res = requests.post(GEMINI_URL.format(model=model), headers={"x-goog-api-key": gemini.key},
+                                json=payload, timeout=TIMEOUT)
+        except requests.RequestException as exc:
+            raise ProviderUnavailable("unreachable") from exc
+        if res.status_code == 429 or res.status_code >= 500:
+            continue
+        if not res.ok:
+            raise ProviderUnavailable(f"http-{res.status_code}")
+        return gemini_text(read_json(res))
+    raise ProviderUnavailable("busy")
+
+
 def pcm_to_wav(samples: bytes, rate: int) -> bytes:
     out = io.BytesIO()
     with wave.open(out, "wb") as wav:

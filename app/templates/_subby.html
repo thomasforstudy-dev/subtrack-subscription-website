@@ -1,8 +1,10 @@
 {# Subby, trợ lý hướng dẫn & tra cứu tài khoản. Câu hỏi gửi tới /subby/ask (xem app/subby.py).
    Model: Gemini (Google AI Studio key) by default; Phi-3.5-mini stays possible via SUBBY_PROVIDER
-   (app/ai_providers.py). Voice mode uses the browser's Web Speech API. #}
+   (app/ai_providers.py). Voice mode: answers are read out with Gemini's voice (/subby/speak,
+   browser voice as backup); the mic uses the browser's speech recognition, or records and lets
+   Gemini write the words down (/subby/listen) where the browser can't (Firefox). #}
 {% set face %}<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="13" r="1.6" fill="currentColor" stroke="none"/><path d="M19 12.5l3 1.5-3 1.5"/><path d="M10 20c3.5 3 8.5 3 12 0"/></svg>{% endset %}
-<div class="subby" data-subby data-ask-url="{{ url_for('subby.ask') }}" data-new-sub-url="{{ url_for('subscriptions.create') }}">
+<div class="subby" data-subby data-ask-url="{{ url_for('subby.ask') }}" data-speak-url="{{ url_for('subby.speak') }}" data-listen-url="{{ url_for('subby.listen') }}" data-new-sub-url="{{ url_for('subscriptions.create') }}">
   <p class="subby-teaser" data-teaser>{{ t("Cần hỗ trợ? Hỏi Subby nhé — vui tính hơn thông báo trừ tiền ngân hàng!", "Confused? Ask me. I promise I'm funnier than your bank.") }}</p>
 
   <section class="subby-panel" id="subby-panel" role="dialog" aria-modal="false" aria-label="{{ t("Trò chuyện với trợ lý Subby", "Chat with Subby") }}" hidden>
