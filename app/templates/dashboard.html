@@ -16,7 +16,7 @@
   {% set greet = {"morning": ("Chào buổi sáng,", "Good morning,"), "afternoon": ("Chào buổi chiều,", "Good afternoon,"),
                   "evening": ("Chào buổi tối,", "Good evening,")}[greeting] %}
 
-  <div class="dash" data-dash>
+  <div class="dash" data-dash{% if not active_count %} data-tour-autostart{% endif %}>
     <header class="dash-hello">
       <div>
         <h1 class="dash-greeting">
@@ -79,7 +79,7 @@
       </article>
 
       {# 2. The orange card + three small figures #}
-      <div class="tile-quad">
+      <div class="tile-quad" data-tour="stats">
         <a class="tile tile-hero" style="--i: 1" href="{{ url_for('subscriptions.list_subscriptions') }}">
           <span class="tile-label">{{ t("Gia hạn trong 7 ngày", "Renewing in 7 days") }}</span>
           <p class="tile-big"><span data-count="{{ week | length }}">{{ week | length }}</span></p>

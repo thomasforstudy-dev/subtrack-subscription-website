@@ -1,98 +1,86 @@
 {% extends "base.html" %}
-{% from "_mascot.html" import mascot %}
-{% block title %}{{ t("Mã tiện ích Chrome", "Extension tokens") }} — AllOutFree{% endblock %}
+{% block title %}{{ t("Mã tiện ích Chrome", "Extension keys") }} — AllOutFree{% endblock %}
 {% block content %}
-  {# Backend page (app/api_tokens.py), restyled for AllOutFree v3 design system.
-     Keep the routes and field names (docs/CONTRACT.md -> Extension API tokens). #}
+  {# Backend page (app/api_tokens.py). Keep the routes and field names
+     (docs/CONTRACT.md -> Extension API tokens). #}
   <div class="section-head">
     <div>
-      <h1>{{ t("Mã cho tiện ích Chrome", "Extension tokens") }}</h1>
-      <p class="muted">{{ t("Tiện ích chỉ xem được các gói sắp gia hạn. Thu hồi bất cứ lúc nào.", "The extension only sees plans that renew soon. Revoke any time.") }}</p>
+      <a class="button secondary btn-sm back-pill" href="{{ url_for('settings.show') }}">← {{ t("Cài đặt", "Settings") }}</a>
+      <h1>{{ t("Tiện ích Chrome", "Chrome extension") }}</h1>
     </div>
-    <a class="button secondary" href="{{ url_for('settings.show') }}">{{ t("Về Cài đặt", "Back to Settings") }}</a>
   </div>
+
+  {# How it works, in three pictures #}
+  <ol class="how-steps">
+    <li><span class="how-icon tone-bg-0" aria-hidden="true">🔑</span>{{ t("Tạo một mã", "Create a key") }}</li>
+    <li><span class="how-icon tone-bg-1" aria-hidden="true">📋</span>{{ t("Dán vào tiện ích", "Paste it in the extension") }}</li>
+    <li><span class="how-icon tone-bg-2" aria-hidden="true">🔔</span>{{ t("Xem gói sắp gia hạn ngay trên Chrome", "See upcoming renewals in Chrome") }}</li>
+  </ol>
 
   {% if new_secret %}
     <div class="card token-new" role="status">
       <div class="card-head-row">
-        <h2 class="card-title">{{ t("Sao chép mã này ngay", "Copy this token now") }}</h2>
+        <h2 class="card-title">🎉 {{ t("Sao chép mã này ngay", "Copy this key now") }}</h2>
         <span class="pill sun-label">{{ t("Chỉ hiện một lần", "Shown once") }}</span>
       </div>
-      <p class="muted small-text">{{ t("Dán vào tiện ích AllOutFree. Mã chỉ hiện một lần.", "Paste it into the AllOutFree extension. It's shown only once.") }}</p>
-      <label class="sr-only" for="new-token">Token</label>
+      <label class="sr-only" for="new-token">{{ t("Mã mới", "New key") }}</label>
       <div class="token-secret-box">
         <input id="new-token" type="text" value="{{ new_secret }}" readonly autocomplete="off" spellcheck="false" onclick="this.select()" />
-        <button type="button" class="button btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('new-token').value); this.innerText='Đã sao chép!';">{{ t("Sao chép", "Copy") }}</button>
+        <button type="button" class="button btn-sm" data-copied="{{ t('Đã sao chép!', 'Copied!') }}" onclick="navigator.clipboard.writeText(document.getElementById('new-token').value); this.textContent=this.dataset.copied;">{{ t("Sao chép", "Copy") }}</button>
       </div>
     </div>
   {% endif %}
 
-  <div class="card">
-    <h2 class="card-title">{{ t("Tạo mã mới", "New token") }}</h2>
-    <form method="post" action="{{ url_for('api_tokens.create_token') }}" class="sub-form">
+  <div class="tokens-layout">
+    <form method="post" action="{{ url_for('api_tokens.create_token') }}" class="card sub-form token-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <h2 class="card-title">{{ t("Mã mới", "New key") }}</h2>
       <div class="field-group">
-        <label for="token-name">{{ t("Tên (để bạn nhận ra)", "Name (so you recognise it)") }}</label>
-        <input id="token-name" name="name" maxlength="{{ name_max }}" required placeholder="{{ t("Chrome trên laptop", "Chrome on my laptop") }}" />
+        <label for="token-name">{{ t("Tên", "Name") }}</label>
+        <input id="token-name" name="name" maxlength="{{ name_max }}" required placeholder="{{ t('Chrome trên laptop', 'Chrome on my laptop') }}" />
       </div>
       <div class="field-group">
         <label for="token-days">{{ t("Hết hạn sau (ngày)", "Expires after (days)") }}</label>
         <input id="token-days" name="days" type="number" min="1" max="{{ max_days }}" value="{{ default_days }}" required />
       </div>
-      <fieldset class="settings-fieldset">
-        <legend>{{ t("Mã được xem", "What it may see") }}</legend>
+      <fieldset class="channel-row">
+        <legend class="sr-only">{{ t("Mã được xem", "What it may see") }}</legend>
         {% for scope, labels in scopes.items() %}
-          <label class="check"><input type="checkbox" name="scopes" value="{{ scope }}" checked />
-            <span data-vi="{{ labels[0] }}" data-en="{{ labels[1] }}">{{ labels[0] }}</span> <code>{{ scope }}</code></label>
+          <label class="channel-pill"><input type="checkbox" name="scopes" value="{{ scope }}" checked /><span>👀 {{ t(labels[0], labels[1]) }}</span></label>
         {% endfor %}
       </fieldset>
-      <p class="muted small-text" data-vi="Tối đa {{ max_active }} mã đang hoạt động; hiện có {{ active }}." data-en="Up to {{ max_active }} active tokens; you have {{ active }}.">Tối đa {{ max_active }} mã đang hoạt động; hiện có {{ active }}.</p>
-      <div class="form-actions">
-        <button type="submit" {% if active >= max_active %}disabled{% endif %} data-vi="Tạo mã" data-en="Create token">Tạo mã</button>
+      <div class="token-meter" aria-label="{{ t('Số mã đang dùng', 'Keys in use') }}">
+        {% for n in range(max_active) %}<i class="{{ 'on' if n < active else '' }}"></i>{% endfor %}
+        <span class="muted small-text">{{ active }} / {{ max_active }}</span>
       </div>
+      <button type="submit" {% if active >= max_active %}disabled{% endif %}>🔑 {{ t("Tạo mã", "Create key") }}</button>
     </form>
-  </div>
 
-  <div class="card">
-    <h2 class="card-title">{{ t("Mã của bạn", "Your tokens") }}</h2>
-    {% if rows %}
-      <div class="table-scroll">
-        <table class="activity-table">
-          <thead><tr>
-            <th>{{ t("Tên", "Name") }}</th><th>{{ t("Mã", "Token") }}</th>
-            <th>{{ t("Quyền", "Scopes") }}</th><th>{{ t("Tạo", "Created") }}</th>
-            <th>{{ t("Dùng gần nhất", "Last used") }}</th><th>{{ t("Hết hạn", "Expires") }}</th>
-            <th>{{ t("Trạng thái", "Status") }}</th><th></th>
-          </tr></thead>
-          <tbody>
-            {% for token, state in rows %}
-              {% set labels = {"active": ("Đang dùng", "Active"), "expired": ("Hết hạn", "Expired"), "revoked": ("Đã thu hồi", "Revoked")}[state] %}
-              <tr>
-                <td><strong>{{ token.name }}</strong></td>
-                <td><code>{{ token.prefix }}…</code></td>
-                <td>{{ token.scope_list | join(", ") }}</td>
-                <td>{{ local_date(token.created_at).strftime('%d/%m/%Y') }}</td>
-                <td>{% if token.last_used_at %}{{ local_date(token.last_used_at).strftime('%d/%m/%Y') }}{% else %}<span>{{ t("Chưa dùng", "Never") }}</span>{% endif %}</td>
-                <td>{{ local_date(token.expires_at).strftime('%d/%m/%Y') }}</td>
-                <td><span class="status status-{{ 'paid' if state == 'active' else 'skipped' }}" data-vi="{{ labels[0] }}" data-en="{{ labels[1] }}">{{ labels[0] }}</span></td>
-                <td class="row-actions">
-                  {% if state == "active" %}
-                    <form class="inline" method="post" action="{{ url_for('api_tokens.revoke', token_id=token.id) }}">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                      <button type="submit" class="btn-sm secondary">{{ t("Thu hồi", "Revoke") }}</button>
-                    </form>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="empty-state">
-        {{ mascot("hi", 80) }}
-        <p class="empty-text">{{ t("Chưa có mã nào. Tạo một mã bên trên để kết nối tiện ích Chrome.", "No tokens yet. Create one above to connect the Chrome extension.") }}</p>
-      </div>
-    {% endif %}
+    <section class="card">
+      <h2 class="card-title">{{ t("Mã của bạn", "Your keys") }}</h2>
+      {% if rows %}
+        <ul class="token-list">
+          {% for token, state in rows %}
+            <li class="token-item is-{{ state }}">
+              <span class="how-icon {{ 'tone-bg-2' if state == 'active' else '' }}" aria-hidden="true">🔑</span>
+              <div>
+                <strong>{{ token.name }}</strong>
+                <small class="muted block-small"><code>{{ token.prefix }}…</code> · {{ t("hết hạn", "expires") }} {{ local_date(token.expires_at).strftime('%d/%m/%Y') }}
+                  · {{ t("dùng lần cuối", "last used") }} {% if token.last_used_at %}{{ local_date(token.last_used_at).strftime('%d/%m/%Y') }}{% else %}{{ t("chưa", "never") }}{% endif %}</small>
+              </div>
+              <span class="pill {{ 'mint' if state == 'active' else 'sun-label' }}">{{ {"active": t("Đang dùng", "Active"), "expired": t("Hết hạn", "Expired"), "revoked": t("Đã thu hồi", "Revoked")}[state] }}</span>
+              {% if state == "active" %}
+                <form class="inline" method="post" action="{{ url_for('api_tokens.revoke', token_id=token.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="button secondary btn-sm">{{ t("Thu hồi", "Revoke") }}</button>
+                </form>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="token-empty"><span aria-hidden="true">🔑</span>{{ t("Chưa có mã nào.", "No keys yet.") }}</p>
+      {% endif %}
+    </section>
   </div>
 {% endblock %}

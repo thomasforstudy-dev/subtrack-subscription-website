@@ -1,148 +1,158 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}{{ t("Cài đặt", "Settings") }} — AllOutFree{% endblock %}
+{% set display_name = current_user.username or current_user.email %}
+{# Layout from the Stitch design docs/design/v4-settings.png #}
 {% block content %}
-  <div class="section-head" id="reminders">
-    <div>
-      <h1>{{ t("Cài đặt", "Settings") }}</h1>
+  {# Profile banner: who you are, whether the email is confirmed, and the tour #}
+  <section class="settings-hero" id="settings">
+    <span class="settings-avatar" aria-hidden="true">{{ display_name[:1] | upper }}</span>
+    <div class="settings-who">
+      <h1>{{ display_name }}</h1>
+      <p>{{ current_user.email }}
+        {% if current_user.email_verified %}
+          <span class="pill mint">✓ {{ t("Đã xác nhận", "Confirmed") }}</span>
+        {% else %}
+          <span class="pill sun-label">{{ t("Chưa xác nhận", "Not confirmed") }}</span>
+        {% endif %}
+      </p>
     </div>
-  </div>
+    <button type="button" class="button settings-tour" data-tour-start="0" data-tour-name="app">▶ {{ t("Xem lại hướng dẫn", "Take the tour again") }}</button>
+  </section>
 
-  <div class="settings-cards-grid" id="settings">
-    {# 1. Cài đặt Máy chủ: Múi giờ & Nhắc nhở (Server-persisted settings) #}
-    <div class="card">
-      <div class="card-head-row">
-        <h2 class="card-title">{{ t("Lời nhắc & múi giờ", "Reminders & time zone") }}</h2>
-      </div>
+  <div class="settings-grid">
+    {# 1. Reminders (saved on the server: the reminder job reads them) #}
+    <form method="post" action="{{ url_for('settings.show') }}" class="card settings-card" id="reminders" data-tour="reminders" data-submitting-text="{{ t('Đang lưu…', 'Saving…') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <h2 class="card-title">🔔 {{ t("Lời nhắc", "Reminders") }}</h2>
 
-      <div class="kv-list">
-        <div class="kv-row">
-          <span class="muted">{{ t("Tài khoản:", "Account:") }}</span>
-          <strong>{{ current_user.username if (current_user.username is defined and current_user.username) else current_user.email }} ({{ current_user.email }})</strong>
-        </div>
-        {% if current_user.email_verified is defined %}
-          <div class="kv-row">
-            <span class="muted">{{ t("Trạng thái xác thực email:", "Email confirmation:") }}</span>
-            <span class="pill {% if current_user.email_verified %}mint{% else %}sun-label{% endif %}">
-              {{ t("Đã xác nhận", "Confirmed") if current_user.email_verified else t("Chưa xác nhận: hãy nhập mã trong email", "Not confirmed yet: type the code from the email") }}
-            </span>
-          </div>
-        {% endif %}
-      </div>
+      <label class="switch-row" for="settings-reminders-enabled">
+        <span>
+          <strong>{{ t("Email nhắc trước hạn", "Email reminders") }}</strong>
+          <small class="muted">{{ t("Trước mỗi lần gia hạn", "Before each renewal") }}</small>
+        </span>
+        <input id="settings-reminders-enabled" class="switch" type="checkbox" name="reminders_enabled" {% if current_user.reminders_enabled %}checked{% endif %} />
+      </label>
 
-      <form method="post" action="{{ url_for('settings.show') }}" class="sub-form compact-top" data-submitting-text="{{ t('Đang lưu cài đặt…', 'Saving settings…') }}">
-        {% if csrf_token is defined %}
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        {% endif %}
-
-        <div class="field-group">
-          <label for="settings-timezone">{{ t("Múi giờ của bạn (Time zone — chuẩn IANA)", "Time zone") }}</label>
-          <input
-            id="settings-timezone"
-            name="timezone"
-            list="zones"
-            required
-            placeholder="Asia/Ho_Chi_Minh"
-            value="{{ current_user.timezone }}"
-          />
-          <datalist id="zones">
-            {% for zone in zones %}<option value="{{ zone }}"></option>{% endfor %}
-          </datalist>
-          <small class="field-hint" data-vi="Ví dụ: Asia/Ho_Chi_Minh, UTC, Asia/Singapore, Europe/London." data-en="e.g. Asia/Ho_Chi_Minh, UTC, Europe/London.">
-            Ví dụ: <code>Asia/Ho_Chi_Minh</code>, <code>UTC</code>, <code>Asia/Singapore</code>.
-          </small>
-        </div>
-
-        <div class="field-group">
-          <label class="check" for="settings-reminders-enabled">
-            <input
-              id="settings-reminders-enabled"
-              type="checkbox"
-              name="reminders_enabled"
-              {% if current_user.reminders_enabled %}checked{% endif %}
-            />
-            <span>{{ t("Bật gửi lời nhắc trước hạn gia hạn", "Send me reminders") }}</span>
+      <div class="field-group">
+        <span class="field-label">{{ t("Gửi lúc", "Send at") }}</span>
+        <div class="hour-chips" role="group" aria-label="{{ t('Chọn giờ', 'Pick an hour') }}">
+          {% for h in [7, 9, 12, 18, 21] %}
+            <button type="button" class="hour-chip{% if current_user.reminder_hour == h %} on{% endif %}" data-set-hour="{{ h }}" aria-pressed="{{ 'true' if current_user.reminder_hour == h else 'false' }}">{{ '%02d' % h }}:00</button>
+          {% endfor %}
+          <label class="hour-other" for="settings-reminder-hour">
+            <span class="sr-only">{{ t("Giờ khác (0–23)", "Other hour (0–23)") }}</span>
+            <input id="settings-reminder-hour" type="number" name="reminder_hour" min="0" max="23" required value="{{ current_user.reminder_hour }}" />
+            <span aria-hidden="true">:00</span>
           </label>
         </div>
-
-        <div class="field-group">
-          <label for="settings-reminder-hour">{{ t("Giờ gửi lời nhắc trong ngày (0–23, theo múi giờ của bạn)", "Send them at (hour, 0–23, your time)") }}</label>
-          <input
-            id="settings-reminder-hour"
-            type="number"
-            name="reminder_hour"
-            min="0"
-            max="23"
-            required
-            value="{{ current_user.reminder_hour }}"
-          />
-        </div>
-
-        <fieldset class="settings-fieldset">
-          <legend>{{ t("Kênh nhận lời nhắc", "Where") }}</legend>
-          {% for channel in channels %}
-            <label class="check">
-              <input
-                type="checkbox"
-                name="channels"
-                value="{{ channel }}"
-                {% if channel in current_user.channel_list %}checked{% endif %}
-              />
-              <span>{{ channel|capitalize }} ({{ current_user.email }})</span>
-            </label>
-          {% endfor %}
-          <p class="muted small-text">{{ t("Thêm ngày gia hạn vào Google Calendar hoặc tải tệp .ics ở trang", "Add renewal dates to Google Calendar or download an .ics file on the") }} <a href="{{ url_for('calendar.index') }}">{{ t("Lịch", "Calendar") }}</a>{{ t(". Tiện ích Chrome sắp có.", " page. The Chrome extension is coming soon.") }}</p>
-        </fieldset>
-
-        <div class="status-banner info compact">
-          <strong>{{ t("Trạng thái email nhắc nhở: Đang bật", "Reminder email status: On") }}</strong>
-          <p class="muted small-text">{{ t("Email đến vào giờ bạn chọn, khi email đã xác nhận.", "Emails arrive at the hour you pick, once your email is confirmed.") }}</p>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit">{{ t("Lưu", "Save") }}</button>
-        </div>
-      </form>
-    </div>
-
-    {# 2. Tùy chọn chỉ hiển thị trên trình duyệt & Kết nối Gmail (UI Preparation) #}
-    <div class="card">
-      <div class="card-head-row">
-        <h2 class="card-title">{{ t("Ngôn ngữ, Gmail & ứng dụng", "Language, Gmail & app") }}</h2>
       </div>
 
-      <div class="status-banner info compact">
-        <strong>{{ t("Ngôn ngữ", "Language") }}</strong>
-        <p class="muted small-text">{{ t("Nút VI / EN ở trên cùng đổi ngôn ngữ.", "The VI / EN button at the top switches language.") }}</p>
+      <div class="field-group">
+        <label for="settings-timezone">{{ t("Múi giờ", "Time zone") }}</label>
+        <input id="settings-timezone" name="timezone" list="zones" required placeholder="Asia/Ho_Chi_Minh" value="{{ current_user.timezone }}" />
+        <datalist id="zones">
+          {% for zone in zones %}<option value="{{ zone }}"></option>{% endfor %}
+        </datalist>
       </div>
 
-      <div class="status-banner warn compact">
-        <strong>{{ t("Đọc hóa đơn từ Gmail: sắp có", "Reading bills from Gmail: coming later") }}</strong>
-        <p class="muted small-text">{{ t("Sắp có, và sẽ hỏi bạn cho phép riêng.", "Coming later, with your separate permission.") }}</p>
-        <button type="button" class="button secondary btn-sm" disabled>{{ t("Kết nối Gmail (sắp có)", "Connect Gmail (coming later)") }}</button>
+      <div class="channel-row">
+        {% for channel in channels %}
+          <label class="channel-pill">
+            <input type="checkbox" name="channels" value="{{ channel }}" {% if channel in current_user.channel_list %}checked{% endif %} />
+            <span>✉️ {{ t("Email", "Email") if channel == "email" else channel|capitalize }}</span>
+          </label>
+        {% endfor %}
       </div>
 
-      <div id="pwa-install-banner" class="pwa-banner">
+      <div class="form-actions">
+        <button type="submit">{{ t("Lưu", "Save") }}</button>
+      </div>
+    </form>
+
+    <div class="settings-side">
+      {# 2. Try it: a sample reminder to your own inbox #}
+      <form method="post" action="{{ url_for('settings.test_email') }}" class="card settings-card test-mail-card">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div>
-          <strong>{{ t("Cài AllOutFree như một ứng dụng", "Install AllOutFree as an app") }}</strong>
-          <ul class="pwa-guide-list muted small-text">
-            <li data-vi="Chrome / Edge: Bấm biểu tượng Cài đặt (⊕) trên thanh địa chỉ hoặc Menu (⋮) → Cài đặt ứng dụng." data-en="Chrome / Edge: Click Install (⊕) in the address bar or Menu (⋮) → Install app.">
-              <strong>Chrome / Edge:</strong> Bấm biểu tượng Cài đặt (⊕) trên thanh địa chỉ hoặc Menu (⋮) → <em>Cài đặt ứng dụng</em>.
-            </li>
-            <li data-vi="Safari (iOS): Bấm Chia sẻ → chọn 'Thêm vào MH chính'." data-en="Safari (iOS): Tap Share → 'Add to Home Screen'.">
-              <strong>Safari (iOS):</strong> Bấm Chia sẻ (Share) → chọn <em>Thêm vào MH chính</em>.
-            </li>
-          </ul>
-          <p class="muted small-text">{{ t("Hóa đơn và dữ liệu tài khoản không bao giờ được lưu lại để dùng khi ngoại tuyến.", "Bills and account data are never stored for offline use.") }}</p>
+          <h2 class="card-title">📨 {{ t("Thử một email nhắc", "Try a reminder email") }}</h2>
+          <p class="muted small-text">{{ t("Gửi một email mẫu tới hộp thư của bạn.", "Sends a sample to your own inbox.") }}</p>
         </div>
-        <button type="button" class="link small-text" data-dismiss-pwa>{{ t("Ẩn hướng dẫn", "Dismiss") }}</button>
-      </div>
-    </div>
+        <button type="submit" class="button secondary">{{ t("Gửi thử", "Send a test") }}</button>
+      </form>
 
-    {# 3. Tokens for the Chrome extension (app/api_tokens.py) #}
-    <div class="card" id="extension-tokens">
-      <h2 class="card-title">{{ t("Tiện ích Chrome", "Chrome extension") }}</h2>
-      <p class="muted small-text">{{ t("Mã riêng cho tiện ích, thu hồi bất cứ lúc nào.", "A separate key for the extension. Revoke it any time.") }}</p>
-      <p><a class="button secondary btn-sm" href="{{ url_for('api_tokens.list_tokens') }}">{{ t("Quản lý mã tiện ích", "Manage extension tokens") }}</a></p>
+      {# 3. Look & language: saved in this browser #}
+      <section class="card settings-card">
+        <h2 class="card-title">🎨 {{ t("Giao diện & ngôn ngữ", "Look & language") }}</h2>
+        <div class="choice-row" role="group" aria-label="{{ t('Ngôn ngữ', 'Language') }}">
+          <button type="button" class="choice{% if ui_lang() == 'vi' %} is-active{% endif %}" data-set-lang="vi" aria-pressed="{{ 'true' if ui_lang() == 'vi' else 'false' }}"><b class="lang-badge">VI</b>{{ t("Tiếng Việt", "Vietnamese") }}</button>
+          <button type="button" class="choice{% if ui_lang() == 'en' %} is-active{% endif %}" data-set-lang="en" aria-pressed="{{ 'true' if ui_lang() == 'en' else 'false' }}"><b class="lang-badge">EN</b>English</button>
+        </div>
+        <div class="choice-row" role="group" aria-label="{{ t('Giao diện', 'Theme') }}">
+          <button type="button" class="choice theme-choice" data-theme-set="light"><span class="theme-swatch light" aria-hidden="true"></span>{{ t("Sáng", "Light") }}</button>
+          <button type="button" class="choice theme-choice" data-theme-set="dark"><span class="theme-swatch dark" aria-hidden="true"></span>{{ t("Tối", "Dark") }}</button>
+        </div>
+      </section>
+
+      {# 4. Apps and extras #}
+      <section class="card settings-card">
+        <h2 class="card-title">🧩 {{ t("Ứng dụng & dữ liệu", "Apps & data") }}</h2>
+        <div class="app-tiles">
+          <div class="app-tile" id="pwa-install-banner">
+            <span class="app-tile-icon tone-bg-1" aria-hidden="true">📱</span>
+            <span><strong>{{ t("Cài như ứng dụng", "Install as an app") }}</strong>
+              <small class="muted">{{ t("Menu trình duyệt → Cài đặt ứng dụng", "Browser menu → Install app") }}</small></span>
+          </div>
+          <a class="app-tile" href="{{ url_for('api_tokens.list_tokens') }}">
+            <span class="app-tile-icon tone-bg-0" aria-hidden="true">🧩</span>
+            <span><strong>{{ t("Tiện ích Chrome", "Chrome extension") }}</strong>
+              <small class="muted">{{ t("Quản lý mã kết nối", "Manage keys") }}</small></span>
+            <span class="app-tile-go" aria-hidden="true">→</span>
+          </a>
+          <a class="app-tile" href="{{ url_for('calendar.index') }}">
+            <span class="app-tile-icon tone-bg-2" aria-hidden="true">📅</span>
+            <span><strong>{{ t("Lịch Google", "Google Calendar") }}</strong>
+              <small class="muted">{{ t("Thêm ngày gia hạn", "Add renewal dates") }}</small></span>
+            <span class="app-tile-go" aria-hidden="true">→</span>
+          </a>
+          <a class="app-tile" href="{{ url_for('bills.export', fmt='csv') }}">
+            <span class="app-tile-icon tone-bg-3" aria-hidden="true">⬇️</span>
+            <span><strong>{{ t("Tải dữ liệu", "Download my data") }}</strong>
+              <small class="muted">{{ t("Hóa đơn (CSV)", "Bills (CSV)") }}</small></span>
+            <span class="app-tile-go" aria-hidden="true">→</span>
+          </a>
+          <div class="app-tile is-soon">
+            <span class="app-tile-icon" aria-hidden="true">📥</span>
+            <span><strong>{{ t("Hóa đơn từ Gmail", "Bills from Gmail") }}</strong>
+              <small class="muted">{{ t("Sắp có", "Coming soon") }}</small></span>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
+
+  <script>
+    // Hour chips fill the hour box; language buttons set the same cookie as the VI · EN button.
+    (function () {
+      var hour = document.getElementById("settings-reminder-hour");
+      var chips = document.querySelectorAll("[data-set-hour]");
+      function mark() {
+        chips.forEach(function (chip) {
+          var on = chip.dataset.setHour === String(parseInt(hour.value, 10));
+          chip.classList.toggle("on", on);
+          chip.setAttribute("aria-pressed", String(on));
+        });
+      }
+      chips.forEach(function (chip) {
+        chip.addEventListener("click", function () { hour.value = chip.dataset.setHour; mark(); });
+      });
+      hour.addEventListener("input", mark);
+      document.querySelectorAll("[data-set-lang]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          document.cookie = "ui_lang=" + button.dataset.setLang + "; path=/; max-age=31536000; SameSite=Lax";
+          location.reload();
+        });
+      });
+    })();
+  </script>
 {% endblock %}

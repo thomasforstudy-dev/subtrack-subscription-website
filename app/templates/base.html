@@ -58,7 +58,7 @@
 
         <div class="top-actions">
           {% if signed_in %}
-            <a class="button btn-sm top-add" href="{{ url_for('subscriptions.create') }}">
+            <a class="button btn-sm top-add" data-tour="add-plan" href="{{ url_for('subscriptions.create') }}">
               {{ icon("plus", 18) }}<span>{{ t("Thêm gói", "Add plan") }}</span>
             </a>
           {% endif %}
@@ -87,6 +87,8 @@
                 <a href="{{ url_for('settings.show') }}#reminders">{{ icon("bell", 18) }}<span>{{ t("Nhắc nhở", "Reminders") }}</span></a>
                 <a class="only-phone" href="{{ url_for('calendar.index') }}">{{ icon("calendar", 18) }}<span>{{ t("Lịch", "Calendar") }}</span></a>
                 <a class="only-phone" href="{{ url_for('tools.index') }}">{{ icon("sparkles", 18) }}<span>{{ t("Công cụ AI", "AI tools") }}</span></a>
+                <button type="button" data-tour-start="0" data-tour-name="app">{{ icon("help", 18) }}<span>{{ t("Xem hướng dẫn nhanh", "Take the tour") }}</span></button>
+                <a href="{{ url_for('guide.show') }}">{{ icon("grid", 18) }}<span>{{ t("Hướng dẫn sử dụng", "User guide") }}</span></a>
                 {% if current_user.is_admin %}
                   <a href="{{ url_for('admin.users') }}">{{ icon("shield", 18) }}<span>{{ t("Quản trị", "Admin") }}</span></a>
                 {% endif %}
@@ -218,6 +220,7 @@
             <div>
               <p class="footer-heading">{{ t("Trợ giúp", "Help") }}</p>
               <ul>
+                <li><a href="{{ url_for('guide.show') }}">{{ t("Hướng dẫn sử dụng", "User guide") }}</a></li>
                 <li><button type="button" class="footer-link" data-open-subby>{{ t("Hỏi trợ lý Subby", "Ask Subby") }}</button></li>
                 <li><a href="https://github.com/thomasforstudy-dev/subtrack-subscription-website" target="_blank" rel="noopener noreferrer">{{ t("Mã nguồn trên GitHub", "Source code on GitHub") }}</a></li>
               </ul>
@@ -236,7 +239,7 @@
       <nav class="tabbar" aria-label="{{ t('Điều hướng nhanh', 'Quick menu') }}">
         {% for target, endpoint, prefix, vi, en, icon_name in nav_items %}
           {% if loop.index == 3 %}
-            <a class="tab-fab" href="{{ url_for('subscriptions.create') }}" aria-label="{{ t('Thêm gói đăng ký', 'Add a plan') }}">{{ icon("plus", 26) }}</a>
+            <a class="tab-fab" href="{{ url_for('subscriptions.create') }}" data-tour="add-plan" aria-label="{{ t('Thêm gói đăng ký', 'Add a plan') }}">{{ icon("plus", 26) }}</a>
           {% endif %}
           {% if target not in ("calendar", "tools") %}
             {% set active = request.path.startswith(prefix) %}
@@ -250,6 +253,10 @@
     {% endif %}
 
     {% include "_subby.html" %}
+    {% if signed_in %}
+      {% from "_tour.html" import app_tour with context %}
+      {{ app_tour() }}
+    {% endif %}
     <script src="{{ url_for('static', filename='app-ui.js') }}" defer></script>
     <script src="{{ url_for('static', filename='subby.js') }}" defer></script>
     <script src="{{ url_for('static', filename='nav.js') }}" defer></script>

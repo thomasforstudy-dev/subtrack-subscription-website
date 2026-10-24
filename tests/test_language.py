@@ -55,7 +55,7 @@ def wrong_language(html: str, lang: str) -> list[str]:
     return [t for t in parser.texts if VI_CHARS.search(t) and MIXED.search(t)]
 
 
-PAGES_SIGNED_OUT = ["/", "/login", "/register", "/forgot-password", "/no-such-page"]
+PAGES_SIGNED_OUT = ["/", "/login", "/register", "/forgot-password", "/no-such-page", "/guide"]
 PAGES_SIGNED_IN = ["/dashboard", "/subscriptions/", "/subscriptions/new", "/bills/", "/bills/new", "/links/",
                    "/calendar/", "/settings", "/settings/tokens", "/tools/", "/tools/forecast/",
                    "/tools/read-aloud/", "/tools/food-roulette/"]

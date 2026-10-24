@@ -2,31 +2,48 @@
 {% from "_mascot.html" import mascot %}
 {% block title %}{{ t("Lịch gia hạn", "Renewal calendar") }} — AllOutFree{% endblock %}
 {% block content %}
+  {% set weekdays = [t("T2", "Mon"), t("T3", "Tue"), t("T4", "Wed"), t("T5", "Thu"), t("T6", "Fri"), t("T7", "Sat"), t("CN", "Sun")] %}
   <div class="section-head">
     <div>
       <h1>{{ t("Lịch gia hạn", "Renewal calendar") }}</h1>
-      <p class="muted">{{ t("Đưa ngày gia hạn tiếp theo của mỗi gói vào lịch của bạn, như một sự kiện cả ngày.", "Put the next renewal date of each plan in your calendar, as an all-day event.") }}</p>
     </div>
     <div class="head-actions">
-      <a class="button secondary" href="{{ url_for('subscriptions.list_subscriptions') }}">← {{ t("Gói đăng ký", "Subscriptions") }}</a>
       <a class="button" href="{{ url_for('calendar.export_all') }}">📥 {{ t("Tải tất cả (.ics)", "Download all (.ics)") }}</a>
     </div>
   </div>
 
-  <div class="card calendar-info-card" style="margin-bottom: 1.25rem;">
-    <div class="card-head-row">
-      <strong>{{ t("Điều cần biết", "Good to know") }}</strong>
-      <span class="pill mint">{{ t("Múi giờ", "Time zone") }}: {{ zone }}</span>
-    </div>
-    <p class="small-text" style="margin: 0.35rem 0;">{{ t("Đây là ngày gia hạn dự kiến, chưa phải tiền đã trừ.", "These are expected renewal dates, not confirmed payments.") }}</p>
-    <p class="small-text muted" style="margin: 0.35rem 0;">{{ t("Tệp tải về không tự cập nhật.", "Downloads don't update by themselves.") }}</p>
-    <p class="small-text muted" style="margin: 0.35rem 0 0;">🔒 {{ t("Không kèm ghi chú, email, giá tiền hay link quản lý.", "No notes, email addresses, prices or manage links are included.") }}</p>
+  {# Two months at a glance: each renewal sits on its day, in the plan's colour #}
+  <div class="month-grid-row">
+    {% for month in months %}
+      <section class="card month-card" aria-label="{{ month.first.strftime('%m/%Y') }}">
+        <h2 class="month-title">{{ t("Tháng " ~ month.first.month ~ "/" ~ month.first.year, month.first.strftime('%B %Y')) }}</h2>
+        <div class="month-grid" role="grid">
+          {% for wd in weekdays %}<span class="month-wd" role="columnheader">{{ wd }}</span>{% endfor %}
+          {% for week in month.weeks %}
+            {% for cell in week %}
+              <span class="month-day{% if not cell.inside %} outside{% endif %}{% if cell.day == today %} today{% endif %}{% if cell.plans and cell.inside %} has-plan{% endif %}" role="gridcell">
+                <b>{{ cell.day.day }}</b>
+                {% if cell.inside %}
+                  {% for plan in cell.plans[:3] %}<i class="month-dot tone-{{ tone(plan.name) }}" title="{{ plan.name }}">{{ plan.name[:1] | upper }}</i>{% endfor %}
+                {% endif %}
+              </span>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
   </div>
+
+  <ul class="fact-strip">
+    <li><span aria-hidden="true">📅</span> {{ t("Ngày dự kiến, chưa phải tiền đã trừ", "Expected dates, not charges") }}</li>
+    <li><span aria-hidden="true">🌏</span> {{ zone }}</li>
+    <li><span aria-hidden="true">🔒</span> {{ t("Chỉ gửi tên gói và ngày", "Only plan names and dates") }}</li>
+  </ul>
 
   {% if items %}
     <div class="card">
       <div class="card-head-row">
-        <strong>{{ t("Thêm từng gói vào Google Calendar, hoặc tải tệp .ics", "Add a plan to Google Calendar, or download its .ics file") }}</strong>
+        <h2 class="card-title">{{ t("Thêm vào lịch của bạn", "Add to your calendar") }}</h2>
         <span class="pill">{{ items|length }} {{ t("gói đang dùng", "active plans") }}</span>
       </div>
       <ul class="mini-list calendar-item-list">

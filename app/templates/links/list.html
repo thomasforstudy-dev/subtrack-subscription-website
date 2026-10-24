@@ -1,17 +1,20 @@
 {% extends "base.html" %}
 {% from "_mascot.html" import mascot %}
+{% from "_icons.html" import icon %}
 {% block title %}{{ t("Link đã lưu", "Saved links") }} — AllOutFree{% endblock %}
 {% block content %}
-  <div class="page-head">
+  <div class="section-head">
     <div>
       <h1>{{ t("Link đã lưu", "Pinned links") }}</h1>
     </div>
-    <p><a class="button secondary" href="{{ url_for('links.create') }}">{{ t("+ Thêm đầy đủ (có ghi chú)", "+ Full form (with notes)") }}</a></p>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('links.create') }}">✎ {{ t("Thêm có ghi chú", "Add with notes") }}</a>
+    </div>
   </div>
 
   {# Form thêm nhanh (Quick-add) giữ nguyên action, method và tên các trường url, title, tags #}
   <div class="card quick-add-card">
-    <form class="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}" data-submitting-text="{{ t('Đang lưu link…', 'Saving link…') }}">
+    <form class="quick-add" data-tour="quick-add" method="post" action="{{ url_for('links.create') }}" data-link-preview="{{ url_for('links.preview') }}" data-submitting-text="{{ t('Đang lưu link…', 'Saving link…') }}">
       {% if csrf_token is defined %}
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       {% endif %}
@@ -27,7 +30,7 @@
         <label for="qa-tags" class="sr-only">{{ t("Thẻ", "Tags") }}</label>
         <input id="qa-tags" name="tags" placeholder="{{ t("Thẻ (vd: huy-goi, hoa-don)", "Tags (e.g. cancel, bills)") }}" aria-label="Tags" maxlength="200" />
       </div>
-      <button type="submit">{{ t("Lưu link", "Save link") }}</button>
+      <button type="submit">+ {{ t("Lưu link", "Save link") }}</button>
     </form>
 
     {# Trạng thái tự động lấy tiêu đề (đang tải / thành công / không lấy được) #}
@@ -44,8 +47,8 @@
   </div>
 
   {# Thanh tìm kiếm & lọc theo Tag #}
-  <div class="search-filter-wrap">
-    <form class="search" method="get" action="{{ url_for('links.list_links') }}">
+  <div class="search-filter-wrap card compact-card">
+    <form class="search links-search" method="get" action="{{ url_for('links.list_links') }}">
       <input
         type="search"
         name="q"
@@ -54,17 +57,17 @@
         aria-label="Search"
       />
       {% if tag %}<input type="hidden" name="tag" value="{{ tag }}" />{% endif %}
-      <button type="submit">{{ t("Tìm kiếm", "Search") }}</button>
+      <button type="submit">🔍 {{ t("Tìm", "Search") }}</button>
       {% if q or tag %}
-        <a class="button secondary" href="{{ url_for('links.list_links') }}">{{ t("Xóa lọc", "Clear") }}</a>
+        <a class="button secondary" href="{{ url_for('links.list_links') }}">✕ {{ t("Xóa lọc", "Clear") }}</a>
       {% endif %}
     </form>
 
     {% if all_tags %}
-      <div class="chips" role="navigation" aria-label="Lọc theo thẻ (Tags)">
+      <div class="chips" role="navigation" aria-label="{{ t('Lọc theo thẻ', 'Filter by tag') }}">
         <a class="chip {% if not tag %}on{% endif %}" href="{{ url_for('links.list_links', q=q or None) }}">{{ t("Tất cả", "All") }}</a>
-        {% for t in all_tags %}
-          <a class="chip {% if t == tag %}on{% endif %}" href="{{ url_for('links.list_links', tag=t, q=q or None) }}">#{{ t }}</a>
+        {% for tg in all_tags %}
+          <a class="chip {% if tg == tag %}on{% endif %}" href="{{ url_for('links.list_links', tag=tg, q=q or None) }}">#{{ tg }}</a>
         {% endfor %}
       </div>
     {% endif %}
@@ -75,7 +78,7 @@
       {% for link in items %}
         {% set host_initial = (link.hostname[:1] or '🌐')|upper %}
         <li
-          class="{% if link.is_pinned %}pinned{% endif %}"
+          class="link-row{% if link.is_pinned %} pinned{% endif %}" style="--i: {{ loop.index0 }}"
           data-saved-url="{{ link.url }}"
           data-saved-title="{{ link.title }}"
           data-edit-url="{{ url_for('links.edit', link_id=link.id) }}"
@@ -86,12 +89,12 @@
             {% endif %}
             <button
               type="submit"
-              title="{{ 'Bỏ ghim khỏi đầu trang' if link.is_pinned else 'Ghim lên đầu danh sách' }}"
-              aria-label="{{ 'Unpin' if link.is_pinned else 'Pin to top' }}"
+              title="{{ t('Bỏ ghim', 'Unpin') if link.is_pinned else t('Ghim lên đầu', 'Pin to top') }}"
+              aria-label="{{ t('Bỏ ghim', 'Unpin') if link.is_pinned else t('Ghim lên đầu', 'Pin to top') }}"
             >{{ '★' if link.is_pinned else '☆' }}</button>
           </form>
 
-          <span class="link-favicon" aria-hidden="true" title="Tên miền: {{ link.hostname }}">
+          <span class="link-favicon" aria-hidden="true" >
             {% if link.favicon_url is defined and link.favicon_url %}
               <img src="{{ link.favicon_url }}" alt="" width="16" height="16" loading="lazy" referrerpolicy="no-referrer" data-favicon-img />
             {% endif %}
@@ -101,29 +104,27 @@
           <div class="link-body">
             <div class="link-title-row">
               <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
-              <span class="domain-pill" title="Đường dẫn trỏ tới tên miền {{ link.hostname }}">🔗 {{ link.hostname }}</span>
+              <span class="domain-pill">🔗 {{ link.hostname }}</span>
               {% if link.is_pinned %}
                 <span class="pill sun-label">{{ t("Đã ghim", "Pinned") }}</span>
               {% endif %}
             </div>
 
-            <p class="link-raw-url muted small-text">{{ link.url }}</p>
-
             {% if link.tag_list %}
               <span class="chips small">
-                {% for t in link.tag_list %}<a class="chip" href="{{ url_for('links.list_links', tag=t) }}">{{ t }}</a>{% endfor %}
+                {% for tg in link.tag_list %}<a class="chip" href="{{ url_for('links.list_links', tag=tg) }}">#{{ tg }}</a>{% endfor %}
               </span>
             {% endif %}
             {% if link.notes %}<p class="muted note">{{ link.notes }}</p>{% endif %}
           </div>
 
           <div class="link-actions">
-            <a href="{{ url_for('links.edit', link_id=link.id) }}">{{ t("Sửa", "Edit") }}</a>
+            <a class="icon-action" href="{{ url_for('links.edit', link_id=link.id) }}" title="{{ t('Sửa', 'Edit') }}" aria-label="{{ t('Sửa', 'Edit') }} {{ link.title }}">{{ icon("pencil", 16) }}</a>
             <form class="inline delete-link-form" method="post" action="{{ url_for('links.delete', link_id=link.id) }}" data-link-title="{{ link.title }}">
               {% if csrf_token is defined %}
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
               {% endif %}
-              <button type="submit">{{ t("Xóa", "Delete") }}</button>
+              <button type="submit" class="icon-action danger" title="{{ t('Xóa', 'Delete') }}" aria-label="{{ t('Xóa', 'Delete') }} {{ link.title }}">{{ icon("trash", 16) }}</button>
             </form>
           </div>
         </li>
@@ -135,7 +136,6 @@
       <div>
         <p>
           <strong>{{ t("Không tìm thấy link nào khớp với bộ lọc.", "No links match.") }}</strong>
-          <span class="sr-only">No links match.</span>
         </p>
         <p class="muted"><a href="{{ url_for('links.list_links') }}">{{ t("Hiển thị toàn bộ link đã lưu", "Show all") }}</a></p>
       </div>

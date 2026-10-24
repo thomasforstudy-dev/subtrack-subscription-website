@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ t("Hướng dẫn sử dụng", "User guide") }} — AllOutFree{% endblock %}
+{% set signed_in = current_user.is_authenticated %}
+{# (number, tour step or None, colour, icon, VI title, EN title, VI line, EN line, the button to look for: VI, EN, its style) #}
+{% set steps = [
+  (1, None, "violet", "👤", "Tạo tài khoản", "Create your account",
+   "Đăng ký bằng email, hoặc một chạm với Google / GitHub.", "Sign up with email, or one tap with Google / GitHub.",
+   "Đăng ký", "Sign up", "violet"),
+  (2, None, "mint", "✉️", "Xác nhận email", "Confirm your email",
+   "Nhập mã 6 số chúng tôi gửi vào ô màu vàng.", "Type the 6-digit code we email you into the yellow box.",
+   "Xác nhận", "Confirm", "orange"),
+  (3, 1, "orange", "➕", "Thêm gói đầu tiên", "Add your first plan",
+   "Chọn Netflix, Spotify… hoặc gõ tên bất kỳ.", "Pick Netflix, Spotify… or type any name.",
+   "+ Thêm gói", "+ Add plan", "orange"),
+  (4, 8, "sky", "🔔", "Bật lời nhắc", "Turn on reminders",
+   "Chọn giờ nhận email trong Cài đặt.", "Pick the hour for your emails in Settings.",
+   "Lưu", "Save", "violet"),
+  (5, 5, "pink", "🧾", "Tải hóa đơn", "Upload bills",
+   "Ảnh, PDF hoặc Word. AI đọc, bạn kiểm tra.", "Photo, PDF or Word. AI reads, you check.",
+   "Tải lên", "Upload", "violet"),
+  (6, 6, "sun", "🔗", "Lưu link", "Save links",
+   "Trang hủy gói luôn sẵn trong một chạm.", "Cancel pages, always one tap away.",
+   "Lưu link", "Save link", "violet"),
+  (7, 7, "violet", "✨", "Công cụ AI", "AI tools",
+   "Dự đoán chi tiêu, đọc to, vòng quay ăn gì.", "Spending forecast, read aloud, food roulette.",
+   "Công cụ AI", "AI tools", "dark"),
+  (8, 9, "mint", "💬", "Hỏi Subby", "Ask Subby",
+   "Gõ hoặc nói câu hỏi bất cứ lúc nào.", "Type or say your question any time.",
+   "☺", "☺", "round"),
+] %}
+{% block content %}
+  <section class="guide-hero">
+    <div>
+      <h1>{{ t("Dùng AllOutFree trong 8 bước", "AllOutFree in 8 steps") }}</h1>
+      <p>{{ t("Mỗi bước chỉ cho bạn đúng nút cần bấm.", "Each step shows you the exact button to press.") }}</p>
+    </div>
+    {% if signed_in %}
+      <button type="button" class="button big guide-start" data-tour-start="0" data-tour-name="app">▶ {{ t("Bắt đầu hướng dẫn trực tiếp", "Start the live tour") }}</button>
+    {% else %}
+      <a class="button big guide-start" href="{{ url_for('auth.register', tour=1) }}">▶ {{ t("Đăng ký có hướng dẫn", "Sign up with a guide") }}</a>
+    {% endif %}
+  </section>
+
+  <ol class="guide-steps">
+    {% for n, tour_step, colour, emoji, vi, en, vi_line, en_line, btn_vi, btn_en, btn_style in steps %}
+      <li class="guide-step gs-{{ colour }}">
+        <span class="guide-num" aria-hidden="true">{{ n }}</span>
+        <span class="guide-icon" aria-hidden="true">{{ emoji }}</span>
+        <h2>{{ t(vi, en) }}</h2>
+        <p>{{ t(vi_line, en_line) }}</p>
+        {# A copy of the real button, glowing, so it's easy to spot on the page. #}
+        <p class="guide-look">
+          <span class="muted small-text">{{ t("Tìm nút:", "Look for:") }}</span>
+          <span class="guide-btn gb-{{ btn_style }}" aria-hidden="true">{{ t(btn_vi, btn_en) }}</span>
+          <span class="sr-only">{{ t(btn_vi, btn_en) }}</span>
+        </p>
+        {% if signed_in and tour_step is not none %}
+          <button type="button" class="button secondary btn-sm" data-tour-start="{{ tour_step }}" data-tour-name="app">👀 {{ t("Chỉ cho tôi", "Show me") }}</button>
+        {% elif not signed_in and n == 1 %}
+          <a class="button secondary btn-sm" href="{{ url_for('auth.register', tour=1) }}">👀 {{ t("Chỉ cho tôi", "Show me") }}</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+{% endblock %}

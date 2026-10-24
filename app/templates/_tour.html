@@ -1,0 +1,66 @@
+{# Guided tours for new users (static/tour.js). Each step points at an element
+   with data-tour="..." on its page; "page" is the name shown on the Next button
+   when the next step is on another page. #}
+{% macro tour_words() -%}
+  {{- {"step": t("Bước", "Step"), "next": t("Tiếp", "Next"), "back": t("Lùi", "Back"), "skip": t("Bỏ qua", "Skip tour"),
+       "done": t("Xong", "Done"), "go": t("Tới", "Go to")} | tojson -}}
+{%- endmacro %}
+
+{% macro app_tour() %}
+  {% set steps = [
+    {"path": url_for("dashboard.show"), "page": t("Tổng quan", "Overview"), "target": "",
+     "title": t("Chào bạn! Cùng xem nhanh 👋", "Hi! Let's look around 👋"),
+     "text": t("1 phút để biết mọi thứ ở đâu. Dùng nút Tiếp, hoặc phím →.", "One minute to see where everything is. Use Next, or the → key.")},
+    {"path": url_for("dashboard.show"), "page": t("Tổng quan", "Overview"), "target": "[data-tour=add-plan]",
+     "title": t("Thêm gói đầu tiên", "Add your first plan"),
+     "text": t("Netflix, Spotify, bất cứ gì bạn trả tiền định kỳ.", "Netflix, Spotify, anything you pay for again and again.")},
+    {"path": url_for("dashboard.show"), "page": t("Tổng quan", "Overview"), "target": "[data-tour=stats]",
+     "title": t("Con số quan trọng", "Your numbers"),
+     "text": t("Sắp gia hạn, đã chi, số gói: cập nhật ngay khi bạn thêm.", "Renewing soon, spent, active plans: updated as you add."),},
+    {"path": url_for("subscriptions.create"), "page": t("Thêm gói", "Add a plan"), "target": "[data-tour=presets]",
+     "title": t("Chọn nhanh dịch vụ", "Pick a service"),
+     "text": t("Một chạm là điền sẵn tên, giá và trang hủy.", "One tap fills in the name, price and cancel page.")},
+    {"path": url_for("subscriptions.create"), "page": t("Thêm gói", "Add a plan"), "target": "[data-tour=remind]",
+     "title": t("Khi nào nhắc bạn?", "When should we remind you?"),
+     "text": t("Chọn 14, 7 hoặc 3 ngày trước ngày gia hạn.", "Pick 14, 7 or 3 days before the renewal date.")},
+    {"path": url_for("bills.list_bills"), "page": t("Hóa đơn", "Bills"), "target": "[data-tour=upload]",
+     "title": t("Tải hóa đơn lên", "Upload a bill"),
+     "text": t("Ảnh, PDF hoặc Word. AI đọc giúp, bạn chỉ cần kiểm tra.", "Photo, PDF or Word. AI reads it, you just check.")},
+    {"path": url_for("links.list_links"), "page": t("Link đã lưu", "Links"), "target": "[data-tour=quick-add]",
+     "title": t("Lưu trang hủy gói", "Save cancel pages"),
+     "text": t("Dán link, tiêu đề tự điền. Ghim cái quan trọng lên đầu.", "Paste a link, the title fills in. Pin the important ones."),},
+    {"path": url_for("tools.index"), "page": t("Công cụ AI", "AI tools"), "target": "[data-tour=tools]",
+     "title": t("Công cụ AI", "AI tools"),
+     "text": t("Dự đoán chi tiêu, đọc to tài liệu, vòng quay ăn gì.", "Spending forecast, read aloud, food roulette.")},
+    {"path": url_for("settings.show"), "page": t("Cài đặt", "Settings"), "target": "[data-tour=reminders]",
+     "title": t("Bật email nhắc", "Turn on email reminders"),
+     "text": t("Chọn giờ nhận. Nhớ xác nhận email bằng mã 6 số.", "Pick the hour. Confirm your email with the 6-digit code."),},
+    {"path": "", "page": "", "target": "[data-tour=subby]",
+     "title": t("Cần giúp? Hỏi Subby", "Stuck? Ask Subby"),
+     "text": t("Gõ hoặc nói câu hỏi, Subby trả lời ngay. Bạn có thể xem lại hướng dẫn trong menu tài khoản.", "Type or say your question. You can replay this tour from your account menu.")},
+  ] %}
+  <script type="application/json" id="tour-data">{"name": "app", "user": {{ current_user.id | tojson }}, "words": {{ tour_words() }}, "steps": {{ steps | tojson }}}</script>
+  <script src="{{ url_for('static', filename='tour.js') }}" defer></script>
+{% endmacro %}
+
+{% macro signup_tour() %}
+  {% set steps = [
+    {"path": "", "page": "", "target": "[data-tour=social]", "optional": true,
+     "title": t("Nhanh nhất: Google hoặc GitHub", "Fastest: Google or GitHub"),
+     "text": t("Một chạm, không cần mật khẩu.", "One tap, no password needed.")},
+    {"path": "", "page": "", "target": "[data-tour=email]",
+     "title": t("Hoặc dùng email", "Or use your email"),
+     "text": t("Chúng tôi gửi mã 6 số để xác nhận, và gửi lời nhắc tới đây.", "We send a 6-digit code to confirm it, and your reminders go here.")},
+    {"path": "", "page": "", "target": "[data-tour=username]",
+     "title": t("Tên đăng nhập", "Username"),
+     "text": t("3–30 ký tự: chữ, số hoặc dấu _. Dùng để đăng nhập.", "3–30 characters: letters, numbers or _. You can log in with it.")},
+    {"path": "", "page": "", "target": "[data-tour=password]",
+     "title": t("Mật khẩu mạnh", "A strong password"),
+     "text": t("Các ô bên dưới tự tích xanh khi đủ điều kiện.", "The rules below turn green as you type.")},
+    {"path": "", "page": "", "target": "[data-tour=create]",
+     "title": t("Tạo tài khoản", "Create your account"),
+     "text": t("Xong! Sau đó bạn sẽ được hướng dẫn tiếp trong ứng dụng.", "Done! The app shows you around right after.")},
+  ] %}
+  <script type="application/json" id="tour-data">{"name": "signup", "user": null, "words": {{ tour_words() }}, "steps": {{ steps | tojson }}}</script>
+  <script src="{{ url_for('static', filename='tour.js') }}" defer></script>
+{% endmacro %}
