@@ -9,7 +9,6 @@
     <div>
       <p class="breadcrumb"><a href="{{ url_for('subscriptions.list_subscriptions') }}" >← {{ t("Quay lại danh sách gói", "Back to subscriptions") }}</a></p>
       <h1>{% if item %}{{ t("Sửa gói đăng ký", "Edit subscription") }}{% else %}{{ t("Thêm gói đăng ký", "Add a subscription") }}{% endif %}</h1>
-      <p class="muted">{{ t("Ghi lại giá, chu kỳ, tối đa 3 mốc nhắc trước và trang quản lý/hủy gói. AllOutFree nhắc bạn đúng hạn; việc hủy gói vẫn do bạn làm.", "Add the price, cycle, up to 3 reminder days and the manage/cancel page. AllOutFree reminds you in time; cancelling is still up to you.") }}</p>
     </div>
   </div>
 
@@ -147,7 +146,7 @@
           />
           <button type="button" class="pw-toggle" data-clear-input="sub-manage-url" title="{{ t("Xóa đường dẫn quản lý", "Remove the manage link") }}" >{{ t("Xóa", "Clear") }}</button>
         </div>
-        <small class="field-hint">{{ t("Trang tài khoản của nhà cung cấp, để mở nhanh khi muốn hủy. Để trống để xóa.", "The provider's account page, to open fast when you want to cancel. Leave empty to remove it.") }}</small>
+        <small class="field-hint">{{ t("Trang tài khoản để hủy nhanh.", "Account page, for cancelling fast.") }}</small>
       </div>
 
       <div class="field-group">

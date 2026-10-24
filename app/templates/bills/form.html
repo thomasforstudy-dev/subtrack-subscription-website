@@ -4,19 +4,18 @@
   {# Styled to DESIGN.md v2 (docs/CONTRACT.md → Bills).
      Every value comes from `form` first, so nothing typed is lost after an error. #}
   {% set f = form or {} %}
+  {% set cat_names = {"software": t("Phần mềm", "Software"), "streaming": t("Giải trí", "Streaming"), "education": t("Học tập", "Education"),
+                      "utilities": t("Điện nước", "Utilities"), "shopping": t("Mua sắm", "Shopping"), "food": t("Ăn uống", "Food"),
+                      "travel": t("Đi lại", "Travel"), "other": t("Khác", "Other")} %}
   {% macro val(name, saved='') -%}{{ f.get(name, saved if saved is not none else '') }}{%- endmacro %}
 
   <div class="section-head">
     <div>
-      <div class="section-badges">
-        <span class="pill mint">{{ t("Đối chiếu & Xác nhận thủ công", "Human-verified entry") }}</span>
-        <span class="pill">{{ t("Trường không có trên hóa đơn → Để trống (null)", "Unknown fields stay blank (null)") }}</span>
-      </div>
       <h1>{{ t("Sửa hóa đơn", "Edit bill") if item else t("Thêm hóa đơn", "Add a bill") }}</h1>
-      <p class="muted">{{ t("Chỉ nhập những gì có trên hóa đơn hoặc sao kê. Ô nào hóa đơn không ghi thì để trống, AllOutFree không tự đoán.", "Type in only what the bill or statement shows. Leave a box empty if it isn't there: AllOutFree never guesses.") }}</p>
+      <p class="muted">{{ t("Ô nào hóa đơn không ghi thì để trống.", "Leave a box empty if the bill doesn't show it.") }}</p>
     </div>
     <div class="head-actions">
-      <a class="button secondary" href="{{ url_for('bills.list_bills') }}">{{ t("← Quay lại danh sách Hóa đơn", "← Back to Bills") }}</a>
+      <a class="button secondary" href="{{ url_for('bills.list_bills') }}">← {{ t("Hóa đơn", "Bills") }}</a>
     </div>
   </div>
 
@@ -58,16 +57,12 @@
         {% else %}
           <div class="empty-state-box compact-top">
             <p><strong>{{ t("Tệp " ~ (document.kind|upper) ~ " chỉ tải về được", (document.kind|upper) ~ " files are download-only") }}</strong></p>
-            <p class="muted small-text">{{ t("Để an toàn, PDF và Word không mở ngay trong trình duyệt. Hãy tải về để xem trong lúc nhập.", "For safety, PDFs and Word files never open inside the browser. Download your copy to look at while typing.") }}</p>
             <p class="compact-top">
               <a class="button secondary btn-sm" href="{{ url_for('bills.download', document_id=document.id) }}">⬇ {{ t("Tải", "Download") }} {{ document.original_name }}</a>
             </p>
           </div>
         {% endif %}
 
-        <div class="honest-status-box compact-top" role="note">
-          <p class="muted small-text">{{ t("Chỉ nhập những gì có trên hóa đơn. Ô nào hóa đơn không ghi thì để trống: AllOutFree không bao giờ tự đoán (kể cả giờ 00:00).", "Type in only what the bill shows. Leave a box empty if it isn't there: AllOutFree never guesses (not even a 00:00 time).") }}</p>
-        </div>
       </aside>
     {% endif %}
 
@@ -79,21 +74,20 @@
       <div class="form-row-2">
         <div class="field-group">
           <label for="bill-kind-select">{{ t("Loại chứng từ", "Kind") }}</label>
-          <select id="bill-kind-select" name="kind" aria-describedby="bill-kind-help">
+          <select id="bill-kind-select" name="kind">
             {% for k in kinds %}
               <option value="{{ k }}" {% if val('kind', item.kind if item else 'receipt') == k %}selected{% endif %}>
-                {{ 'Receipt / invoice' if k == 'receipt' else 'Credit card bill' }}
+                {{ t("Biên lai", "Receipt") if k == "receipt" else t("Sao kê thẻ tín dụng", "Credit card bill") }}
               </option>
             {% endfor %}
           </select>
-          <small id="bill-kind-help" class="field-hint muted small-text">{{ t("Receipt = biên lai đã thanh toán (tính vào Chi tiêu thực tế). Credit card bill = sao kê thẻ tín dụng cần trả theo hạn (due date).", "Receipt = paid purchase (counted in Spent). Credit card bill = statement balance due by due date.") }}</small>
         </div>
 
         <div class="field-group">
           <label for="bill-category-select">{{ t("Danh mục", "Category") }}</label>
           <select id="bill-category-select" name="category">
             {% for c in categories %}
-              <option value="{{ c }}" {% if val('category', item.category if item else 'other') == c %}selected{% endif %}>{{ c }}</option>
+              <option value="{{ c }}" {% if val('category', item.category if item else 'other') == c %}selected{% endif %}>{{ cat_names.get(c, c) }}</option>
             {% endfor %}
           </select>
         </div>
@@ -101,24 +95,23 @@
 
       <div class="form-row-2">
         <div class="field-group">
-          <label for="bill-merchant-input">{{ t("Đơn vị bán hoặc Ngân hàng / Thẻ (Shop, or card / bank name) *", "Shop, or card / bank name *") }}</label>
+          <label for="bill-merchant-input">{{ t("Cửa hàng hoặc ngân hàng *", "Shop or bank *") }}</label>
           <input
             id="bill-merchant-input"
             name="merchant"
             required
             maxlength="200"
-            placeholder="e.g. Highlands Coffee, Adobe, VPBank…"
+            placeholder="Highlands Coffee, VPBank…"
             value="{{ val('merchant', item.merchant if item else '') }}"
           />
         </div>
 
         <div class="field-group">
-          <label for="bill-branch-input">{{ t("Chi nhánh (Branch — tùy chọn)", "Branch") }}</label>
+          <label for="bill-branch-input">{{ t("Chi nhánh", "Branch") }}</label>
           <input
             id="bill-branch-input"
             name="branch"
             maxlength="200"
-            placeholder="Leave empty if not shown"
             value="{{ val('branch', item.branch if item else '') }}"
           />
         </div>
@@ -126,23 +119,22 @@
 
       <div class="form-row-2">
         <div class="field-group">
-          <label for="bill-address-input">{{ t("Địa chỉ trên hóa đơn (Address — để trống nếu không có)", "Address") }}</label>
+          <label for="bill-address-input">{{ t("Địa chỉ", "Address") }}</label>
           <input
             id="bill-address-input"
             name="address"
             maxlength="500"
-            placeholder="{{ t('Chỉ ghi những gì có trên hóa đơn', 'Only what the bill shows') }}"
             value="{{ val('address', item.address if item else '') }}"
           />
         </div>
 
         <div class="field-group">
-          <label for="bill-invnum-input">{{ t("Số hóa đơn (Invoice number — tùy chọn)", "Invoice number") }}</label>
+          <label for="bill-invnum-input">{{ t("Số hóa đơn", "Invoice number") }}</label>
           <input
             id="bill-invnum-input"
             name="invoice_number"
             maxlength="64"
-            placeholder="e.g. INV-2026-001"
+            placeholder="INV-001"
             value="{{ val('invoice_number', item.invoice_number if item else '') }}"
           />
         </div>
@@ -172,12 +164,11 @@
         <div class="field-group">
           <label for="bill-txtime-input">
             <span>{{ t("Giờ giao dịch", "Time") }}</span>
-            <span class="missing-badge">{{ t("Trống = null (không điền 00:00)", "Blank = null (never 00:00)") }}</span>
           </label>
           <input
             id="bill-txtime-input"
             name="transaction_time"
-            placeholder="{{ t('14:30 — để trống nếu hóa đơn không ghi', '14:30 — leave empty if the bill shows none') }}"
+            placeholder="14:30"
             value="{{ val('transaction_time', item.transaction_time.strftime('%H:%M') if item and item.transaction_time else '') }}"
           />
         </div>
@@ -204,7 +195,7 @@
 
       <div class="form-row-4">
         <div class="field-group">
-          <label for="bill-currency-input">{{ t("Tiền tệ 3 chữ cái *", "Currency *") }}</label>
+          <label for="bill-currency-input">{{ t("Tiền tệ *", "Currency *") }}</label>
           <input
             id="bill-currency-input"
             name="currency"
@@ -250,13 +241,11 @@
       </div>
 
       <fieldset class="card compact-card">
-        <legend><strong>{{ t("Dành riêng cho Sao kê thẻ tín dụng", "Credit card bill only") }}</strong></legend>
-        <p id="card-last4-help" class="muted small-text" data-vi="Chỉ nhập đúng 4 chữ số cuối của thẻ. Tuyệt đối KHÔNG nhập số thẻ đầy đủ (máy chủ sẽ từ chối và xóa ngay)." data-en="Enter only the last 4 digits. Full card numbers are refused and never echoed back.">
-          Chỉ nhập đúng <strong>4 chữ số cuối</strong> của thẻ. Tuyệt đối không nhập số thẻ đầy đủ.
-        </p>
+        <legend><strong>{{ t("Chỉ cho sao kê thẻ", "Card bill only") }}</strong></legend>
+        <p id="card-last4-help" class="muted small-text">{{ t("Chỉ 4 số cuối, không nhập cả số thẻ.", "Only the last 4 digits, never the full number.") }}</p>
         <div class="form-row-4 compact-top">
           <div class="field-group">
-            <label for="bill-card-last4">{{ t("4 số cuối thẻ (Card: last 4 digits only)", "Card: last 4 digits only") }}</label>
+            <label for="bill-card-last4">{{ t("4 số cuối thẻ", "Last 4 card digits") }}</label>
             <input
               id="bill-card-last4"
               name="card_last4"
@@ -291,7 +280,7 @@
           </div>
 
           <div class="field-group">
-            <label for="bill-due-date">{{ t("Hạn thanh toán", "Pay by (due date)") }}</label>
+            <label for="bill-due-date">{{ t("Hạn trả", "Due date") }}</label>
             <input
               id="bill-due-date"
               type="date"
@@ -303,17 +292,16 @@
       </fieldset>
 
       <fieldset class="card compact-card">
-        <legend><strong>{{ t("Danh sách mặt hàng trên hóa đơn", "Items") }}</strong></legend>
-        <p class="muted small-text">{{ t("Các dòng để trống tên mặt hàng sẽ tự động được bỏ qua. Thành tiền từng dòng = Số lượng × Đơn giá.", "Rows without an item name are skipped automatically. Line amount = Qty × Unit price.") }}</p>
+        <legend><strong>{{ t("Món hàng", "Items") }}</strong></legend>
         <div class="table-scroll compact-top">
           <table class="compact-table">
             <caption class="sr-only">{{ t("Các món trên hóa đơn", "Items on the bill") }}</caption>
             <thead>
               <tr>
-                <th scope="col">{{ t("Tên mặt hàng", "Item") }}</th>
+                <th scope="col">{{ t("Món", "Item") }}</th>
                 <th scope="col">{{ t("Số lượng", "Qty") }}</th>
                 <th scope="col">{{ t("Đơn giá", "Unit price") }}</th>
-                <th scope="col">Actions</th>
+                <th scope="col"><span class="sr-only">{{ t("Xóa", "Remove") }}</span></th>
               </tr>
             </thead>
             <tbody data-bill-lines data-max-lines="{{ max_lines }}">
@@ -324,8 +312,8 @@
                     <input
                       name="item_name_{{ n }}"
                       maxlength="300"
-                      aria-label="Item {{ n }}"
-                      placeholder="Item {{ n }}"
+                      aria-label="{{ t('Món', 'Item') }} {{ n }}"
+                      placeholder="{{ t('Món', 'Item') }} {{ n }}"
                       value="{{ val('item_name_' ~ n, saved.description) }}"
                     />
                   </td>
@@ -333,7 +321,7 @@
                     <input
                       name="item_qty_{{ n }}"
                       inputmode="decimal"
-                      aria-label="Quantity {{ n }}"
+                      aria-label="{{ t('Số lượng', 'Quantity') }} {{ n }}"
                       placeholder="1"
                       value="{{ val('item_qty_' ~ n, saved.quantity) }}"
                     />
@@ -342,29 +330,24 @@
                     <input
                       name="item_price_{{ n }}"
                       inputmode="decimal"
-                      aria-label="Unit price {{ n }}"
+                      aria-label="{{ t('Đơn giá', 'Unit price') }} {{ n }}"
                       placeholder="0.00"
                       value="{{ val('item_price_' ~ n, saved.unit_price) }}"
                     />
                   </td>
-                  <td><button type="button" class="button secondary btn-sm" data-remove-line aria-label="Remove item {{ n }}">Remove</button></td>
+                  <td><button type="button" class="button secondary btn-sm" data-remove-line aria-label="{{ t('Xóa món', 'Remove item') }} {{ n }}">✕</button></td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-        <button type="button" class="button secondary btn-sm" data-add-line>{{ t("Thêm món (tối đa " ~ max_lines ~ ")", "Add item (up to " ~ max_lines ~ ")") }}</button>
+        <button type="button" class="button secondary btn-sm" data-add-line>+ {{ t("Thêm món", "Add item") }}</button>
         <p class="muted small-text" data-line-status role="status" aria-live="polite"></p>
       </fieldset>
 
       <div class="field-group">
-        <label for="bill-notes-input">{{ t("Ghi chú thêm (Notes — tối đa 2000 ký tự)", "Notes") }}</label>
+        <label for="bill-notes-input">{{ t("Ghi chú", "Notes") }}</label>
         <textarea id="bill-notes-input" name="notes" maxlength="2000" rows="3">{{ val('notes', item.notes if item else '') }}</textarea>
-      </div>
-
-      <div class="honest-status-box" role="region" aria-label="{{ t("Xác nhận trước khi lưu hóa đơn", "Check before saving the bill") }}">
-        <p><strong>{{ t("✓ Kiểm tra & Xác nhận trước khi lưu:", "✓ Review & Confirm before saving:") }}</strong></p>
-        <p class="muted small-text">{{ t("Biên lai được cộng vào số tiền đã chi, theo từng loại tiền. Sao kê thẻ được theo dõi riêng tới hạn thanh toán. Ô để trống vẫn để trống.", "Receipts count toward what you spent, per currency. Card statements are tracked separately until their due date. Empty boxes stay empty.") }}</p>
       </div>
 
       <div class="form-actions">

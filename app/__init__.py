@@ -27,6 +27,12 @@ def safe_link(url: str) -> str:
     return url if url.startswith("https://") else ""
 
 
+def tone(name: str) -> int:
+    """The same colour (0-5) for the same name on every page, so "Netflix"
+    always gets the same tile colour (see .tone-0 ... .tone-5 in style.css)."""
+    return sum(map(ord, (name or "").strip().lower())) % 6
+
+
 def secret_key(production: bool) -> str:
     """The key that signs login cookies. Anyone who knows it can fake a login,
     so the live site refuses to start with a missing, short or sample key."""
@@ -99,7 +105,7 @@ def create_app() -> Flask:
 
     # One language per page: {{ t("Tiếng Việt", "English") }} in every template,
     # {{ say(message) }} for messages the code writes in English.
-    app.jinja_env.globals.update(t=t, say=say, ui_lang=ui_lang, inbox_url=inbox_url)
+    app.jinja_env.globals.update(t=t, say=say, ui_lang=ui_lang, inbox_url=inbox_url, tone=tone)
 
     from app.admin import bp as admin_bp
     from app.api import bp as api_bp

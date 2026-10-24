@@ -154,7 +154,7 @@ def test_totals_are_per_currency(user, app):
     user.post("/bills/new", data=RECEIPT)
     user.post("/bills/new", data={**RECEIPT, "merchant": "Gucci", "currency": "USD", "total": "1200.50"})
     page = user.get("/bills/").get_data(as_text=True)
-    assert "99000.00 VND" in page and "1200.50 USD" in page
+    assert "99,000 VND" in page and "1,200.50 USD" in page
 
 
 def test_search_and_filters(user, app):

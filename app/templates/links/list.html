@@ -5,7 +5,6 @@
   <div class="page-head">
     <div>
       <h1>{{ t("Link đã lưu", "Pinned links") }}</h1>
-      <p class="muted">{{ t("Lưu sẵn trang hủy gói, trang thanh toán, hóa đơn hoặc tài liệu học tập. Dán link vào ô dưới, AllOutFree sẽ tự lấy tiêu đề trang và hiển thị rõ tên miền đích.", "Save cancel pages, billing portals, or study links. Paste a URL below and AllOutFree will automatically fetch the page title and show its domain.") }}</p>
     </div>
     <p><a class="button secondary" href="{{ url_for('links.create') }}">{{ t("+ Thêm đầy đủ (có ghi chú)", "+ Full form (with notes)") }}</a></p>
   </div>
@@ -96,7 +95,7 @@
             {% if link.favicon_url is defined and link.favicon_url %}
               <img src="{{ link.favicon_url }}" alt="" width="16" height="16" loading="lazy" referrerpolicy="no-referrer" data-favicon-img />
             {% endif %}
-            <span class="link-favicon-fallback">{{ host_initial }}</span>
+            <span class="link-favicon-fallback tone-{{ tone(link.hostname) }}">{{ host_initial }}</span>
           </span>
 
           <div class="link-body">
@@ -146,7 +145,7 @@
       {{ mascot("hi", 96) }}
       <div>
         <p><strong>{{ t("Chưa có đường dẫn nào được lưu", "No links yet.") }}</strong></p>
-        <p class="muted">{{ t("Dán một đường dẫn ở khung trên — ví dụ trang hủy gói Netflix, trang quản lý thanh toán Adobe, hoặc tài liệu học tập bạn muốn giữ lại.", "Paste one above — cancel pages, billing portals, course pages, or tools you want to keep.") }}</p>
+        <p class="muted">{{ t("Dán một link ở trên.", "Paste a link above.") }}</p>
       </div>
     </div>
   {% endif %}

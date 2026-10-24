@@ -19,7 +19,7 @@
       <span class="pill mint">{{ t("Múi giờ", "Time zone") }}: {{ zone }}</span>
     </div>
     <p class="small-text" style="margin: 0.35rem 0;">{{ t("Đây là ngày gia hạn dự kiến, chưa phải tiền đã trừ.", "These are expected renewal dates, not confirmed payments.") }}</p>
-    <p class="small-text muted" style="margin: 0.35rem 0;">{{ t("Tệp tải về là bản chụp lúc tải: thay đổi sau này không tự cập nhật. Hãy chọn giờ báo trong ứng dụng lịch, và xóa sự kiện cũ ở đó khi cần.", "The download is a snapshot: later changes don't update it. Pick alerts in your calendar app, and remove old events there when needed.") }}</p>
+    <p class="small-text muted" style="margin: 0.35rem 0;">{{ t("Tệp tải về không tự cập nhật.", "Downloads don't update by themselves.") }}</p>
     <p class="small-text muted" style="margin: 0.35rem 0 0;">🔒 {{ t("Không kèm ghi chú, email, giá tiền hay link quản lý.", "No notes, email addresses, prices or manage links are included.") }}</p>
   </div>
 
@@ -33,7 +33,7 @@
         {% for item in items %}
           <li>
             <div class="service-cell">
-              <span class="service-tile" aria-hidden="true">{{ (item.name or 'S')[:2]|upper }}</span>
+              <span class="service-tile tone-{{ tone(item.name) }}" aria-hidden="true">{{ (item.name or 'S')[:2]|upper }}</span>
               <div>
                 <strong><a href="{{ url_for('calendar.review', item_id=item.id) }}">{{ item.name }}</a></strong>
                 <small class="muted block-small">{{ t("Gia hạn dự kiến", "Expected renewal") }}: <strong>{{ item.next_renewal_at.strftime('%d/%m/%Y') }}</strong> · {{ t("cả ngày", "all day") }}</small>

@@ -1,32 +1,44 @@
-/* AllOutFree styles for every page. Colours and sizes come from DESIGN.md (v3).
-   v3 (20 Oct 2026): the owner's "Dashboard V14" video: neutral grey page, white
-   cards, near-black active state, one orange accent. The old names --violet and
-   --lilac are kept so the older rules keep working: --violet is now the orange
-   ACCENT and --lilac the soft grey for hovers/pills. */
+/* AllOutFree styles for every page. Colours and sizes come from DESIGN.md (v4).
+   v4 (24 Oct 2026): the owner found v3 (grey page, one orange accent) bland.
+   Now: violet for actions (as in the Stitch design system), the logo's orange
+   for the main "add" action and highlights, and mint / sky / pink / sun to tell
+   kinds of things apart (stat tiles, categories, service tiles). Lilac page.
+   --violet and --lilac keep their old names so older rules keep working. */
 :root {
   color-scheme: light;
-  --accent: #f2602d;
-  --accent-deep: #d9441a;
-  --accent-soft: #fff0e8;
-  --accent-gradient: linear-gradient(140deg, #ff8c55 0%, #f2602d 48%, #e0441b 100%);
+  --accent: #6d4aff;
+  --accent-deep: #5130e8;
+  --accent-soft: #efeaff;
+  --accent-gradient: linear-gradient(135deg, #8f6bff 0%, #6d4aff 50%, #5130e8 100%);
   --violet: var(--accent);
   --violet-deep: var(--accent-deep);
-  --mint: #12b886;
-  --sun: #ffc83d;
-  --coral: #ef4444;
-  --lilac: #ececf0;
-  --page: #f1f1f3;
+  --orange: #ff6a2b;
+  --orange-deep: #e8521a;
+  --orange-soft: #fff0e8;
+  --mint: #10c98f;
+  --sky: #2f8fff;
+  --pink: #ff4f9a;
+  --sun: #ffb820;
+  --coral: #ff4d5e;
+  /* Stat tiles and big highlights: one vivid gradient per kind of number. */
+  --grad-violet: linear-gradient(135deg, #9a7bff 0%, #6d4aff 55%, #4f2fe0 100%);
+  --grad-orange: linear-gradient(135deg, #ffa24d 0%, #ff6a2b 55%, #ff4d5e 100%);
+  --grad-mint: linear-gradient(135deg, #3ee8b5 0%, #10c98f 55%, #0a9e86 100%);
+  --grad-sky: linear-gradient(135deg, #63c3ff 0%, #2f8fff 55%, #3a5bff 100%);
+  --grad-pink: linear-gradient(135deg, #ff8ac4 0%, #ff4f9a 55%, #e83a7a 100%);
+  --lilac: #ece7ff;
+  --page: #f5f2ff;
   --surface: #ffffff;
-  --navy: #121216;
+  --navy: #16142b;
   --on-navy: #ffffff;
-  --text: #121216;
-  --muted: #6e6e78;
-  --line: #e6e6ea;
+  --text: #16142b;
+  --muted: #5f5d78;
+  --line: #e6e1fa;
   --bg: var(--page);
-  --due: #fff1ec;
+  --due: #fff0f1;
   --pin: #fff8e1;
   --radius: 20px;
-  --shadow: 0 1px 2px rgba(18, 18, 22, 0.04), 0 8px 24px rgba(18, 18, 22, 0.05);
+  --shadow: 0 1px 2px rgba(22, 20, 43, 0.04), 0 10px 28px rgba(76, 52, 200, 0.08);
   --font: "Plus Jakarta Sans", system-ui, sans-serif;
   /* Status tints (notes, badges): soft in light mode, see-through in dark. */
   --tint-amber: #fffbeb;
@@ -40,18 +52,21 @@
 /* Dark theme: switched by the moon button (static/motion.js), remembered per browser. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --accent-soft: #3a2116;
-  --lilac: #24242a;
-  --page: #0d0d10;
-  --surface: #17171b;
-  --navy: #f2f2f4;
-  --on-navy: #121216;
-  --text: #f2f2f4;
-  --muted: #a1a1aa;
-  --line: #2a2a31;
-  --due: #3a1d1d;
+  --accent: #8f73ff;
+  --accent-deep: #6d4aff;
+  --accent-soft: #2a2160;
+  --orange-soft: #3a2116;
+  --lilac: #241f4a;
+  --page: #0e0b2b;
+  --surface: #17143a;
+  --navy: #f2f0ff;
+  --on-navy: #16142b;
+  --text: #f2f0ff;
+  --muted: #aaa6cc;
+  --line: #2c2759;
+  --due: #3a1d26;
   --pin: #3a3216;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px rgba(0, 0, 0, 0.4);
   --tint-amber: rgba(245, 158, 11, 0.14);
   --tint-amber-fg: #fbbf24;
   --tint-green: rgba(16, 185, 129, 0.14);
@@ -535,7 +550,7 @@ form.looking-up [name=title] {
   height: 3.75rem;
   padding: 0;
   border-radius: 50%;
-  box-shadow: 0 10px 30px rgba(242, 96, 45, 0.45);
+  box-shadow: 0 10px 30px rgba(109, 74, 255, 0.45);
 }
 
 .subby-fab svg {
@@ -935,9 +950,9 @@ body {
 }
 
 .nav-subby-trigger {
-  background: rgba(242, 96, 45, 0.09);
+  background: rgba(109, 74, 255, 0.09);
   color: var(--violet-deep);
-  border: 1px solid rgba(242, 96, 45, 0.22);
+  border: 1px solid rgba(109, 74, 255, 0.22);
 }
 
 .nav-subby-dot {
@@ -2074,7 +2089,7 @@ dialog::backdrop {
 
 .receipt-bbox.is-active rect {
   stroke-width: 3;
-  filter: drop-shadow(0 0 6px rgba(242, 96, 45, 0.35));
+  filter: drop-shadow(0 0 6px rgba(109, 74, 255, 0.35));
 }
 
 .receipt-caption {
@@ -2128,7 +2143,7 @@ dialog::backdrop {
 
 .bill-field-item.is-focused {
   border-color: var(--violet);
-  box-shadow: 0 0 0 3px rgba(242, 96, 45, 0.15);
+  box-shadow: 0 0 0 3px rgba(109, 74, 255, 0.15);
   background: var(--surface);
 }
 
@@ -2869,7 +2884,7 @@ pre {
 
 .source-block.is-highlighted {
   border-color: var(--violet);
-  box-shadow: 0 0 0 3px rgba(242, 96, 45, 0.18);
+  box-shadow: 0 0 0 3px rgba(109, 74, 255, 0.18);
   background: var(--page);
 }
 
@@ -3314,7 +3329,7 @@ main {
 .voice-orb-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(242, 96, 45, 0.45);
+  border: 1px solid rgba(109, 74, 255, 0.45);
   pointer-events: none;
 }
 
@@ -3362,7 +3377,7 @@ main {
   display: inline-grid;
   place-items: center;
   padding: 0;
-  box-shadow: 0 0 24px rgba(242, 96, 45, 0.65);
+  box-shadow: 0 0 24px rgba(109, 74, 255, 0.65);
   cursor: pointer;
 }
 
@@ -3434,7 +3449,7 @@ main {
 }
 
 .voice-card.reply-card {
-  background: linear-gradient(135deg, rgba(242, 96, 45, 0.24) 0%, rgba(22, 199, 154, 0.14) 100%);
+  background: linear-gradient(135deg, rgba(109, 74, 255, 0.24) 0%, rgba(22, 199, 154, 0.14) 100%);
   border-color: rgba(165, 148, 255, 0.38);
 }
 
@@ -3797,7 +3812,7 @@ main {
 .shell-brand-mark {
   display: block;
   border-radius: 10px;
-  box-shadow: 0 6px 14px rgba(242, 96, 45, 0.28);
+  box-shadow: 0 6px 14px rgba(255, 106, 43, 0.28);
   transition: transform 0.4s var(--spring);
 }
 
@@ -3878,7 +3893,7 @@ main {
   align-items: center;
   gap: 0.35rem;
   border-radius: 999px;
-  box-shadow: 0 8px 18px rgba(242, 96, 45, 0.3);
+  box-shadow: 0 8px 18px rgba(255, 106, 43, 0.3);
 }
 
 .top-add .icon {
@@ -3964,7 +3979,7 @@ main {
   width: 2.1rem;
   height: 2.1rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff8c55, var(--violet-deep));
+  background: var(--grad-violet);
   color: #fff;
   font-weight: 800;
 }
@@ -4350,9 +4365,9 @@ nav.footer-cols {
     height: 3.6rem;
     margin-top: -2.4rem;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ff8c55, var(--violet-deep));
+    background: var(--grad-orange);
     color: #fff;
-    box-shadow: 0 0 0 0.4rem var(--bg), 0 12px 24px rgba(242, 96, 45, 0.45);
+    box-shadow: 0 0 0 0.4rem var(--bg), 0 12px 24px rgba(255, 106, 43, 0.45);
     transition: transform 0.3s var(--spring);
   }
 
@@ -4924,9 +4939,9 @@ a.tile:hover {
 /* The one orange card */
 .tile-hero {
   border: 0;
-  background: var(--accent-gradient);
+  background: var(--grad-orange);
   color: #fff;
-  box-shadow: 0 14px 30px rgba(242, 96, 45, 0.32);
+  box-shadow: 0 14px 30px rgba(255, 106, 43, 0.32);
 }
 
 .tile-hero .tile-label,
@@ -5189,7 +5204,7 @@ a.tile:hover {
 
 /* ---------- Dark theme: pieces whose colours aren't tokens ---------- */
 :root[data-theme="dark"] .tile-hero {
-  box-shadow: 0 14px 30px rgba(242, 96, 45, 0.22);
+  box-shadow: 0 14px 30px rgba(255, 106, 43, 0.22);
 }
 
 :root[data-theme="dark"] a.tile:hover {
@@ -5903,4 +5918,289 @@ a.tile:hover {
   font-size: 0.85rem;
   color: var(--muted);
   text-transform: none;
+}
+
+/* ======================================================================
+   v4 (24 Oct 2026): colour + calm. Stitch designs: docs/design/v4-*.png
+   ====================================================================== */
+
+/* Wide forms (bills, plans, settings) use the whole card: the 24rem cap is
+   for the small forms (log in, filters) only. */
+.stack-form,
+.sub-form,
+form.card {
+  max-width: none;
+}
+
+/* The main "add" actions use the logo's orange; everything else is violet. */
+.top-add,
+.tab-fab {
+  background: var(--grad-orange);
+  border-color: transparent;
+  color: #fff;
+}
+
+.top-add:hover {
+  background: var(--grad-orange);
+  filter: brightness(1.06);
+}
+
+/* Six service colours: tone(name) in __init__.py picks one per name. */
+.tone-0 { --brand: #6d4aff; }
+.tone-1 { --brand: #ff6a2b; }
+.tone-2 { --brand: #10c98f; }
+.tone-3 { --brand: #2f8fff; }
+.tone-4 { --brand: #ff4f9a; }
+.tone-5 { --brand: #ffaa1f; }
+
+.service-tile[class*="tone-"],
+.soon-mark[class*="tone-"],
+.link-favicon-fallback[class*="tone-"] {
+  background: var(--brand);
+  color: #fff;
+}
+
+/* Dashboard: each kind of number gets its own vivid tile. */
+.tile.tile-sky,
+.tile.tile-mint,
+.tile.tile-pink {
+  border: 0;
+  color: #fff;
+}
+
+.tile.tile-sky { background: var(--grad-sky); box-shadow: 0 14px 30px rgba(47, 143, 255, 0.28); }
+.tile.tile-mint { background: var(--grad-mint); box-shadow: 0 14px 30px rgba(16, 201, 143, 0.28); }
+.tile.tile-pink { background: var(--grad-pink); box-shadow: 0 14px 30px rgba(255, 79, 154, 0.28); }
+
+.tile.tile-sky .tile-label,
+.tile.tile-mint .tile-label,
+.tile.tile-pink .tile-label,
+.tile.tile-sky .muted,
+.tile.tile-mint .muted,
+.tile.tile-pink .muted,
+.tile.tile-sky small,
+.tile.tile-mint small,
+.tile.tile-pink small {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tile.tile-sky .tile-num,
+.tile.tile-mint .tile-num,
+.tile.tile-pink .tile-num,
+.tile.tile-pink .tile-num.is-hot {
+  color: #fff;
+}
+
+/* The monthly-cost tile: a violet band on top so it reads as the main number. */
+.tile.tile-balance {
+  border-top: 6px solid var(--violet);
+}
+
+.tile-balance .tile-big {
+  color: var(--violet-deep);
+}
+
+/* Chart: violet = renewals, orange = spent. */
+.bar-ink,
+.dot-ink {
+  background: var(--grad-orange);
+}
+
+/* Subscriptions: the per-currency totals as coloured cards. */
+.account-summary-strip .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.account-summary-strip {
+  padding: 0.75rem;
+}
+
+.stat-card[class*="tone-bg-"] {
+  padding: 1rem 1.15rem;
+  border-radius: 16px;
+  color: #fff;
+}
+
+.stat-card[class*="tone-bg-"] .stat-sub {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.stat-card[class*="tone-bg-"] .stat-value {
+  color: #fff;
+  font-size: 1.35rem;
+}
+
+.tone-bg-0 { background: var(--grad-violet); }
+.tone-bg-1 { background: var(--grad-sky); }
+.tone-bg-2 { background: var(--grad-mint); }
+.tone-bg-3 { background: var(--grad-pink); }
+
+/* Cycle and category pills: a colour each, so a long list is easy to scan. */
+.pill.cycle-weekly { background: #fff0e8; color: #c2410c; }
+.pill.cycle-monthly { background: #efeaff; color: #5130e8; }
+.pill.cycle-yearly { background: #e7f8f1; color: #0a7f62; }
+.pill.cat-food { background: #fff0e8; color: #c2410c; }
+.pill.cat-shopping { background: #ffe8f2; color: #c0266a; }
+.pill.cat-software { background: #efeaff; color: #5130e8; }
+.pill.cat-streaming { background: #ffe9ea; color: #c81e3a; }
+.pill.cat-education { background: #e8f2ff; color: #1d5fd1; }
+.pill.cat-utilities { background: #fff6dc; color: #9a6400; }
+.pill.cat-travel { background: #e7f8f1; color: #0a7f62; }
+.pill.cat-other { background: var(--lilac); color: var(--muted); }
+
+:root[data-theme="dark"] .pill[class*="cycle-"],
+:root[data-theme="dark"] .pill[class*="cat-"] {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+/* Bills page: upload + spent side by side, the table below. */
+.bills-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.upload-card {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+  border: 2px dashed color-mix(in srgb, var(--violet) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+}
+
+.upload-card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--violet-deep);
+}
+
+.upload-card button {
+  justify-self: start;
+}
+
+.spent-card {
+  border: 0;
+  color: #fff;
+  background: var(--grad-mint);
+  box-shadow: 0 14px 30px rgba(16, 201, 143, 0.25);
+}
+
+.spent-card .card-title,
+.spent-card .muted {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.spent-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.spent-list li {
+  display: grid;
+}
+
+.spent-list strong {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.spent-list small {
+  opacity: 0.85;
+}
+
+.export-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .bills-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Page titles: a little colour under the heading instead of a paragraph. */
+.section-head h1::after {
+  content: "";
+  display: block;
+  width: 2.75rem;
+  height: 5px;
+  margin-top: 0.45rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--violet), var(--pink), var(--orange));
+}
+
+.tone-bg-4 { background: var(--grad-orange); }
+
+.tool-card[class*="tone-bg-"] {
+  border: 0;
+  color: #fff;
+  min-height: 11rem;
+  box-shadow: 0 14px 30px rgba(76, 52, 200, 0.18);
+}
+
+.tool-card[class*="tone-bg-"] .muted {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tool-card[class*="tone-bg-"] strong {
+  font-size: 1.25rem;
+}
+
+.tool-card[class*="tone-bg-"] .tool-emoji {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 1.5rem;
+}
+
+/* The coloured totals stand on their own; downloads are a quiet row, not a card. */
+.card.account-summary-strip {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.card.export-scope-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* Phone: the file picker must be allowed to shrink, or it pushes the cards off screen. */
+.upload-card input[type="file"] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .bills-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.bills-top > * {
+  min-width: 0;
 }

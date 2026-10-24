@@ -4,7 +4,6 @@
   <div class="section-head" id="reminders">
     <div>
       <h1>{{ t("Cài đặt", "Settings") }}</h1>
-      <p class="muted">{{ t("Chọn múi giờ, giờ nhận và cách AllOutFree nhắc bạn trước mỗi lần gia hạn.", "Pick your time zone, the hour, and how AllOutFree reminds you before each renewal.") }}</p>
     </div>
   </div>
 
@@ -96,7 +95,7 @@
 
         <div class="status-banner info compact">
           <strong>{{ t("Trạng thái email nhắc nhở: Đang bật", "Reminder email status: On") }}</strong>
-          <p class="muted small-text">{{ t("AllOutFree kiểm tra mỗi 30 phút và gửi email vào giờ bạn chọn. Để nhận được: email đã xác nhận, ô Gửi lời nhắc được bật, kênh Email được chọn, và mỗi gói có số ngày nhắc trước (ví dụ 14, 7, 3).", "AllOutFree checks every 30 minutes and emails you at the hour you picked. You need: a confirmed email, Send me reminders on, Email ticked, and reminder days on each plan (like 14, 7, 3).") }}</p>
+          <p class="muted small-text">{{ t("Email đến vào giờ bạn chọn, khi email đã xác nhận.", "Emails arrive at the hour you pick, once your email is confirmed.") }}</p>
         </div>
 
         <div class="form-actions">
@@ -113,12 +112,12 @@
 
       <div class="status-banner info compact">
         <strong>{{ t("Ngôn ngữ", "Language") }}</strong>
-        <p class="muted small-text">{{ t("Nút VI / EN trên thanh trên cùng đổi cả trang sang một ngôn ngữ. Trình duyệt này sẽ nhớ lựa chọn của bạn.", "The VI / EN button at the top switches the whole site to one language. This browser remembers your choice.") }}</p>
+        <p class="muted small-text">{{ t("Nút VI / EN ở trên cùng đổi ngôn ngữ.", "The VI / EN button at the top switches language.") }}</p>
       </div>
 
       <div class="status-banner warn compact">
         <strong>{{ t("Đọc hóa đơn từ Gmail: sắp có", "Reading bills from Gmail: coming later") }}</strong>
-        <p class="muted small-text">{{ t("Đăng nhập bằng Google không cho AllOutFree đọc Gmail của bạn. Việc đọc hóa đơn từ Gmail sẽ cần bạn đồng ý riêng, khi tính năng này ra mắt.", "Signing in with Google does not let AllOutFree read your Gmail. Reading bills from Gmail will ask for your permission separately, once it launches.") }}</p>
+        <p class="muted small-text">{{ t("Sắp có, và sẽ hỏi bạn cho phép riêng.", "Coming later, with your separate permission.") }}</p>
         <button type="button" class="button secondary btn-sm" disabled>{{ t("Kết nối Gmail (sắp có)", "Connect Gmail (coming later)") }}</button>
       </div>
 
@@ -142,7 +141,7 @@
     {# 3. Tokens for the Chrome extension (app/api_tokens.py) #}
     <div class="card" id="extension-tokens">
       <h2 class="card-title">{{ t("Tiện ích Chrome", "Chrome extension") }}</h2>
-      <p class="muted small-text">{{ t("Tạo một mã riêng cho tiện ích: nó chỉ xem được các gói sắp gia hạn, và bạn thu hồi được bất cứ lúc nào.", "Make a separate token for the extension: it can only see plans that renew soon, and you can revoke it any time.") }}</p>
+      <p class="muted small-text">{{ t("Mã riêng cho tiện ích, thu hồi bất cứ lúc nào.", "A separate key for the extension. Revoke it any time.") }}</p>
       <p><a class="button secondary btn-sm" href="{{ url_for('api_tokens.list_tokens') }}">{{ t("Quản lý mã tiện ích", "Manage extension tokens") }}</a></p>
     </div>
   </div>

@@ -292,7 +292,7 @@
   }
 }
 
-.tile {
+.brand-tile {
   display: grid;
   place-items: center;
   width: 2.1rem;
@@ -1104,7 +1104,7 @@
     padding: 0.45rem 0.55rem;
   }
 
-  .tile {
+  .brand-tile {
     width: 1.75rem;
     height: 1.75rem;
     font-size: 0.8rem;
@@ -1301,5 +1301,138 @@
 
   .remind .mail.swap {
     animation: none;
+  }
+}
+
+/* ---------- v4 (24 Oct 2026): less text, more colour (Stitch: docs/design/v4-landing.png) ---------- */
+/* Hero: glowing colour behind the navy, so the first screen isn't a flat dark block. */
+#ch1 {
+  background:
+    radial-gradient(40rem 26rem at 12% 18%, rgba(109, 74, 255, 0.38), transparent 70%),
+    radial-gradient(34rem 24rem at 88% 30%, rgba(255, 79, 154, 0.26), transparent 70%),
+    radial-gradient(30rem 22rem at 70% 95%, rgba(16, 201, 143, 0.2), transparent 70%),
+    radial-gradient(28rem 20rem at 30% 90%, rgba(255, 106, 43, 0.22), transparent 70%),
+    var(--night);
+}
+
+.hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0;
+}
+
+.hero-chips span {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Six tools, six colours */
+.features-band {
+  padding: 5rem 1.5rem;
+  background: var(--page, #f5f2ff);
+  text-align: center;
+}
+
+.features-band .display {
+  margin: 0 auto 2rem;
+  color: var(--text);
+}
+
+.feature-tiles {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 64rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1rem;
+}
+
+.feature-tile {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  padding: 1.5rem;
+  border-radius: 22px;
+  color: #fff;
+  text-align: left;
+  box-shadow: 0 14px 30px rgba(22, 20, 43, 0.14);
+  transition: transform 0.25s var(--ease-out);
+}
+
+.feature-tile:hover {
+  transform: translateY(-4px);
+}
+
+.feature-tile strong {
+  font-size: 1.2rem;
+}
+
+.feature-tile span:last-child {
+  opacity: 0.9;
+  font-size: 0.92rem;
+}
+
+.feature-icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 1.35rem;
+}
+
+.ft-0 { background: var(--grad-violet); }
+.ft-1 { background: var(--grad-orange); }
+.ft-2 { background: var(--grad-mint); }
+.ft-3 { background: var(--grad-sky); }
+.ft-4 { background: var(--grad-pink); }
+.ft-5 { background: linear-gradient(135deg, #ffd25e 0%, #ffb820 55%, #ff8a1f 100%); }
+
+/* The final call to action: a violet-to-orange band instead of a plain page. */
+.chapter.final .final-inner {
+  padding: 3rem 1.5rem;
+  border-radius: 32px;
+  background: linear-gradient(120deg, #6d4aff 0%, #b04bff 45%, #ff6a2b 100%);
+  color: #fff;
+  box-shadow: 0 24px 60px rgba(109, 74, 255, 0.3);
+}
+
+.chapter.final .final-inner .display,
+.chapter.final .final-inner .calm,
+.chapter.final .final-inner .lead {
+  color: #fff;
+}
+
+.chapter.final .final-inner .button.big:not(.secondary) {
+  background: #fff;
+  color: #5130e8;
+}
+
+.chapter.final .final-inner .button.secondary {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+}
+
+.chapter.final .tick circle {
+  stroke: #fff;
+}
+
+.chapter.final .tick path {
+  stroke: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-tile:hover {
+    transform: none;
   }
 }

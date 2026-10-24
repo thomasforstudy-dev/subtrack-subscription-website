@@ -7,7 +7,7 @@
   <div class="section-head">
     <div>
       <h1>{{ t("Mã cho tiện ích Chrome", "Extension tokens") }}</h1>
-      <p class="muted">{{ t("Tiện ích dùng một mã riêng thay cho đăng nhập. Mã chỉ xem được các gói sắp gia hạn (không xem hóa đơn, link hay mật khẩu), và ngừng hoạt động ngay khi bạn thu hồi.", "The extension uses its own token instead of your login. It can only see plans that renew soon (no bills, links or password), and stops working as soon as you revoke it.") }}</p>
+      <p class="muted">{{ t("Tiện ích chỉ xem được các gói sắp gia hạn. Thu hồi bất cứ lúc nào.", "The extension only sees plans that renew soon. Revoke any time.") }}</p>
     </div>
     <a class="button secondary" href="{{ url_for('settings.show') }}">{{ t("Về Cài đặt", "Back to Settings") }}</a>
   </div>
@@ -18,7 +18,7 @@
         <h2 class="card-title">{{ t("Sao chép mã này ngay", "Copy this token now") }}</h2>
         <span class="pill sun-label">{{ t("Chỉ hiện một lần", "Shown once") }}</span>
       </div>
-      <p class="muted small-text">{{ t("Dán vào tiện ích AllOutFree. Mã chỉ hiện một lần: AllOutFree không lưu mã gốc, nên không thể hiện lại.", "Paste it into the AllOutFree extension. It is shown only once: AllOutFree doesn't keep it, so it can't be shown again.") }}</p>
+      <p class="muted small-text">{{ t("Dán vào tiện ích AllOutFree. Mã chỉ hiện một lần.", "Paste it into the AllOutFree extension. It's shown only once.") }}</p>
       <label class="sr-only" for="new-token">Token</label>
       <div class="token-secret-box">
         <input id="new-token" type="text" value="{{ new_secret }}" readonly autocomplete="off" spellcheck="false" onclick="this.select()" />
