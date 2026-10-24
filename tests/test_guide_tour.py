@@ -84,3 +84,17 @@ def test_calendar_shows_renewals_on_the_month_grid(app, user):
     page = user.get("/calendar/").get_data(as_text=True)
     assert 'title="Gridflix"' in page and "month-day" in page and " today" in page
 
+
+
+def test_pet_mascot_is_the_chat_button(app, user):
+    pages = [app.test_client().get("/").get_data(as_text=True), user.get("/subscriptions/").get_data(as_text=True)]
+    for page in pages:
+        assert 'subby-fab--pet' in page and 'class="pet"' in page  # the pet is the chat button
+        assert 'data-open' in page and 'aria-controls="subby-panel"' in page  # still opens the chat
+        assert 'data-pet-tip' in page and 'pet.js' in page
+
+
+def test_pet_does_not_break_the_signed_out_landing(app):
+    # The pet rides on every page, but the landing hero must still be there.
+    page = app.test_client().get("/").get_data(as_text=True)
+    assert "Never pay for a subscription" in page and 'data-pet' in page

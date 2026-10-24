@@ -1,0 +1,88 @@
+{# Subby the AI pet: the AllOutFree logo (orange tile + card face + chain link)
+   given a soft 2.5D plushie look and parts that move. static/pet.js drives it
+   (eye tracking, blinking, moods from Subby) and style.css has the animation.
+   One instance only (the chat button), so fixed gradient ids are fine.
+   Use: {% from "_pet.html" import pet %} {{ pet() }} #}
+{% macro pet(size=60) -%}
+<svg class="pet" viewBox="0 0 96 108" width="{{ size }}" height="{{ (size * 108 / 96) | round | int }}" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="pet-tile" cx="0.32" cy="0.28" r="0.9">
+      <stop offset="0" stop-color="#ffb37a"/>
+      <stop offset="0.55" stop-color="#ff7a3c"/>
+      <stop offset="1" stop-color="#e0441b"/>
+    </radialGradient>
+    <linearGradient id="pet-card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eef0ff"/>
+    </linearGradient>
+    <radialGradient id="pet-eye" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#8f73ff"/>
+      <stop offset="1" stop-color="#4b2fd6"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse class="pet-shadow" cx="48" cy="100" rx="26" ry="4"/>
+
+  <g class="pet-body">
+    {# waving hand (little chain-link nub), tucked behind the tile #}
+    <g class="pet-hand" aria-hidden="true">
+      <circle cx="80" cy="46" r="7" fill="#ff7a3c"/>
+      <circle cx="80" cy="46" r="3.4" fill="#ffd9c2"/>
+    </g>
+
+    {# the orange app tile = the pet's head #}
+    <rect class="pet-tile" x="14" y="12" width="68" height="68" rx="19" fill="url(#pet-tile)"/>
+    <ellipse class="pet-gloss" cx="34" cy="30" rx="18" ry="11" fill="#ffffff" opacity="0.28"/>
+
+    {# the white card = the face, tilted like the logo #}
+    <g class="pet-face" transform="rotate(-10 48 44)">
+      <rect x="22" y="26" width="46" height="34" rx="8" fill="url(#pet-card)"/>
+      {# the dark visor where the eyes live #}
+      <rect class="pet-visor" x="22" y="32" width="46" height="13" rx="2" fill="#141428"/>
+
+      <g class="pet-eyes">
+        <g class="pet-eye left">
+          <ellipse class="eye-white" cx="36" cy="38.5" rx="4.4" ry="5" fill="#ffffff"/>
+          <circle class="eye-pupil" cx="36" cy="38.5" r="2.5" fill="url(#pet-eye)"/>
+          <circle class="eye-spark" cx="34.8" cy="37.2" r="0.9" fill="#ffffff"/>
+        </g>
+        <g class="pet-eye right">
+          <ellipse class="eye-white" cx="52" cy="38.5" rx="4.4" ry="5" fill="#ffffff"/>
+          <circle class="eye-pupil" cx="52" cy="38.5" r="2.5" fill="url(#pet-eye)"/>
+          <circle class="eye-spark" cx="50.8" cy="37.2" r="0.9" fill="#ffffff"/>
+        </g>
+      </g>
+
+      {# a little yellow charm + blush, like the logo's accent dot #}
+      <rect x="28" y="50" width="9" height="6" rx="2" fill="#ffc83d"/>
+      <circle class="pet-blush" cx="58" cy="52" r="3.2" fill="#ff7a3c" opacity="0.45"/>
+
+      {# mouths: pet.js shows one at a time by setting the pet's state class #}
+      <g class="pet-mouth" fill="none" stroke="#141428" stroke-width="1.8" stroke-linecap="round">
+        <path class="m m-smile" d="M44 50 q4 4 8 0"/>
+        <path class="m m-grin" d="M42 49 q6 6.5 12 0 q-6 2.5 -12 0" fill="#141428" stroke="none"/>
+        <path class="m m-talk" d="M45 50 q3 5 6 0 q-3 4 -6 0" fill="#141428" stroke="none"/>
+        <circle class="m m-think" cx="48" cy="52" r="1.8" fill="#141428" stroke="none"/>
+        <path class="m m-flat" d="M44 52 h8"/>
+      </g>
+    </g>
+
+    {# the chain-link body, a small charm under the head #}
+    <g class="pet-link" transform="rotate(-45 48 82)" fill="none">
+      <rect x="36" y="76" width="18" height="9" rx="4.5" stroke="#e0441b" stroke-width="6"/>
+      <rect x="36" y="76" width="18" height="9" rx="4.5" stroke="#141428" stroke-width="3"/>
+    </g>
+  </g>
+
+  {# thinking dots and sleep z's, shown by state #}
+  <g class="pet-think-dots" aria-hidden="true">
+    <circle cx="72" cy="20" r="2.4" fill="#8f73ff"/>
+    <circle cx="80" cy="14" r="3.2" fill="#8f73ff"/>
+    <circle cx="89" cy="7" r="4" fill="#8f73ff"/>
+  </g>
+  <g class="pet-zzz" aria-hidden="true" fill="#5f5d78" font-family="Plus Jakarta Sans, system-ui, sans-serif" font-weight="800">
+    <text x="70" y="22" font-size="9">z</text>
+    <text x="78" y="14" font-size="12">Z</text>
+  </g>
+</svg>
+{%- endmacro %}
