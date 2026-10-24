@@ -17,6 +17,13 @@
         t.setAttribute("aria-pressed", String(t === tile));
       });
       name.value = p.name || "";
+      if (!p.name) {
+        // "Other": start clean, so a custom plan never keeps the last service's
+        // price, reminders or cancel page.
+        amount.value = "0";
+        if (remind) remind.value = "7,3";
+        if (manage) manage.value = "";
+      }
       if (p.amount) amount.value = p.amount;
       if (p.currency) currency.value = p.currency;
       if (p.cycle) {

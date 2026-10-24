@@ -27,7 +27,7 @@
         data-voice-mode-toggle
         aria-pressed="false"
         title="{{ t("Chuyển sang giao diện Giọng nói (chỉ bật micro khi bạn bấm nút Mic)", "Switch to voice mode (the mic only turns on when you press it)") }}"
-      >{{ t("🎙️ Voice", "🎙️ Voice") }}</button>
+      >{{ t("🎙️ Giọng nói", "🎙️ Voice") }}</button>
       <button class="subby-close" type="button" data-close aria-label="{{ t("Đóng cửa sổ chat", "Close chat") }}">×</button>
     </header>
 
@@ -103,7 +103,7 @@
         </button>
         <button type="button" class="voice-dock-btn end-voice" data-voice-end>
           <span class="dock-icon" aria-hidden="true">📞</span>
-          <span>{{ t("Kết thúc Voice", "End Voice") }}</span>
+          <span>{{ t("Kết thúc", "End voice") }}</span>
         </button>
         <button type="button" class="voice-dock-btn" data-voice-keyboard>
           <span class="dock-icon" aria-hidden="true">⌨️</span>
@@ -200,3 +200,18 @@
 
   <button class="subby-fab subby-fab--pet" data-pet data-tour="subby" type="button" data-open aria-controls="subby-panel" aria-expanded="false" aria-label="{{ t("Hỏi trợ lý Subby", "Ask Subby") }}">{{ pet() }}</button>
 </div>
+{# Put a dragged pet back in its spot before the page paints (static/pet.js saves it). #}
+<script>
+  (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem("subby-pos") || "null");
+      var box = document.querySelector("[data-subby]");
+      if (!s || !box) return;
+      var x = Math.min(Math.max(8, s.fx * innerWidth), innerWidth - 80);
+      var y = Math.min(Math.max(8, s.fy * innerHeight), innerHeight - 90);
+      box.style.cssText += ";left:" + x + "px;top:" + y + "px;right:auto;bottom:auto";
+      if (x < innerWidth / 2) box.classList.add("at-left");
+      if (y < innerHeight / 2) box.classList.add("at-top");
+    } catch (e) { /* no saved spot: it stays in the corner */ }
+  })();
+</script>

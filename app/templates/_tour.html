@@ -8,7 +8,7 @@
 
 {% macro app_tour() %}
   {% set steps = [
-    {"path": url_for("dashboard.show"), "page": t("Tổng quan", "Overview"), "target": "",
+    {"path": "", "page": t("Tổng quan", "Overview"), "target": "",
      "title": t("Chào bạn! Cùng xem nhanh 👋", "Hi! Let's look around 👋"),
      "text": t("1 phút để biết mọi thứ ở đâu. Dùng nút Tiếp, hoặc phím →.", "One minute to see where everything is. Use Next, or the → key.")},
     {"path": url_for("dashboard.show"), "page": t("Tổng quan", "Overview"), "target": "[data-tour=add-plan]",

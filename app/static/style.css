@@ -4724,8 +4724,10 @@ main h1 {
     color: var(--on-navy);
   }
 
-  .theme-toggle {
-    display: none; /* the rail has the sun and the moon */
+  /* Signed-in pages have the side rail with its own sun and moon. Visitors
+     (landing, log in, sign up, guide) have no rail, so they keep this button. */
+  body.has-tabbar .theme-toggle {
+    display: none;
   }
 
   body.has-tabbar:not(.landing) > main,
@@ -7472,4 +7474,252 @@ a.app-tile:hover {
   }
   .eye-pupil,
   .eye-spark { transition: none; }
+}
+
+/* Phone tour: when the highlighted thing is in the lower half (the + button,
+   Subby, the bottom of a card), the card docks at the top instead. */
+@media (max-width: 640px) {
+  .tour-card[data-dock="top"] {
+    top: calc(0.75rem + env(safe-area-inset-top)) !important;
+    bottom: auto;
+  }
+}
+
+/* Phone width (Codex QA-05/G06): the bill form ran ~350px off the screen.
+   Fieldsets are "at least as wide as their content" by default, and 1fr grid
+   columns won't shrink below an input's natural width. Let both shrink. */
+fieldset {
+  min-width: 0;
+}
+
+.form-row-2,
+.form-row-4 {
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+}
+
+.form-row-4 { --cols: 4; }
+
+.form-row-2 input,
+.form-row-2 select,
+.form-row-4 input,
+.form-row-4 select,
+.compact-table input {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .form-row-2 { --cols: 1; }
+  .form-row-4 { --cols: 2; }
+
+  /* Item lines: name on its own row, qty + price + remove underneath. */
+  .compact-table thead { display: none; }
+  .compact-table,
+  .compact-table tbody { display: block; }
+  .compact-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 0.4rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .compact-table td { display: block; padding: 0; border: 0; }
+  .compact-table td:first-child { grid-column: 1 / -1; }
+}
+
+/* ======================================================================
+   Subby v2: drag the pet anywhere (static/pet.js) + chat as pop-up bubbles
+   ====================================================================== */
+.subby-fab--pet {
+  cursor: grab;
+  touch-action: none; /* a drag on the pet moves the pet, not the page */
+}
+
+.subby.dragging .subby-fab--pet {
+  cursor: grabbing;
+  transform: scale(1.1) rotate(-5deg);
+  transition: none;
+}
+
+.subby.dragging .pet {
+  animation-play-state: paused;
+}
+
+.subby.dragging .pet-shadow {
+  opacity: 0.2;
+}
+
+/* The chat and the speech bubble open next to the pet, toward free space. */
+.subby-panel {
+  bottom: calc(100% + 0.6rem);
+  transform-origin: bottom right;
+}
+
+.subby-teaser {
+  bottom: calc(100% + 0.4rem);
+}
+
+@media (min-width: 641px) {
+  .subby.at-left .subby-panel,
+  .subby.at-left .subby-teaser {
+    left: 0;
+    right: auto;
+    transform-origin: bottom left;
+  }
+
+  .subby.at-left .subby-teaser {
+    border-radius: 16px 16px 16px 4px;
+  }
+
+  .subby.at-top .subby-panel,
+  .subby.at-top .subby-teaser {
+    top: calc(100% + 0.6rem);
+    bottom: auto;
+    transform-origin: top right;
+  }
+
+  .subby.at-top.at-left .subby-panel {
+    transform-origin: top left;
+  }
+}
+
+/* Phone: the chat is a sheet; the pet steps aside so it never covers Send (Codex QA-10/G05). */
+@media (max-width: 640px) {
+  .subby.open .subby-fab {
+    display: none;
+  }
+
+  .subby-panel {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+
+  body:not(.has-tabbar) .subby-panel {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* ---- The chat itself: a light glass card where messages pop up as bubbles ---- */
+.subby-panel {
+  /* Almost solid: the page behind must never make the chat hard to read. */
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--violet) 18%, transparent);
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(76, 52, 200, 0.22);
+}
+
+.subby-panel:not([hidden]) {
+  animation: chat-pop 0.38s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@keyframes chat-pop {
+  from { opacity: 0; transform: scale(0.6) translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+.subby-head {
+  background: transparent;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.subby-log {
+  gap: 0.75rem;
+  padding: 1rem 0.9rem;
+  background: transparent;
+}
+
+/* Bot messages: white speech bubbles with a little tail, like the pet talking. */
+.msg {
+  position: relative;
+  max-width: 86%;
+  padding: 0.7rem 0.95rem;
+  border-radius: 20px;
+  box-shadow: 0 6px 16px rgba(22, 20, 43, 0.08);
+  animation: msg-pop 0.42s cubic-bezier(0.34, 1.5, 0.64, 1) both;
+  transform-origin: bottom left;
+}
+
+.msg.bot {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--violet) 14%, transparent);
+  border-bottom-left-radius: 6px;
+}
+
+.msg.bot::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: 8px;
+  width: 12px;
+  height: 12px;
+  background: var(--surface);
+  border-left: 1px solid color-mix(in srgb, var(--violet) 14%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--violet) 14%, transparent);
+  transform: rotate(45deg);
+}
+
+.msg.user {
+  background: var(--grad-violet);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+  transform-origin: bottom right;
+}
+
+.msg.typing {
+  background: var(--surface);
+  color: var(--muted);
+}
+
+/* The "thinking…" bubble shows three bouncing dots instead of words. */
+.msg.typing::after {
+  content: " •••";
+  letter-spacing: 0.1em;
+  animation: typing-dots 1s steps(4, end) infinite;
+}
+
+@keyframes msg-pop {
+  0% { opacity: 0; transform: scale(0.5) translateY(10px); }
+  70% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes typing-dots {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+.subby-chips button {
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(22, 20, 43, 0.06);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.subby-chips button:hover {
+  transform: translateY(-2px);
+}
+
+.subby-input {
+  margin: 0.5rem 0.7rem 0.7rem;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(22, 20, 43, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subby-panel:not([hidden]),
+  .msg,
+  .msg.typing::after {
+    animation: none;
+  }
+  .subby-chips button:hover {
+    transform: none;
+  }
+}
+
+.subby-input {
+  border-top: 0;
+  padding: 0.35rem 0.35rem 0.35rem 0.9rem;
+  align-items: center;
 }

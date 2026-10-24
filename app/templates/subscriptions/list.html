@@ -164,7 +164,8 @@
       </div>
     </div>
   {% else %}
-    <div class="card empty-state-box mascot-box">
+    {# A brand-new account lands here after sign-up: start the guided tour once. #}
+    <div class="card empty-state-box mascot-box" data-tour-autostart>
       {{ mascot("hi", 96) }}
       <div>
         <p><strong>{{ t("Chưa có gói nào.", "No plans yet.") }}</strong></p>

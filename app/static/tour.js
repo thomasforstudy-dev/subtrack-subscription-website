@@ -62,8 +62,8 @@
     layer.querySelector(".tour-skip").textContent = words.skip;
     layer.querySelector(".tour-back").textContent = "← " + words.back;
     layer.querySelector(".tour-skip").addEventListener("click", function () { finish(); });
-    layer.querySelector(".tour-back").addEventListener("click", function () { go(index - 1); });
-    layer.querySelector(".tour-next").addEventListener("click", function () { go(index + 1); });
+    layer.querySelector(".tour-back").addEventListener("click", function () { go(index - 1, -1); });
+    layer.querySelector(".tour-next").addEventListener("click", function () { go(index + 1, 1); });
     // A click on the dark part does nothing: the tour only moves with its buttons.
     layer.addEventListener("click", function (e) { if (e.target === layer) card.focus(); });
     var dots = layer.querySelector(".tour-dots");
@@ -82,7 +82,13 @@
       spot.style.width = (r.width + pad * 2) + "px";
       spot.style.height = (r.height + pad * 2) + "px";
       layer.classList.remove("no-target");
-      if (!wide) { card.removeAttribute("style"); return; } // phone: the card sits at the bottom (CSS)
+      if (!wide) {
+        // Phone: the card is a sheet at the top or bottom, whichever side
+        // the highlighted thing is NOT on, so it never covers it.
+        card.removeAttribute("style");
+        card.dataset.dock = (r.top + r.height / 2) > window.innerHeight * 0.5 ? "top" : "bottom";
+        return;
+      }
       var cw = card.offsetWidth, ch = card.offsetHeight, gap = 16;
       var below = r.bottom + pad + gap + ch < window.innerHeight;
       var top = below ? r.bottom + pad + gap : Math.max(12, r.top - pad - gap - ch);
@@ -97,6 +103,7 @@
       layer.classList.add("no-target");
       card.removeAttribute("style");
       card.dataset.side = "";
+      card.dataset.dock = "";
     }
   }
 
@@ -124,13 +131,15 @@
     card.focus({ preventScroll: true });
   }
 
-  function go(i) {
-    if (i < 0) return;
+  function go(i, dir) {
+    dir = dir || (i >= index ? 1 : -1); // which way we're moving
+    if (i < 0) { if (dir < 0) go(0, 1); return; } // backed off the start: show the first real step
     if (i >= steps.length) { finish(); return; }
     var step = steps[i];
-    // An optional step whose button isn't on the page (e.g. Google sign-in is off): skip it.
+    // An optional step whose button isn't on the page (e.g. Google sign-in is off): skip it,
+    // in the same direction we were going.
     if (step.optional && onThisPage(step) && !findTarget(step)) {
-      go(i > index ? i + 1 : i - 1);
+      go(i + dir, dir);
       return;
     }
     if (!onThisPage(step)) {
@@ -146,7 +155,8 @@
     lastFocus = document.activeElement;
     layer.classList.add("open");
     document.documentElement.classList.add("tour-open");
-    go(at || 0);
+    index = at || 0;
+    go(at || 0, 1);
   }
 
   function finish() {
@@ -161,13 +171,15 @@
   document.addEventListener("keydown", function (e) {
     if (!layer || !layer.classList.contains("open")) return;
     if (e.key === "Escape") { e.preventDefault(); finish(); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); go(index + 1); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); go(index - 1); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); go(index + 1, 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); go(index - 1, -1); }
     else if (e.key === "Tab") {
       // Keep the keyboard inside the card while the tour is open.
       var items = card.querySelectorAll("button:not([hidden])");
       var first = items[0], last = items[items.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      var inside = Array.prototype.indexOf.call(items, document.activeElement) >= 0;
+      if (!inside) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
@@ -189,9 +201,10 @@
   var fresh = Date.now() - (parseInt(parts[1], 10) || 0) < 10 * 60 * 1000;
   if (!isNaN(saved) && fresh && steps[saved] && onThisPage(steps[saved])) {
     start(saved);
-  } else if (/[?&]tour=1/.test(location.search)) {
+  } else if (/[?&]tour=1\b/.test(location.search)) {
     start(0); // a "Show me how" link from the guide page
   } else if (document.querySelector("[data-tour-autostart]") && !read(SEEN)) {
+    store(SEEN, "1"); // once: if they leave half-way, it waits in the menu instead of popping up again
     start(0);
   }
 })();

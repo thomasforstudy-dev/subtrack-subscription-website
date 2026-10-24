@@ -128,6 +128,20 @@ VI = {
     "You've sent a few test emails already. Please try again in an hour.": "Bạn đã gửi vài email thử rồi. Hãy thử lại sau một giờ.",
     "Test email sent. Check your inbox (and the spam folder).": "Đã gửi email thử. Hãy xem hộp thư (và cả thư rác).",
     "We couldn't send the email right now. Please try again later.": "Chưa gửi được email lúc này. Vui lòng thử lại sau.",
+    "Links to private or local addresses (like 127.0.0.1 or your router) can't be saved.":
+        "Không lưu được link tới địa chỉ nội bộ (như 127.0.0.1 hoặc router của bạn).",
+    # bill reading jobs
+    "Photos and scanned pages need OCR, and OCR isn't switched on yet. Type the bill in, or try again later.": 'Ảnh và trang quét cần OCR, mà OCR chưa được bật. Hãy tự nhập hóa đơn, hoặc thử lại sau.',
+    "The OCR computer didn't answer. We'll try again a few times; you can also type the bill in.": 'Máy OCR không trả lời. Chúng tôi sẽ thử lại vài lần; bạn cũng có thể tự nhập hóa đơn.',
+    "The OCR computer is busy. We'll try again a few times.": 'Máy OCR đang bận. Chúng tôi sẽ thử lại vài lần.',
+    "The OCR computer sent something we couldn't use. Type the bill in, or try again later.": 'Máy OCR gửi về dữ liệu không dùng được. Hãy tự nhập hóa đơn, hoặc thử lại sau.',
+    'Reading this file took too long.': 'Đọc tệp này mất quá lâu.',
+    'Reading this file failed unexpectedly.': 'Đọc tệp này bị lỗi bất ngờ.',
+    "This file couldn't be read. Type the bill in instead.": 'Không đọc được tệp này. Hãy tự nhập hóa đơn.',
+    'This Word file is too big to read.': 'Tệp Word này quá lớn để đọc.',
+    "The reader's answer couldn't be trusted, so nothing was filled in. Type the bill in.": 'Kết quả đọc không đáng tin, nên không ô nào được điền. Hãy tự nhập hóa đơn.',
+    'The uploaded file is missing on the server.': 'Không tìm thấy tệp đã tải lên trên máy chủ.',
+    'Reading kept failing, so we stopped trying.': 'Đọc thất bại nhiều lần nên đã dừng thử.',
     # read aloud
     "That PDF is bigger than 40 MB.": "Tệp PDF lớn hơn 40 MB.",
     "Word files can be up to 10 MB. A PDF can be up to 40 MB.": "Tệp Word tối đa 10 MB. Tệp PDF tối đa 40 MB.",
