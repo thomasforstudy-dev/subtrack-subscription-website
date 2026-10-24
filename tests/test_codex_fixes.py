@@ -117,3 +117,15 @@ def test_subby_voice_controls_are_translated(app):
     client.set_cookie("ui_lang", "vi")
     page = client.get("/").get_data(as_text=True)
     assert "🎙️ Giọng nói" in page and "Kết thúc Voice" not in page
+
+
+# ---------- idea_fix2: Subby's look and the "Paid" button ----------
+
+def test_chat_avatar_is_the_mascot_and_buttons_keep_their_look(app):
+    page = app.test_client().get("/").get_data(as_text=True)
+    assert 'data-subby-avatar><img src="/static/favicon.svg' in page
+    css = (Path(__file__).resolve().parent.parent / "app" / "static" / "style.css").read_text(encoding="utf-8")
+    # Text-link styling must not strip real buttons (e.g. "✓ Paid") inside inline forms.
+    assert ".inline button:not([class])" in css and "\n.inline button {" not in css
+    # The pet button never gets the violet hover square.
+    assert ".subby-fab--pet:hover,\n.subby-fab--pet:focus-visible,\n.subby-fab--pet:active {\n  background: none;" in css
