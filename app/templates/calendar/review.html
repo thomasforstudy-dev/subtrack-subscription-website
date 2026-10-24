@@ -10,7 +10,7 @@
     <div class="card form-card">
       <div class="card-head-row">
         <div class="service-cell">
-          <span class="service-tile" aria-hidden="true">{{ (item.name or 'S')[:2]|upper }}</span>
+          <span class="service-tile tone-{{ tone(item.name) }}" aria-hidden="true">{{ (item.name or 'S')[:2]|upper }}</span>
           <div>
             <h2 style="margin: 0;">{{ item.name }}</h2>
             <p class="muted small-text" style="margin: 0.2rem 0 0;">

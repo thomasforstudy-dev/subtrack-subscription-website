@@ -8,7 +8,6 @@
   <div class="section-head" id="subscriptions">
     <div>
       <h1>{{ t("Gói đăng ký", "Subscriptions") }}</h1>
-      <p class="muted">{{ t("Ngày hiển thị là ngày gia hạn dự kiến, chưa phải tiền đã trừ. Lời nhắc giúp bạn kịp giữ hoặc hủy gói trên trang của nhà cung cấp.", "Dates are expected renewal dates, not confirmed charges. Reminders help you keep or cancel in time on the provider's site.") }}</p>
     </div>
     <div class="head-actions">
       <a class="button secondary" href="{{ url_for('calendar.index') }}">{{ t("Lịch gia hạn", "Renewal calendar") }}</a>
@@ -21,10 +20,9 @@
     <div class="card account-summary-strip" id="account-wide-summary">
       <div class="summary-grid">
         {% for row in totals %}
-          <div class="stat-card">
-            <span class="stat-label">{{ t("Mỗi tháng", "Per month") }} ({{ row.currency }})</span>
-            <strong class="stat-value">{{ row.currency }} {{ row.monthly }} / {{ t("tháng", "month") }}</strong>
-            <span class="stat-sub">{{ row.currency }} {{ row.yearly }} / {{ t("năm", "year") }} · {{ row.count }} {{ t("gói đang hoạt động", "active plans") }}</span>
+          <div class="stat-card tone-bg-{{ loop.index0 % 4 }}">
+            <strong class="stat-value">{{ row.currency }} {{ row.monthly | money(row.currency) }} / {{ t("tháng", "month") }}</strong>
+            <span class="stat-sub">{{ row.count }} {{ t("gói đang hoạt động", "active plans") }}</span>
           </div>
         {% endfor %}
       </div>
@@ -57,12 +55,6 @@
   </form>
 
   {% if items %}
-    {% if has_server_pager %}
-      <p class="scope-notice muted small-text">
-        {{ t("Đang hiện", "Showing") }} {{ items|length }} / {{ pages.total }} {{ t("gói", "plans") }}{% if pages.pages > 1 %} · {{ t("trang", "page") }} {{ pages.page }}/{{ pages.pages }}{% endif %}{% if q %} · “{{ q }}”{% endif %}
-      </p>
-    {% endif %}
-
     <div class="table-scroll">
       <table id="subs-table">
         <thead>
@@ -86,7 +78,7 @@
                 data-status="{{ item.status if item.status is defined else 'active' }}">
               <td>
                 <div class="service-cell">
-                  <span class="service-tile" aria-hidden="true">{{ btile }}</span>
+                  <span class="service-tile tone-{{ tone(item.name) }}" aria-hidden="true">{{ btile }}</span>
                   <div class="service-info">
                     <div class="sub-card-title-row">
                       <strong class="service-name">{{ item.name }}</strong>
@@ -98,8 +90,8 @@
                   </div>
                 </div>
               </td>
-              <td class="num-cell"><strong>{{ item.amount }} {{ item.currency }}</strong></td>
-              <td><span class="pill">{{ cycles.get(item.cycle, item.cycle) }}</span></td>
+              <td class="num-cell"><strong>{{ item.amount | money(item.currency) }}</strong> <small class="muted">{{ item.currency }}</small></td>
+              <td><span class="pill cycle-{{ item.cycle }}">{{ cycles.get(item.cycle, item.cycle) }}</span></td>
               <td>
                 <strong class="num-cell">{{ item.next_renewal_at.strftime('%d/%m/%Y') }}</strong>
                 {% if is_active %}
@@ -120,7 +112,6 @@
                 {% else %}
                   <span class="pill sun-label">{{ t("Đã lưu trữ", "Archived") }}</span>
                 {% endif %}
-                <small class="block-small muted">{{ t("Nhắc trước", "Remind") }}: {{ item.lead_days if (item.lead_days is defined and item.lead_days) else item.remind_days }} {{ t("ngày", "days") }}</small>
               </td>
               <td class="actions-cell">
                 <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}">{{ t("Sửa", "Edit") }}</a>
@@ -156,7 +147,6 @@
 
     {# Export only what is shown here; CSV cells are made safe to open in Excel (app-ui.js). #}
     <div class="card compact-card export-scope-bar">
-      <p class="muted small-text">{{ t("Tải về " ~ (items|length) ~ " gói đang hiện trên trang này.", "Download the " ~ (items|length) ~ " plans shown on this page.") }}</p>
       <div class="head-actions">
         <button type="button" class="button secondary btn-sm" data-export-subs="csv">⬇ CSV</button>
         <button type="button" class="button secondary btn-sm" data-export-subs="json">⬇ JSON</button>
@@ -176,7 +166,7 @@
     <div class="card empty-state-box mascot-box">
       {{ mascot("hi", 96) }}
       <div>
-        <p><strong>{{ t("Chưa có gói nào. Thêm dịch vụ đầu tiên để AllOutFree nhắc bạn trước hạn.", "None yet. Add your first subscription to get reminded in time.") }}</strong></p>
+        <p><strong>{{ t("Chưa có gói nào.", "No plans yet.") }}</strong></p>
         <p><a class="button" href="{{ url_for('subscriptions.create') }}">+ {{ t("Thêm gói đầu tiên", "Add your first plan") }}</a></p>
       </div>
     </div>
@@ -191,7 +181,7 @@
       </header>
       <div class="legal-dialog-body">
         <p>{{ t("Lưu trữ", "Archive") }} <strong id="archive-target-name"></strong>?</p>
-        <p class="muted small-text">{{ t("AllOutFree sẽ ngừng nhắc gói này. Việc này KHÔNG hủy gói ở nhà cung cấp: bạn vẫn cần tự hủy trên trang của họ.", "AllOutFree stops reminding you about it. This does NOT cancel it with the provider: do that on their site.") }}</p>
+        <p class="muted small-text">{{ t("Ngừng nhắc gói này. Muốn hủy gói, hãy hủy trên trang nhà cung cấp.", "Reminders stop. To cancel the plan, do it on the provider's site.") }}</p>
         <div class="form-actions compact-top">
           <button type="button" class="button" id="confirm-archive-btn">{{ t("Lưu trữ", "Archive") }}</button>
           <button type="button" class="button secondary" data-close-dialog>{{ t("Giữ lại", "Keep it") }}</button>

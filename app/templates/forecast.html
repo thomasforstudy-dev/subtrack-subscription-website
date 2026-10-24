@@ -8,7 +8,7 @@
   <div class="section-head">
     <div>
       <h1>{{ t("Dự đoán chi tiêu", "Spending forecast") }}</h1>
-      <p class="muted">{{ t("Đoán bạn sẽ mua gì dựa trên hóa đơn đã lưu: càng nhiều hóa đơn, dự đoán càng chính xác.", "A guess at what you'll buy, based on your saved receipts: the more receipts, the better the guess.") }}</p>
+      <p class="muted">{{ t("Dựa trên hóa đơn bạn đã lưu.", "Based on your saved receipts.") }}</p>
     </div>
     <div class="head-actions">
       <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
@@ -88,7 +88,7 @@
 
     <div class="card forecast-ai">
       <h2 class="card-title">✨ {{ t("Hỏi Gemini", "Ask Gemini") }}</h2>
-      <p class="muted small-text">{{ t("Gemini (AI của Google) viết dự đoán bằng lời và một mẹo tiết kiệm. Chỉ các con số ở trên (tên quán, phần trăm, số tiền) được gửi cho Google, không gửi hóa đơn.", "Gemini (Google's AI) writes the forecast in words, plus one money tip. Only the numbers above (place names, percents, amounts) go to Google, never your bills.") }}</p>
+      <p class="muted small-text">{{ t("Chỉ gửi các con số ở trên cho Google, không gửi hóa đơn.", "Only the numbers above go to Google, never your bills.") }}</p>
       {% if advice %}
         <p class="forecast-advice">{{ advice }}</p>
       {% elif problem %}

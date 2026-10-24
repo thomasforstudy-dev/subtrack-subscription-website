@@ -7,6 +7,28 @@ Version 2 (2026-10-15): colourful "chaos → calm" story, Plus Jakarta Sans,
 help bot. `app/static/style.css` still has version 1 (black/white, Segoe UI)
 until the UI lane rebuilds it.
 
+## Version 4 (2026-10-24): less text, more colour
+
+The owner found v3 (grey page, one orange accent, long explanations) bland and
+wordy. v4 rules, on top of the sections below:
+
+- **Words:** each page shows its title and the key numbers. No "how it works"
+  paragraphs, no developer words (null, Decimal, OCR slice, endpoint), no
+  "(Demo)" tags. One short line at most under a heading.
+- **Colour roles:** violet `#6d4aff` = actions and links; the logo's orange
+  `#ff6a2b` = the main "add" action (top bar, phone + button) and highlights;
+  mint `#10c98f`, sky `#2f8fff`, pink `#ff4f9a`, sun `#ffb820` tell kinds of
+  things apart. Page background lilac `#f5f2ff`; dark mode midnight `#0e0b2b`.
+- **Stat tiles:** one vivid gradient per kind of number (`--grad-violet`,
+  `--grad-orange`, `--grad-mint`, `--grad-sky`, `--grad-pink`), white text.
+- **Service tiles:** `tone(name)` (app/__init__.py) gives every name one of six
+  colours, the same on every page (`.tone-0` ... `.tone-5`).
+- **Pills:** cycles and bill categories each have their own soft colour.
+- **Landing:** hero "Never pay for a subscription you forgot." on navy with
+  colour glows; a six-tile feature band; the closing call to action is a
+  violet-to-orange card. Stitch mockups: `docs/design/v4-landing.png`,
+  `docs/design/v4-dashboard.png`.
+
 ## 1. Visual theme and atmosphere
 
 The page tells a story with colour. It starts as **subscription rush hour**:

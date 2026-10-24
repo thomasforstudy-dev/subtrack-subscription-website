@@ -4,7 +4,7 @@
   <div class="section-head">
     <div>
       <h1>{{ t("Đọc to tài liệu", "Read aloud") }}</h1>
-      <p class="muted">{{ t("Tải lên tệp PDF (tối đa 300 trang) hoặc Word, hoặc dán đoạn văn, rồi nghe AI đọc to.", "Upload a PDF (up to 300 pages) or a Word file, or paste some text, then listen to the AI read it.") }}</p>
+      <p class="muted">{{ t("PDF, Word hoặc đoạn văn: AI đọc to cho bạn.", "PDF, Word or pasted text, read out loud by AI.") }}</p>
     </div>
     <div class="head-actions">
       <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
@@ -21,7 +21,7 @@
       <label for="read-text">{{ t("Hoặc dán đoạn văn", "Or paste text") }}</label>
       <textarea id="read-text" name="text" rows="4" maxlength="100000" placeholder="{{ t('Dán chữ vào đây…', 'Paste text here…') }}"></textarea>
     </div>
-    <p class="muted small-text">🔒 {{ t("Tệp chỉ được đọc một lần và không được lưu. Khi bấm nghe, từng đoạn được gửi cho Gemini của Google để tạo giọng đọc. Tài liệu rất dài có thể dùng hết lượt miễn phí của Gemini; khi đó trang tự chuyển sang giọng của trình duyệt.", "The file is read once and not saved. When you press play, each part is sent to Google's Gemini to make the voice. A very long document can use up Gemini's free quota; the page then switches to the browser voice by itself.") }}</p>
+    <p class="muted small-text">🔒 {{ t("Tệp không được lưu. Giọng đọc do Gemini của Google tạo.", "Files aren't saved. The voice is made by Google's Gemini.") }}</p>
     <div class="form-actions"><button type="submit">{{ t("Chuẩn bị đọc", "Get it ready") }}</button></div>
   </form>
 

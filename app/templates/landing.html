@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}AllOutFree — {{ t("Quản lý gói đăng ký, hạn thẻ, link & hóa đơn", "Track subscriptions, card bills and links") }}{% endblock %}
+{% block title %}AllOutFree — {{ t("Nhắc bạn trước mỗi lần gia hạn", "Reminders before every renewal") }}{% endblock %}
 {% block body_class %}landing{% endblock %}
 {% block head %}
   {# Đánh dấu khi JavaScript hoạt động để kích hoạt hiệu ứng cuộn mượt.
@@ -55,26 +55,23 @@
     <section class="chapter dark" id="ch1" data-theme="dark">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label hot-label">{{ t("Chương 01 · Nhiều gói & phí khó nhớ", "Chapter 01 · Subscription rush hour") }}</p>
-          <h1 class="display" data-vi="Giờ cao điểm của các gói đăng ký." data-en="It's subscription rush hour.">
-            Giờ cao điểm của <span class="hot">các gói đăng ký.</span>
-            <span class="sr-only">It's subscription rush hour.</span>
-          </h1>
-          <p class="lead">{{ t("Nhạc, phim, dung lượng đám mây, ba công cụ AI và thẻ tín dụng. Mỗi dịch vụ gia hạn một ngày khác nhau, không dễ nhớ hết lịch thu phí.", "Music, movies, cloud storage, AI tools and credit cards. Every service renews on its own date, making it hard to track.") }}</p>
-          <p class="stat-row">
-            <span class="stat"><strong>{{ t("10 gói", "10 plans") }}</strong> <span>{{ t("xoay vòng mỗi tháng", "renewing this month") }}</span></span>
-            <span class="stat hot-stat"><strong>1.115.000₫ + $113.98</strong> <span>{{ t("rời ví âm thầm (Minh họa)", "leaving quietly (Demo)") }}</span></span>
+          <h1 class="display">{{ t("Đừng trả tiền cho gói", "Never pay for a subscription") }} <span class="hot">{{ t("bạn đã quên.", "you forgot.") }}</span></h1>
+          <p class="lead">{{ t("Thêm gói một lần. Chúng tôi email bạn trước mỗi lần gia hạn.", "Add your plans once. We email you before every renewal.") }}</p>
+          <p class="hero-chips">
+            <span>✓ {{ t("Miễn phí", "Free") }}</span>
+            <span>✓ {{ t("Nhắc qua email", "Email reminders") }}</span>
+            <span>✓ {{ t("Tiếng Việt & English", "Vietnamese & English") }}</span>
           </p>
           <div class="hero-actions">
-            <a class="button big" href="{{ url_for('auth.register') }}">{{ t("Tạo tài khoản miễn phí", "Get started free") }}</a>
-            <a class="scroll-hint" href="#ch2"><span>{{ t("Cuộn xuống xem hành trình", "Scroll to see the story") }}</span> <span aria-hidden="true">↓</span></a>
+            <a class="button big" href="{{ url_for('auth.register') }}">{{ t("Bắt đầu miễn phí", "Start free") }}</a>
+            <a class="scroll-hint" href="#ch2"><span>{{ t("Xem cách hoạt động", "See how it works") }}</span> <span aria-hidden="true">↓</span></a>
           </div>
         </div>
         <div class="rush" data-rush aria-label="{{ t("Minh họa các thẻ dịch vụ đang đến hạn", "Subscription cards about to renew") }}">
           {% for c in rush %}
             <div class="sub-card" style="--x: {{ c.x }}; --y: {{ c.y }}; --r: {{ c.r }}deg; --fx: {{ c.fx }}vw; --fy: {{ c.fy }}vh; --s: {{ c.s }}; --i: {{ loop.index0 }}; --brand: {{ c.color }}">
               <div class="sub-card-in">
-                <span class="tile">{{ c.tile }}</span>
+                <span class="brand-tile">{{ c.tile }}</span>
                 <span class="sub-name">
                   <span>{{ c.name }}</span>
                   <small data-vi="gia hạn {{ c.due }}" data-en="renews {{ c.due_en }}">gia hạn {{ c.due }}</small>
@@ -98,22 +95,21 @@
     <section class="chapter dark" id="ch2" data-theme="dark">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label hot-label">{{ t("Chương 02 · Bất ngờ gia hạn & trễ hạn thẻ", "Chapter 02 · Surprise charges & late fees") }}</p>
           <h2 class="display">
             <span>{{ t("Bất ngờ bị trừ tiền hoặc", "Then the charges") }}</span>
             <span class="hot">{{ t("sát hạn trả thẻ.", "hit your bank.") }}</span>
           </h2>
-          <p class="lead">{{ t("Gói dùng thử quên hủy tự động thu phí cả năm, còn kỳ sao kê thẻ tín dụng thì đến hạn đúng lúc bạn quên kiểm tra.", "A forgotten free trial auto-renews for a full year, right as your credit card statement payment comes due.") }}</p>
+          <p class="lead">{{ t("Một bản dùng thử bị quên, và cả năm bị trừ tiền.", "One forgotten free trial, a whole year charged.") }}</p>
         </div>
         <div class="surprise">
           <div class="phone" aria-label="{{ t("Mô phỏng thông báo trên điện thoại", "Phone notifications example") }}">
-            <p class="phone-top">{{ t("Thứ Ba · 07:42 sáng (Mô phỏng)", "Tuesday · 7:42 AM (Demo)") }}</p>
+            <p class="phone-top">{{ t("Thứ Ba · 07:42", "Tuesday · 7:42 AM") }}</p>
             <div class="notif" style="--i: 0"><strong>{{ t("Thông báo thẻ •••• 4108", "Card Alert •••• 4108") }}</strong><span data-vi="Vừa thu tự động $20.00 cho CHATGPT PLUS" data-en="Auto-charged $20.00 by CHATGPT PLUS">Vừa thu tự động <b>$20.00</b> cho CHATGPT PLUS</span></div>
             <div class="notif" style="--i: 1"><strong>{{ t("Thông báo thẻ •••• 4108", "Card Alert •••• 4108") }}</strong><span data-vi="Vừa thu tự động $59.99 cho ADOBE CC" data-en="Auto-charged $59.99 by ADOBE CC">Vừa thu tự động <b>$59.99</b> cho ADOBE CC</span></div>
             <div class="notif" style="--i: 2"><strong>{{ t("Sao kê thẻ tín dụng", "Credit Card Statement") }}</strong><span data-vi="Hạn thanh toán kỳ này còn 2 ngày" data-en="Statement payment due in 2 days">Hạn thanh toán kỳ này còn <b>2 ngày</b></span></div>
             <div class="notif warn" style="--i: 3"><strong>{{ t("⚠ Cảnh báo chi vượt dự kiến", "⚠ Unplanned charges alert") }}</strong><span>{{ t("Nhiều khoản tự gia hạn cùng tuần", "Multiple auto-renewals in the same week") }}</span></div>
             <p class="phone-total">
-              <span>{{ t("Phát sinh ngoài dự tính (Minh họa)", "Unexpected this month (Demo)") }}</span>
+              <span>{{ t("Ngoài dự tính tháng này", "Unexpected this month") }}</span>
               <span class="hot">$<span data-count="347.82" data-decimals="2">347.82</span></span>
             </p>
           </div>
@@ -131,27 +127,22 @@
 
     {# Chuyển cảnh từ đêm rối rắm sang sáng gọn gàng #}
     <div class="bridge" aria-hidden="true">
-      <p>{{ t("…cho đến khi AllOutFree giúp bạn tổ chức lại mọi thứ.", "…until you organize them all in one place.") }}</p>
+      <p>{{ t("…cho tới khi bạn gom tất cả về một chỗ.", "…until it's all in one place.") }}</p>
     </div>
 
     {# 3. AllOutFree tổ chức lịch (Add them once) #}
     <section class="chapter light" id="ch3" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label">{{ t("Chương 03 · AllOutFree tổ chức lịch", "Chapter 03 · Organize your schedule") }}</p>
           <h2 class="display">
             <span>{{ t("Ghi lại một lần.", "Add them once.") }}</span>
             <span class="calm">{{ t("Lịch trình rõ ràng ngay.", "We'll keep watch.") }}</span>
           </h2>
-          <p class="lead">{{ t("Mọi gói đăng ký được sắp xếp theo ngày gia hạn dự kiến gần nhất, tách biệt rõ ràng từng loại tiền tệ (VND, USD) để bạn nắm chắc chi phí.", "Every subscription is sorted by its next expected renewal date, grouped cleanly by currency so you always know what's coming.") }}</p>
-          <p class="stat-row">
-            <span class="stat light-stat"><strong>5</strong> <span>{{ t("gói đang theo dõi", "tracked plans") }}</span></span>
-            <span class="stat light-stat"><strong>388.000 VND</strong> + <strong>$79.99</strong> <span>{{ t("/ tháng (Minh họa)", "/ month (Demo)") }}</span></span>
-          </p>
+          <p class="lead">{{ t("Mọi gói, xếp theo ngày gia hạn.", "Every plan, sorted by renewal date.") }}</p>
         </div>
         <div class="ledger card">
           <p class="ledger-head">
-            <span>{{ t("Danh sách gói đăng ký (minh họa)", "Your subscriptions (Demo)") }}</span>
+            <span>{{ t("Gói của bạn", "Your plans") }}</span>
             </p>
           {# More than one way to look at your plans: the rows glide to their new place (landing.js). #}
           <div class="ledger-sort" role="group" aria-label="{{ t('Sắp xếp', 'Sort') }}">
@@ -162,7 +153,7 @@
           <div class="ledger-rows" data-ledger>
           {% for row in ledger %}
             <div class="row{% if row.soon %} soon{% endif %}" data-days="{{ row.days }}" data-vnd="{{ row.vnd }}" data-name="{{ row.name }}" style="--fx: {{ row.fx }}px; --fy: {{ row.fy }}px; --r: {{ row.r }}deg; --i: {{ loop.index0 }}">
-              <span class="tile" style="--brand: {{ row.color }}">{{ row.tile }}</span>
+              <span class="brand-tile" style="--brand: {{ row.color }}">{{ row.tile }}</span>
               <span class="sub-name">
                 <span>{{ row.name }}</span>
                 <small>{% if row.soon %}<b data-vi="{{ row.next }}" data-en="{{ row.next_en }}">{{ row.next }}</b>{% else %}<span data-vi="{{ row.next }}" data-en="{{ row.next_en }}">{{ row.next }}</span>{% endif %}</small>
@@ -172,7 +163,7 @@
           {% endfor %}
           </div>
           <div class="ledger-total">
-            <span>{{ t("Dự kiến hàng tháng theo tiền tệ", "Estimated monthly by currency") }}</span>
+            <span>{{ t("Mỗi tháng", "Per month") }}</span>
             <strong>388.000 VND · $79.99</strong>
           </div>
         </div>
@@ -183,13 +174,11 @@
     <section class="chapter light" id="ch4" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label">{{ t("Chương 04 · Nhắc trước hạn", "Chapter 04 · Remind before renewal") }}</p>
           <h2 class="display">
             <span>{{ t("Nhắc bạn", "Remind you") }}</span>
             <span class="calm">{{ t("trước ngày gia hạn.", "before it renews.") }}</span>
           </h2>
-          <p class="lead">{{ t("Đặt mốc nhắc trước 14, 7 hoặc 3 ngày cho từng gói để bạn kịp tự gia hạn hoặc mở trang hủy dịch vụ đúng lúc. AllOutFree chỉ nhắc lịch, không tự hủy dịch vụ bên ngoài.", "Set a 14, 7, or 3-day advance reminder for each plan so you can decide to keep or cancel in time. AllOutFree reminds you; it does not cancel external services automatically.") }}</p>
-          <p class="hint">{{ t("👉 Thử bấm chọn mốc ngày bạn muốn nhận lời nhắc:", "👉 Try it: pick when you want your reminder:") }}</p>
+          <p class="lead">{{ t("Chọn nhắc trước 14, 7 hoặc 3 ngày. Thử bấm:", "Pick 14, 7 or 3 days ahead. Try it:") }}</p>
         </div>
         <div class="remind">
           <div class="timeline card">
@@ -204,21 +193,20 @@
           <div class="mail card">
             <p class="mail-from">
               <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="28" height="28" alt="" />
-              <span>{{ t("Xem trước lời nhắc AllOutFree", "AllOutFree Reminder Preview") }}</span>
-              <span class="pill">{{ t("Mẫu minh họa", "Preview") }}</span>
+              <span>AllOutFree</span>
             </p>
             <p class="mail-subject">
               <span>{{ t("Adobe Creative Cloud dự kiến gia hạn sau", "Adobe Creative Cloud renews in") }}</span>
               <span data-days-text>{{ t("7 ngày", "7 days") }}</span>
             </p>
-            <p class="muted">{{ t("Gói của bạn ($59.99/tháng) sắp tới ngày gia hạn dự kiến. Bạn có thể giữ tiếp hoặc mở link hủy gói đã lưu để tự thao tác kịp thời.", "Your plan ($59.99/mo) is approaching its expected renewal date. Keep it, or open your saved cancel link to manage it directly.") }}</p>
+            <p class="muted">$59.99 / {{ t("tháng", "month") }}</p>
             <p class="mail-actions">
-              <span class="button">{{ t("Mở trang hủy đã lưu", "Open saved cancel page") }}</span>
-              <span class="button secondary">{{ t("Giữ gói đăng ký", "Keep subscription") }}</span>
+              <span class="button">{{ t("Mở trang hủy", "Open cancel page") }}</span>
+              <span class="button secondary">{{ t("Giữ gói", "Keep it") }}</span>
             </p>
             <p class="set">
               <span class="tick-dot" aria-hidden="true">✓</span>
-              <span>{{ t("Email nhắc sẽ đến hộp thư của bạn đúng ngày đó.", "The reminder email reaches your inbox on that day.") }}</span>
+              <span>{{ t("Email đến đúng ngày đó.", "The email arrives that day.") }}</span>
             </p>
           </div>
         </div>
@@ -229,12 +217,11 @@
     <section class="chapter light" id="ch5" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label sun-label">{{ t("Chương 05 · Lưu & ghim link", "Chapter 05 · Pinned links") }}</p>
           <h2 class="display">
             <span>{{ t("Lưu sẵn mọi đường link", "Keep the links you'll") }}</span>
             <span class="calm">{{ t("cần dùng lúc gấp.", "need later.") }}</span>
           </h2>
-          <p class="lead">{{ t("Trang hủy gói, trang quản lý thanh toán hay hỗ trợ khách hàng thường bị giấu sâu. Dán link một lần, AllOutFree tự lấy tiêu đề, hiện rõ tên miền và ghim ngay trên đầu.", "Cancel pages, billing portals and support chats are often buried. Paste a link once, AllOutFree fetches the title, shows the domain clearly, and pins it to the top.") }}</p>
+          <p class="lead">{{ t("Trang hủy, trang thanh toán, hỗ trợ: dán một lần, ghim lên đầu.", "Cancel pages, billing, support: paste once, pin to the top.") }}</p>
         </div>
         <div class="link-grid">
           {% for l in [
@@ -258,23 +245,22 @@
     <section class="chapter light" id="ch6" data-theme="light">
       <div class="chapter-inner">
         <div class="copy">
-          <p class="label">{{ t("Chương 06 · Xem hóa đơn & hạn thẻ tín dụng", "Chapter 06 · Bill review & Credit card due dates") }}</p>
           <h2 class="display">
             <span>{{ t("Soát hóa đơn rõ ràng,", "Review bills clearly,") }}</span>
             <span class="calm">{{ t("không trễ hạn thẻ.", "never miss a card due date.") }}</span>
           </h2>
-          <p class="lead">{{ t("Tải ảnh hoặc PDF hóa đơn để đối chiếu từng mặt hàng và thuế (AI đề xuất — bạn kiểm tra và xác nhận), đồng thời theo dõi kỳ sao kê và hạn thanh toán thẻ tín dụng.", "Upload receipt images or PDFs to verify line items and totals (AI-suggested, user-verified), while keeping track of credit card statement balances and due dates.") }}</p>
+          <p class="lead">{{ t("Tải hóa đơn lên, AI đọc giúp. Hạn trả thẻ luôn trong tầm mắt.", "Upload a bill, AI reads it. Card due dates always in sight.") }}</p>
         </div>
         <div class="bills-card-showcase">
           {# Khối xem hóa đơn (Bills review preview) #}
           <div class="bill-preview card">
             <div class="bill-preview-head">
-              <strong>{{ t("📄 Đối chiếu hóa đơn (minh họa)", "📄 Bill Review (Demo)") }}</strong>
-              <span class="pill sun-label">{{ t("AI đề xuất — cần kiểm tra", "AI suggested — needs review") }}</span>
+              <strong>📄 {{ t("Hóa đơn", "Bill") }}</strong>
+              <span class="pill sun-label">{{ t("AI đã đọc", "Read by AI") }}</span>
             </div>
             <div class="bill-split-mini">
               <div class="bill-source-mini">
-                <span class="muted">{{ t("Nguồn: receipt-adobe-p1.pdf · Trang 1/1", "Source: receipt-adobe-p1.pdf · Page 1/1") }}</span>
+                <span class="muted">receipt-adobe.pdf</span>
                 <div class="ocr-highlight-box">
                   <span>ADOBE SYSTEMS SOFTWARE</span>
                   <mark>TOTAL: USD 59.99 (Tax: 5.45)</mark>
@@ -292,7 +278,7 @@
           <div class="stmt">
             <p class="stmt-top">
               <span>Visa Platinum •••• 4108</span>
-              <span class="pill mint">{{ t("Minh họa kỳ sao kê", "Statement Demo") }}</span>
+              <span class="pill mint">{{ t("Sao kê", "Statement") }}</span>
             </p>
             <div class="stmt-grid">
               <div>
@@ -310,25 +296,45 @@
               <span><b data-count="16" data-from="23">16</b><small>{{ t("giờ", "hours") }}</small></span>
               <span><b data-count="28" data-from="59">28</b><small>{{ t("phút", "mins") }}</small></span>
             </div>
-            <p class="stmt-note">{{ t("Trạng thái: Chưa thanh toán · Nhắc trước 3 ngày để tránh phí phạt trễ hạn.", "Status: Unpaid · Reminds 3 days early to avoid late fees.") }}</p>
+            <p class="stmt-note">{{ t("Nhắc trước 3 ngày", "Reminder 3 days before") }}</p>
           </div>
         </div>
       </div>
+    </section>
+
+    {# Everything in one look: one colour per tool (Stitch v4 design, docs/design/v4-landing.png). #}
+    <section class="features-band" aria-labelledby="features-title">
+      <h2 id="features-title" class="display">{{ t("Mọi thứ ở một nơi", "Everything in one place") }}</h2>
+      <ul class="feature-tiles">
+        {% for icon_char, vi, en, vi_sub, en_sub in [
+          ("📊", "Tổng quan", "Dashboard", "Tiền mỗi tháng, ngày gia hạn", "Monthly cost, next renewals"),
+          ("🧾", "Hóa đơn", "Bills", "AI đọc hóa đơn giúp bạn", "AI reads your receipts"),
+          ("🔗", "Link đã lưu", "Saved links", "Trang hủy gói luôn sẵn", "Cancel pages at hand"),
+          ("📅", "Lịch", "Calendar", "Thêm vào Google Calendar", "Add to Google Calendar"),
+          ("✨", "Công cụ AI", "AI tools", "Dự đoán, đọc to, vòng quay", "Forecast, read aloud, roulette"),
+          ("💬", "Trợ lý Subby", "Subby helper", "Hỏi bằng chữ hoặc giọng nói", "Ask by text or voice")
+        ] %}
+          <li class="feature-tile ft-{{ loop.index0 }}">
+            <span class="feature-icon" aria-hidden="true">{{ icon_char }}</span>
+            <strong>{{ t(vi, en) }}</strong>
+            <span>{{ t(vi_sub, en_sub) }}</span>
+          </li>
+        {% endfor %}
+      </ul>
     </section>
 
     {# 7. CTA bắt đầu & Footer minh bạch (Calm) #}
     <section class="chapter light final" id="ch7" data-theme="light">
       <div class="final-inner">
         <svg class="tick" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" /><path d="M20 33l8 8 16-18" /></svg>
-        <p class="label mint-label">{{ t("Chương cuối · Chủ động & an tâm", "Final chapter · Calm & in control") }}</p>
         <h2 class="display">
           <span>{{ t("Gia hạn chủ động.", "Renew on purpose.") }}</span>
           <span class="calm">{{ t("Hủy đúng lúc.", "Cancel in time.") }}</span>
         </h2>
-        <p class="lead">{{ t("Bắt đầu quản lý gói đăng ký, link quan trọng và hóa đơn của bạn hoàn toàn miễn phí.", "Add your first subscription and organize your links in under a minute.") }}</p>
+        <p class="lead">{{ t("Miễn phí. Chưa tới một phút để bắt đầu.", "Free. Less than a minute to start.") }}</p>
         <p class="cta">
-          <a class="button big" href="{{ url_for('auth.register') }}">{{ t("Bắt đầu miễn phí ngay", "Get started free") }}</a>
-          <a class="button secondary big" href="{{ url_for('auth.login') }}">{{ t("Đăng nhập tài khoản", "Log in") }}</a>
+          <a class="button big" href="{{ url_for('auth.register') }}">{{ t("Bắt đầu miễn phí", "Start free") }}</a>
+          <a class="button secondary big" href="{{ url_for('auth.login') }}">{{ t("Đăng nhập", "Log in") }}</a>
         </p>
       </div>
 
@@ -339,20 +345,20 @@
               <img class="shell-brand-mark" src="{{ url_for('static', filename='favicon.svg') }}" width="32" height="32" alt="" />
               <span class="shell-brand-text">AllOutFree</span>
             </p>
-            <p class="muted foot-desc">{{ t("Ứng dụng web quản lý gói đăng ký, hạn thẻ tín dụng, lưu link và kiểm tra chứng từ/hóa đơn. Dự án học tập & portfolio sinh viên năm 2.", "A web app to track subscriptions, card due dates, saved links, and bill reviews. Built as a 2nd-year student portfolio project.") }}</p>
+            <p class="muted foot-desc">{{ t("Gói đăng ký, hóa đơn và link quan trọng ở một nơi.", "Subscriptions, bills and important links in one place.") }}</p>
           </div>
 
           <div class="foot-col">
-            <strong class="foot-heading">{{ t("Thông tin & Pháp lý", "About & Legal") }}</strong>
+            <strong class="foot-heading">{{ t("Thông tin", "About") }}</strong>
             <ul class="foot-links">
-              <li><button type="button" class="foot-link" data-open-dialog="dialog-about">{{ t("Giới thiệu về AllOutFree", "About AllOutFree") }}</button></li>
-              <li><button type="button" class="foot-link" data-open-dialog="dialog-privacy">{{ t("Chính sách quyền riêng tư", "Privacy Policy") }}</button></li>
-              <li><button type="button" class="foot-link" data-open-dialog="dialog-terms">{{ t("Điều khoản sử dụng", "Terms of Use") }}</button></li>
+              <li><button type="button" class="foot-link" data-open-dialog="dialog-about">{{ t("Giới thiệu", "About") }}</button></li>
+              <li><button type="button" class="foot-link" data-open-dialog="dialog-privacy">{{ t("Quyền riêng tư", "Privacy") }}</button></li>
+              <li><button type="button" class="foot-link" data-open-dialog="dialog-terms">{{ t("Điều khoản", "Terms") }}</button></li>
             </ul>
           </div>
 
           <div class="foot-col">
-            <strong class="foot-heading">{{ t("Liên hệ chủ sở hữu", "Owner Contact") }}</strong>
+            <strong class="foot-heading">{{ t("Liên hệ", "Contact") }}</strong>
             {% if contact.messenger or contact.zalo %}
               <div class="foot-contact-list">
                 {% if contact.messenger %}
@@ -363,14 +369,14 @@
                 {% endif %}
               </div>
             {% else %}
-              <p class="muted foot-desc">{{ t("Kênh liên hệ trực tiếp được hiển thị tự động khi chủ sở hữu cấu hình trong hệ thống.", "Direct contact links (Messenger/Zalo) appear when configured by the owner.") }}</p>
+              <button type="button" class="foot-link" data-open-subby>{{ t("Hỏi trợ lý Subby", "Ask Subby") }}</button>
             {% endif %}
           </div>
         </div>
 
         <div class="foot-bottom">
           <span class="muted">© 2026 AllOutFree · {{ t("Dự án portfolio", "Portfolio project") }}</span>
-          <span class="muted">{{ t("Không thu thập mật khẩu ngân hàng · Dữ liệu tách biệt theo từng tài khoản", "Never asks for bank passwords · Data isolated per account") }}</span>
+          <span class="muted">{{ t("Không bao giờ hỏi mật khẩu ngân hàng", "Never asks for bank passwords") }}</span>
         </div>
       </footer>
     </section>

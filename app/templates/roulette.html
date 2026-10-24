@@ -5,7 +5,7 @@
   <div class="section-head">
     <div>
       <h1>{{ t("Vòng quay ăn gì", "Food roulette") }}</h1>
-      <p class="muted">{{ t("Mỗi ô là một quán trong hóa đơn ăn uống của bạn. Quay để chọn bữa này ăn ở đâu.", "Each slice is a place from your food receipts. Spin to pick where to eat this time.") }}</p>
+      <p class="muted">{{ t("Quay để chọn quán ăn bữa này.", "Spin to pick where to eat.") }}</p>
     </div>
     <div class="head-actions">
       <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
@@ -37,7 +37,7 @@
 
       <div class="card">
         <h2 class="card-title">{{ t("Các quán trên vòng quay", "Places on the wheel") }}</h2>
-        <p class="muted small-text">{{ t("Quán quen: quán bạn ghé nhiều có ô to hơn. Đổi gió: quán lâu rồi chưa ghé có ô to hơn.", "My usual: places you visit often get a bigger slice. Something different: places you haven't been to for a while get a bigger slice.") }}</p>
+        <p class="muted small-text">{{ t("Quán quen: quán hay ghé có ô to hơn. Đổi gió: quán lâu chưa ghé có ô to hơn.", "My usual: favourites get bigger slices. Something different: places you haven't been to lately.") }}</p>
         <ul class="mini-list">
           {% for place in places %}
             <li>

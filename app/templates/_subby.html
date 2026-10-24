@@ -43,7 +43,7 @@
 
     {# Màn hình Voice Mode theo thiết kế Stitch (docs/design/subby-voice-phone.png) #}
     <div class="subby-voice-stage" data-voice-stage data-stage-state="idle" hidden role="region" aria-label="{{ t("Chế độ trò chuyện bằng giọng nói", "Voice chat") }}">
-      <p class="voice-privacy-note muted small-text" data-voice-privacy-note>{{ t("🔒 Chỉ bật mic khi bạn bấm chọn. Trình duyệt có thể gửi giọng nói đến dịch vụ nhận diện bên ngoài (external speech service), và giọng đọc trực tuyến (online TTS) cũng có thể dùng dịch vụ đó. AllOutFree không lưu âm thanh; hãy kiểm tra chữ trước khi gửi.", "🔒 Mic starts only when you click. Your browser may send speech to an external recognition service, and online voices for spoken replies may use one too. AllOutFree does not store audio; review the text before sending.") }}</p>
+      <p class="voice-privacy-note muted small-text" data-voice-privacy-note>{{ t("🔒 Micro chỉ bật khi bạn bấm. Không lưu âm thanh.", "🔒 The mic starts only when you click. No audio is kept.") }}</p>
       <div class="voice-stage-center">
         <div class="voice-orb-wrap">
           <span class="voice-orb-ring ring-1" aria-hidden="true"></span>
@@ -117,7 +117,7 @@
       </div>
       <div class="voice-info">
         <strong data-voice-state>{{ t("Đang nghe qua micro…", "Listening via microphone…") }}</strong>
-        <small class="muted" data-voice-preview>{{ t("Trình duyệt có thể dùng dịch vụ nhận diện bên ngoài (AllOutFree không lưu âm thanh). Kiểm tra chữ trước khi gửi.", "Browser speech recognition may use an external service (AllOutFree does not store audio). Review text before sending.") }}</small>
+        <small class="muted" data-voice-preview>{{ t("Xem lại chữ trước khi gửi.", "Check the text before sending.") }}</small>
       </div>
       <div class="voice-actions">
         <button type="button" class="chip on" data-voice-stop>{{ t("Dừng & Xem chữ", "Stop & Review") }}</button>
@@ -165,7 +165,7 @@
         <span class="pill sun-label">{{ t("Cần bạn xác nhận thao tác", "Action confirmation required") }}</span>
         <strong data-action-title>{{ t("Đề xuất thêm / sửa gói đăng ký", "Suggested change to a plan") }}</strong>
         <p class="muted small-text" data-action-detail></p>
-        <p class="small-text action-warn">{{ t("⚠ Lưu ý: Phản hồi văn bản của trợ lý AI chưa tự động ghi vào cơ sở dữ liệu. Hãy bấm nút bên dưới để mở biểu mẫu và lưu xác nhận từ máy chủ.", "⚠ Note: AI chat replies do not mutate database records directly. Click below to open the form and save on the server.") }}</p>
+        <p class="small-text action-warn">{{ t("Mở biểu mẫu bên dưới để lưu.", "Open the form below to save it.") }}</p>
         <div class="handoff-buttons">
           <a class="button btn-sm" data-action-confirm-link href="{{ url_for('subscriptions.create') }}">{{ t("Mở biểu mẫu xác nhận", "Open form to confirm") }}</a>
           <button type="button" class="button secondary btn-sm" data-action-dismiss>{{ t("Đóng", "Dismiss") }}</button>
