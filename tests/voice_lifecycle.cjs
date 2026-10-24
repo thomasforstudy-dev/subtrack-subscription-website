@@ -29,7 +29,7 @@ const context = { ...buttons, window: { SpeechRecognition: Speech },
     addEventListener(name, cb) { this[name] = cb; } },
   input: { value: '', focus() {}, addEventListener(name, cb) { this[name] = cb; } }, voiceBar: {}, voiceStage: { hidden: false },
   voiceState: {}, voicePreview: {}, voiceTranscriptEl: {}, voiceTranscriptActions: {},
-  setVoiceModeOpen() {}, setVoiceStageState() {}, stopSpeaking() {},
+  setVoiceModeOpen() {}, setVoiceStageState() {}, stopSpeaking() {}, petSignal() {},
   say(text) { spokenLog.push(text); },
   tr(vi, en) { return currentUiLang === 'en' ? en : vi; },  // subby.js's language helper
   root: { classList: { toggle() {} } }, voiceModeToggleBtn: null, panel: { hidden: false },

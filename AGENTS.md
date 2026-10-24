@@ -44,6 +44,8 @@ helper, and install a Chrome extension for reminders.
 | `app/api_tokens.py`, `app/api.py` | Extension tokens (Settings page) and the token-only `/api/v1/` API |
 | `app/tools.py`, `app/forecast.py`, `app/read_aloud.py`, `app/roulette.py` | AI tools (`/tools/`): spending forecast, Read aloud (Gemini voice), food roulette |
 | `app/guide.py`, `templates/_tour.html`, `static/tour.js` | User guide page (`/guide`) and the step-by-step spotlight tours (new users, sign-up) |
+| `templates/_pet.html`, `static/pet.js`, `templates/_subby.html` | Subby the AI pet (the animated chat button that reacts, follows the cursor and gives tips) |
+| `tools/loadtest.py` | Local-only load test (refuses anything but 127.0.0.1) |
 | `app/templates/` | HTML pages |
 | `database/01_schema.sql` | **T-SQL schema: the source of truth for SQL Server** |
 | `tests/` | Automated tests (pytest) |

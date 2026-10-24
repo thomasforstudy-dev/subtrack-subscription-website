@@ -126,7 +126,17 @@
   let voiceMuted = false;
   let activeSpeakBtn = null;
 
+  // Tell the pet (static/pet.js) how Subby feels, so it can react. Harmless if no pet.
+  function petSignal(mood) {
+    try {
+      document.dispatchEvent(new CustomEvent("subby:mood", { detail: { mood: mood } }));
+    } catch (e) {
+      // very old browser: the pet just stays idle
+    }
+  }
+
   function setVoiceStageState(state, customLabel) {
+    petSignal(state);  // "listening" | "thinking" | "speaking" | "idle"
     if (voiceStage) {
       voiceStage.dataset.stageState = state;
     }
@@ -728,6 +738,7 @@
     root.classList.toggle("open", open);
     openBtn.setAttribute("aria-expanded", String(open));
     if (teaser) teaser.hidden = true;
+    petSignal(open ? "open" : "idle");
     if (open) {
       if (!log.children.length) {
         say(
