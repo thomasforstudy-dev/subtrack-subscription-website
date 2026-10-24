@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_mascot.html" import mascot %}
+{% from "_icons.html" import icon %}
 {% block title %}{{ t("Gói đăng ký", "Subscriptions") }} — AllOutFree{% endblock %}
 {% block content %}
   {% set has_server_pager = (pages is defined) %}
@@ -114,16 +115,16 @@
                 {% endif %}
               </td>
               <td class="actions-cell">
-                <a href="{{ url_for('subscriptions.edit', item_id=item.id) }}">{{ t("Sửa", "Edit") }}</a>
+                <a class="icon-action" href="{{ url_for('subscriptions.edit', item_id=item.id) }}" title="{{ t('Sửa', 'Edit') }}" aria-label="{{ t('Sửa', 'Edit') }} {{ item.name }}">{{ icon("pencil", 16) }}</a>
                 {% if is_active %}
                   <form class="inline archive-form" method="post" action="{{ url_for('subscriptions.archive', item_id=item.id) }}" data-sub-title="{{ item.name }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit">{{ t("Lưu trữ", "Archive") }}</button>
+                    <button type="submit" class="icon-action" title="{{ t('Lưu trữ', 'Archive') }}" aria-label="{{ t('Lưu trữ', 'Archive') }} {{ item.name }}">{{ icon("archive", 16) }}</button>
                   </form>
                 {% else %}
                   <form class="inline restore-form" method="post" action="{{ url_for('subscriptions.restore', item_id=item.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit">{{ t("Khôi phục", "Restore") }}</button>
+                    <button type="submit" class="icon-action" title="{{ t('Khôi phục', 'Restore') }}" aria-label="{{ t('Khôi phục', 'Restore') }} {{ item.name }}">{{ icon("restore", 16) }}</button>
                   </form>
                 {% endif %}
               </td>

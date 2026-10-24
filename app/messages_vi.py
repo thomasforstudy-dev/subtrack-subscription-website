@@ -123,6 +123,11 @@ VI = {
     "This draft is already closed.": "Bản nháp này đã đóng.",
     # extension tokens
     "Pick what the token may see.": "Chọn những gì mã được xem.",
+    # settings: test email
+    "Confirm your email first, then try the test email.": "Hãy xác nhận email trước, rồi thử gửi email.",
+    "You've sent a few test emails already. Please try again in an hour.": "Bạn đã gửi vài email thử rồi. Hãy thử lại sau một giờ.",
+    "Test email sent. Check your inbox (and the spam folder).": "Đã gửi email thử. Hãy xem hộp thư (và cả thư rác).",
+    "We couldn't send the email right now. Please try again later.": "Chưa gửi được email lúc này. Vui lòng thử lại sau.",
     # read aloud
     "That PDF is bigger than 40 MB.": "Tệp PDF lớn hơn 40 MB.",
     "Word files can be up to 10 MB. A PDF can be up to 40 MB.": "Tệp Word tối đa 10 MB. Tệp PDF tối đa 40 MB.",

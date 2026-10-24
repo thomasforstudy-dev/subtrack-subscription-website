@@ -18,7 +18,7 @@
 
   <div class="bills-top">
     {# Upload: the file is checked, stored privately, then typed in or read #}
-    <form class="card upload-card" method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data">
+    <form class="card upload-card" data-tour="upload" method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <h2 class="card-title">{{ icon("upload", 20) }} {{ t("Tải hóa đơn lên", "Upload a bill") }}</h2>
       <label for="bills-upload-input" class="sr-only">{{ t("Chọn tệp", "Choose a file") }}</label>
@@ -183,20 +183,20 @@
               <td class="num-cell"><strong>{{ bill.total | money(bill.currency) }}</strong> <small class="muted">{{ bill.currency }}</small></td>
               <td><span class="pill cat-{{ bill.category }}">{{ cat_names.get(bill.category, bill.category) }}</span></td>
               <td class="actions-cell">
-                <a href="{{ url_for('bills.edit', bill_id=bill.id) }}" aria-label="{{ t('Sửa', 'Edit') }} {{ bill.merchant }}">{{ t("Sửa", "Edit") }}</a>
+                <a class="icon-action" href="{{ url_for('bills.edit', bill_id=bill.id) }}" title="{{ t('Sửa', 'Edit') }}" aria-label="{{ t('Sửa', 'Edit') }} {{ bill.merchant }}">{{ icon("pencil", 16) }}</a>
                 {% if bill.document_id %}
-                  <a href="{{ url_for('bills.download', document_id=bill.document_id) }}" aria-label="{{ t('Tệp của', 'File for') }} {{ bill.merchant }}">{{ t("Tệp", "File") }}</a>
+                  <a class="icon-action" href="{{ url_for('bills.download', document_id=bill.document_id) }}" title="{{ t('Tệp gốc', 'File') }}" aria-label="{{ t('Tệp của', 'File for') }} {{ bill.merchant }}">{{ icon("file", 16) }}</a>
                 {% endif %}
                 {% if bill.kind == 'card_bill' and bill.paid_at %}
                   <form method="post" action="{{ url_for('bills.mark_paid', bill_id=bill.id) }}" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <input type="hidden" name="paid" value="0" />
-                    <button type="submit">{{ t("Chưa trả", "Unpaid") }}</button>
+                    <button type="submit" class="icon-action" title="{{ t('Đánh dấu chưa trả', 'Mark unpaid') }}" aria-label="{{ t('Đánh dấu chưa trả', 'Mark unpaid') }} {{ bill.merchant }}">{{ icon("restore", 16) }}</button>
                   </form>
                 {% endif %}
                 <form method="post" action="{{ url_for('bills.restore' if status == 'archived' else 'bills.archive', bill_id=bill.id) }}" class="inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                  <button type="submit">{{ t("Khôi phục", "Restore") if status == 'archived' else t("Lưu trữ", "Archive") }}</button>
+                  <button type="submit" class="icon-action" title="{{ t('Khôi phục', 'Restore') if status == 'archived' else t('Lưu trữ', 'Archive') }}" aria-label="{{ t('Khôi phục', 'Restore') if status == 'archived' else t('Lưu trữ', 'Archive') }} {{ bill.merchant }}">{{ icon('restore', 16) if status == 'archived' else icon('archive', 16) }}</button>
                 </form>
               </td>
             </tr>

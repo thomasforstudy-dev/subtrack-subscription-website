@@ -6,9 +6,10 @@
     <div class="auth-header">
       <h1>{{ t("Tạo tài khoản AllOutFree", "Create your account") }}</h1>
       <p class="muted">{{ t("Thêm gói đăng ký một lần, AllOutFree nhắc bạn trước khi gia hạn.", "Add your subscriptions once. We'll remind you before they renew.") }}</p>
+      <button type="button" class="tour-chip" data-tour-start="0">👀 {{ t("Chỉ tôi cách làm", "Show me how") }}</button>
     </div>
 
-    {% include "auth/_social.html" %}
+    <div data-tour="social">{% include "auth/_social.html" %}</div>
 
     <form method="post" id="register-form" class="auth-form" data-submitting-text="{{ t('Đang tạo tài khoản…', 'Creating your account…') }}">
       {% if csrf_token is defined %}
@@ -16,7 +17,7 @@
       {% endif %}
 
       {# Email first: browsers fill a saved login email here, not into Username. #}
-      <div class="field-group">
+      <div class="field-group" data-tour="email">
         <label for="reg-email">{{ t("Địa chỉ email", "Email address") }}</label>
         <input id="reg-email" type="email" name="email" required maxlength="255" autocomplete="email"
                spellcheck="false" autocapitalize="none" autocorrect="off" inputmode="email" enterkeyhint="next"
@@ -25,7 +26,7 @@
         <small id="email-error" class="field-error" role="status" aria-live="polite" hidden></small>
       </div>
 
-      <div class="field-group">
+      <div class="field-group" data-tour="username">
         <label for="reg-username">{{ t("Tên đăng nhập", "Username") }}</label>
         {# "nickname", not "username": a username box would be auto-filled with the saved login email. #}
         <input id="reg-username" type="text" name="username" required minlength="3" maxlength="30"
@@ -37,7 +38,7 @@
         <small id="username-error" class="field-error" role="status" aria-live="polite" hidden></small>
       </div>
 
-      <div class="field-group">
+      <div class="field-group" data-tour="password">
         <label for="new-password">{{ t("Mật khẩu", "Password") }}</label>
         <div class="password-wrap">
           <input id="new-password" type="password" name="password" required
@@ -67,7 +68,7 @@
         <small id="confirm-error" class="field-error" role="status" aria-live="polite" hidden></small>
       </div>
 
-      <button type="submit" class="auth-submit">{{ t("Tạo tài khoản", "Create account") }}</button>
+      <button type="submit" class="auth-submit" data-tour="create">{{ t("Tạo tài khoản", "Create account") }}</button>
     </form>
 
     <p class="muted auth-footer-link">
@@ -122,4 +123,8 @@
       updateRules();
     })();
   </script>
+{% endblock %}
+{% block scripts %}
+  {% from "_tour.html" import signup_tour %}
+  {{ signup_tour() }}
 {% endblock %}

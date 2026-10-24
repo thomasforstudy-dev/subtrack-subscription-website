@@ -1,7 +1,9 @@
 """Manual calendar links and private ICS downloads; no API keys or live sync."""
 
 import re
-from datetime import datetime, timedelta, timezone
+from calendar import Calendar as MonthCalendar
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlencode
 from uuid import NAMESPACE_URL, uuid5
 
@@ -9,7 +11,7 @@ from flask import Blueprint, Response, render_template
 from flask_login import current_user, login_required
 
 from app.models import Subscription
-from app.schedule import user_zone
+from app.schedule import local_now, user_zone
 
 bp = Blueprint("calendar", __name__, url_prefix="/calendar")
 
@@ -96,7 +98,24 @@ def download(items):
 @login_required
 def index():
     items = own_active().order_by(Subscription.next_renewal_at, Subscription.id).all()
-    return render_template("calendar/index.html", items=items, zone=user_zone(current_user.timezone).key)
+    today = local_now(current_user.timezone).date()
+    return render_template("calendar/index.html", items=items, zone=user_zone(current_user.timezone).key,
+                           months=month_grids(items, today), today=today)
+
+
+def month_grids(items, today: date, count: int = 2) -> list[dict]:
+    """This month and the next one as weeks of days (Monday first), each day
+    with the plans that renew on it, for the picture at the top of the page."""
+    by_day = defaultdict(list)
+    for item in items:
+        by_day[item.next_renewal_at].append(item)
+    months, first = [], today.replace(day=1)
+    for _ in range(count):
+        weeks = [[{"day": d, "inside": d.month == first.month, "plans": by_day.get(d, [])} for d in week]
+                 for week in MonthCalendar(firstweekday=0).monthdatescalendar(first.year, first.month)]
+        months.append({"first": first, "weeks": weeks})
+        first = (first + timedelta(days=32)).replace(day=1)
+    return months
 
 
 @bp.route("/renewals.ics")

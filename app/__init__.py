@@ -117,6 +117,7 @@ def create_app() -> Flask:
     from app.calendar import bp as calendar_bp
     from app.dashboard import bp as dashboard_bp
     from app.forecast import bp as forecast_bp
+    from app.guide import bp as guide_bp
     from app.links import bp as links_bp
     from app.main import bp as main_bp
     from app.oauth import bp as oauth_bp
@@ -143,6 +144,7 @@ def create_app() -> Flask:
     app.register_blueprint(api_tokens_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(tools_bp)
+    app.register_blueprint(guide_bp)
     app.register_blueprint(forecast_bp)
     app.register_blueprint(read_aloud_bp)
     app.register_blueprint(roulette_bp)
