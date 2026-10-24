@@ -1,6 +1,7 @@
 """Pinned links: save useful websites, tag them, search them."""
 
 import hashlib
+import ipaddress
 import re
 from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit
 
@@ -236,7 +237,22 @@ def normalize_url(raw: str) -> tuple[str, str | None]:
     # which could run code when clicked.
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
         return "", "That doesn't look like a web link (it should start with http:// or https://)."
+    if is_private_host(parsed.hostname):
+        return "", "Links to private or local addresses (like 127.0.0.1 or your router) can't be saved."
     return url, None
+
+
+def is_private_host(host: str) -> bool:
+    """True for localhost names and IP addresses that aren't on the public
+    internet (127.0.0.1, 10.x, 192.168.x, 169.254.x, ::1 ...). Names like
+    example.com are checked again by link_preview before the server fetches them."""
+    host = host.strip("[]").rstrip(".").lower()
+    if host == "localhost" or host.endswith((".localhost", ".local", ".internal")):
+        return True
+    try:
+        return not ipaddress.ip_address(host).is_global
+    except ValueError:
+        return False  # a normal name, not an IP address
 
 
 def normalize_tags(raw: str) -> str:

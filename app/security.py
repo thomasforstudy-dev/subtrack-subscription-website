@@ -80,7 +80,7 @@ class RateLimiter:
     one server process. That fits SubTrack (one waitress process on one PC).
     """
 
-    MAX_KEYS = 10_000  # clean up old keys past this, so memory can't grow forever
+    MAX_KEYS = 10_000  # a hard cap on remembered keys, so memory can't grow forever
 
     def __init__(self, limit: int, window: int):
         self.limit = limit
@@ -105,9 +105,14 @@ class RateLimiter:
         """Count one event. Returns False (and doesn't count it) if over the limit."""
         with self._lock:
             now = time.monotonic()
-            if len(self._hits) > self.MAX_KEYS:
+            if len(self._hits) >= self.MAX_KEYS and key not in self._hits:
                 for old_key in list(self._hits):
-                    self._recent(old_key, now)
+                    self._recent(old_key, now)  # first drop keys whose window is over
+                while len(self._hits) >= self.MAX_KEYS:
+                    # Still full (e.g. a flood of new IPs): forget the key that was
+                    # quiet the longest. Memory stays bounded; that key starts fresh.
+                    quietest = min(self._hits, key=lambda k: self._hits[k][-1])
+                    del self._hits[quietest]
             recent = self._recent(key, now)
             if len(recent) >= self.limit:
                 return False
@@ -131,6 +136,26 @@ class RateLimiter:
     def clear(self) -> None:
         with self._lock:
             self._hits.clear()
+
+
+def security_headers(response):
+    """Runs after every request (registered in app/__init__.py).
+
+    - Pages for a logged-in user are private: browsers and proxies must not keep
+      a copy (Cache-Control: no-store), so the next person on a shared computer
+      can't press Back to see them.
+    - nosniff, no framing and a sensible Referrer-Policy on everything.
+    setdefault keeps any stricter header a route already set (file downloads,
+    the calendar, the API)."""
+    from flask_login import current_user
+
+    if not request.path.startswith("/static/") and current_user.is_authenticated:
+        response.headers.setdefault("Cache-Control", "no-store, private")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Content-Security-Policy", "frame-ancestors 'none'")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return response
 
 
 def clear_all_limits() -> None:

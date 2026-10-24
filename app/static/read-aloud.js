@@ -18,7 +18,15 @@
   var pageSelect = root.querySelector("[data-reader-page]");
   var progress = root.querySelector("[data-reader-progress]");
   var resumeBtn = root.querySelector("[data-reader-resume]");
-  var saveKey = "read-aloud:" + (root.dataset.docKey || "");
+  // "Continue where you stopped" belongs to THIS text: the key is a small
+  // fingerprint of the words themselves, so another document (or pasted text)
+  // with the same number of parts never resumes in the middle.
+  function fingerprint(text) {
+    var h = 5381;
+    for (var k = 0; k < text.length; k++) h = ((h * 33) ^ text.charCodeAt(k)) >>> 0;
+    return h.toString(36);
+  }
+  var saveKey = "read-aloud:" + parts.length + ":" + fingerprint(parts.map(function (p) { return p.textContent; }).join(" "));
   var csrf = document.querySelector('meta[name="csrf-token"]');
   var audio = new Audio();
   var cache = {}; // paragraph number -> Promise of an audio URL

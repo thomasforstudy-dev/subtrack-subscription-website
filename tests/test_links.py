@@ -74,7 +74,11 @@ def test_other_users_cannot_touch_my_links(app, monkeypatch):
 
 def test_normalize_url():
     assert normalize_url("example.com") == ("https://example.com", None)
-    assert normalize_url("localhost:8000/x")[0] == "https://localhost:8000/x"
+    assert normalize_url("site.com:8000/x")[0] == "https://site.com:8000/x"
+    # Private and local addresses are refused when saving (Codex security review S1).
+    for private in ("localhost:8000/x", "http://127.0.0.1:5000/", "http://192.168.1.1/admin",
+                    "http://169.254.169.254/", "http://[::1]/", "http://printer.local/"):
+        assert normalize_url(private)[0] == "", private
     for bad in ["", "javascript:alert(1)", "mailto:a@b.c", "file:///c:/x", "ftp://x", "http://"]:
         assert normalize_url(bad)[1] is not None, bad
 

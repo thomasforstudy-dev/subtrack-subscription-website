@@ -39,13 +39,14 @@ def food_places(user) -> list[dict]:
         if day and (place not in last or day > last[place]):
             last[place] = day
         if bill.total is not None:
-            spend[place] += bill.total
+            spend[(place, bill.currency)] += bill.total  # per currency: never add VND and USD
             currency[place][bill.currency] += 1
     places = []
     for place, count in visits.most_common(SLICES):
         days_ago = (today - last[place]).days if place in last else None
-        average = (spend[place] / sum(currency[place].values())).quantize(CENT) if currency[place] else None
         main_currency = currency[place].most_common(1)[0][0] if currency[place] else ""
+        # The usual bill in the currency this place is paid in most often.
+        average = (spend[(place, main_currency)] / currency[place][main_currency]).quantize(CENT) if currency[place] else None
         places.append({
             "name": names[place].most_common(1)[0][0],
             "visits": count,

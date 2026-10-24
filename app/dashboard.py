@@ -120,7 +120,7 @@ def activity(user, today: date, limit: int = 8) -> list[dict]:
     """The newest things that happened: bills saved, renewal dates passed, plans added."""
     items = []
     for bill in Bill.query.filter_by(user_id=user.id, status="confirmed").order_by(Bill.created_at.desc()).limit(limit):
-        items.append({"when": bill.transaction_date or bill.invoice_date or bill.created_at.date(),
+        items.append({"when": bill.transaction_date or bill.invoice_date or local_now(user.timezone, bill.created_at).date(),
                       "title": bill.merchant, "kind": "card_bill" if bill.kind == "card_bill" else "receipt",
                       "amount": bill.total, "currency": bill.currency,
                       "status": ("paid" if bill.paid_at else "unpaid") if bill.kind == "card_bill" else "saved",
@@ -132,7 +132,8 @@ def activity(user, today: date, limit: int = 8) -> list[dict]:
                       "amount": row.amount, "currency": row.currency, "status": row.status,
                       "url": url_for("subscriptions.edit", item_id=row.subscription_id)})
     for sub in Subscription.query.filter_by(user_id=user.id).order_by(Subscription.created_at.desc()).limit(limit):
-        items.append({"when": sub.created_at.date(), "title": sub.name, "kind": "new_plan",
+        # Stored in UTC: show the day it was in the user's time zone (02:00 in Hanoi is still "today").
+        items.append({"when": local_now(user.timezone, sub.created_at).date(), "title": sub.name, "kind": "new_plan",
                       "amount": sub.amount, "currency": sub.currency, "status": sub.status,
                       "url": url_for("subscriptions.edit", item_id=sub.id)})
     return sorted(items, key=lambda item: item["when"], reverse=True)[:limit]

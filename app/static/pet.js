@@ -134,6 +134,87 @@
     }, 3500);
   }
 
+  // ---- Drag the pet anywhere on the screen ----
+  // A press that moves more than a few pixels is a drag, not a click: the chat
+  // doesn't open. The spot is remembered in this browser (as a fraction of the
+  // screen, so it survives a resize) and the chat/bubble open toward free space.
+  var POS_KEY = "subby-pos";
+  var drag = null;
+  var dragged = false;
+
+  function clampTo(x, y) {
+    var w = fab.offsetWidth, h = fab.offsetHeight, m = 8;
+    return {
+      x: Math.min(Math.max(m, x), window.innerWidth - w - m),
+      y: Math.min(Math.max(m, y), window.innerHeight - h - m),
+    };
+  }
+
+  function placeAt(x, y) {
+    var p = clampTo(x, y);
+    root.style.left = p.x + "px";
+    root.style.top = p.y + "px";
+    root.style.right = "auto";
+    root.style.bottom = "auto";
+    root.classList.toggle("at-left", p.x + fab.offsetWidth / 2 < window.innerWidth / 2);
+    root.classList.toggle("at-top", p.y + fab.offsetHeight / 2 < window.innerHeight / 2);
+    return p;
+  }
+
+  function restore() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(POS_KEY) || "null"); } catch (e) { saved = null; }
+    if (saved && typeof saved.fx === "number" && typeof saved.fy === "number") {
+      placeAt(saved.fx * window.innerWidth, saved.fy * window.innerHeight);
+    }
+  }
+
+  if (root) {
+    fab.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0) return;
+      var box = root.getBoundingClientRect();
+      drag = { x: e.clientX, y: e.clientY, left: box.left, top: box.top, id: e.pointerId };
+      dragged = false;
+    });
+    window.addEventListener("pointermove", function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!dragged && Math.abs(dx) + Math.abs(dy) < 6) return; // still a click
+      if (!dragged) {
+        dragged = true;
+        root.classList.add("dragging");
+        hideBubble();
+        try { fab.setPointerCapture(drag.id); } catch (err) { /* ignore */ }
+      }
+      placeAt(drag.left + dx, drag.top + dy);
+    });
+    window.addEventListener("pointerup", function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag = null;
+      root.classList.remove("dragging");
+      if (dragged) {
+        var box = root.getBoundingClientRect();
+        try {
+          localStorage.setItem(POS_KEY, JSON.stringify({ fx: box.left / window.innerWidth, fy: box.top / window.innerHeight }));
+        } catch (err) { /* private mode: it just won't be remembered */ }
+        setMood("happy", 900);
+      }
+    });
+    // A drag ends with a click event: swallow it so the chat doesn't open.
+    // Capture phase on the document runs before subby.js's own click handler.
+    document.addEventListener("click", function (e) {
+      if (dragged && fab.contains(e.target)) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragged = false;
+      }
+    }, true);
+    window.addEventListener("resize", function () {
+      if (root.style.left) restore(); // keep it on screen
+    });
+    restore();
+  }
+
   // Random slow blink is pure CSS; a rare "look around" keeps it lively.
   if (!reduce) {
     setInterval(function () {

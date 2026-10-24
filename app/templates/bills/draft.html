@@ -1,88 +1,80 @@
 {% extends "base.html" %}
 {% from "_mascot.html" import mascot %}
 {% block title %}{{ t("Kiểm tra bản nháp", "Check the draft") }} — AllOutFree{% endblock %}
+{# Field names in both languages (the server's LABELS are English, for flash messages). #}
+{% set field_names = {
+  "kind": t("Loại", "Kind"), "category": t("Danh mục", "Category"), "currency": t("Tiền tệ", "Currency"),
+  "timezone": t("Múi giờ", "Time zone"), "transaction_time": t("Giờ thanh toán", "Payment time"),
+  "card_last4": t("4 số cuối thẻ", "Card (last 4 digits)"), "merchant": t("Cửa hàng / ngân hàng", "Shop / card or bank"),
+  "branch": t("Chi nhánh", "Branch"), "address": t("Địa chỉ", "Address"), "invoice_number": t("Số hóa đơn", "Invoice number"),
+  "notes": t("Ghi chú", "Notes"), "invoice_date": t("Ngày trên hóa đơn", "Invoice date"), "transaction_date": t("Ngày trả", "Paid on"),
+  "statement_start": t("Sao kê từ", "Statement from"), "statement_end": t("Sao kê đến", "Statement to"),
+  "due_date": t("Hạn trả thẻ", "Card payment due"), "subtotal": t("Tạm tính", "Subtotal"), "tax": t("Thuế", "Tax"), "total": t("Tổng", "Total"),
+} %}
 {% block content %}
-  {# Styled 2-column side-by-side document & draft review (docs/CONTRACT.md → Reading bills).
-     Every field shows where its value came from. Document text is shown as text, never as HTML. #}
+  {# Every field shows where its value came from. Document text is shown as text, never as HTML. #}
   {% set f = typed or {} %}
   <div class="section-head">
     <div>
+      <a class="button secondary btn-sm back-pill" href="{{ url_for('bills.list_bills') }}">← {{ t("Hóa đơn", "Bills") }}</a>
+      <h1>{{ t("Kiểm tra bản nháp", "Check the draft") }}</h1>
+      <p class="muted">{{ draft.document.original_name }}</p>
       <div class="section-badges">
         {% if draft.status == "accepted" %}
-          <span class="pill mint">{{ t("✓ Đã xác nhận & tạo hóa đơn", "✓ Accepted") }}</span>
+          <span class="pill mint">✓ {{ t("Đã lưu thành hóa đơn", "Saved as a bill") }}</span>
         {% elif draft.status == "discarded" %}
-          <span class="pill sun-label">{{ t("Đã bỏ qua bản nháp", "Put aside") }}</span>
+          <span class="pill sun-label">{{ t("Đã bỏ qua", "Put aside") }}</span>
         {% else %}
-          <span class="pill sun-label">{{ t("Bản nháp chờ bạn kiểm tra", "Draft — Needs your review") }}</span>
+          <span class="pill sun-label">{{ t("Chờ bạn kiểm tra", "Waiting for your check") }}</span>
         {% endif %}
-        <span class="pill" data-vi="Bằng chứng trích xuất (Extractor: {{ draft.extractor }})" data-en="Extractor: {{ draft.extractor }}">Extractor: {{ draft.extractor }}</span>
         {% if 'fake' in (draft.extractor or '')|lower %}
-          <span class="pill sun-label">{{ t("🧪 Trình đọc giả lập kiểm thử", "🧪 Test / Fake reader") }}</span>
+          <span class="pill sun-label">🧪 {{ t("Trình đọc thử nghiệm", "Test reader") }}</span>
         {% endif %}
       </div>
-      <h1>Check the draft from {{ draft.document.original_name }}</h1>
-      {% if draft.status == "accepted" %}
-        <p class="card compact-card">Accepted.
-          {% if bill %}<a class="button btn-sm" href="{{ url_for('bills.edit', bill_id=bill.id) }}">Open the bill</a>{% endif %}</p>
-      {% elif draft.status == "discarded" %}
-        <p class="card compact-card">Put aside. <a class="button secondary btn-sm" href="{{ url_for('bills.create', document_id=draft.document_id) }}">Type the bill in yourself</a></p>
-      {% else %}
-        <p class="muted">Nothing here is saved as a bill until you press Accept. Empty means we didn't
-          find it on the bill: fill it in only if the bill shows it.</p>
-      {% endif %}
-    </div>
-    <div class="head-actions">
-      <a class="button secondary" href="{{ url_for('bills.list_bills') }}">← Back to bills</a>
     </div>
   </div>
+
+  {% if draft.status == "accepted" %}
+    <p class="card compact-card">{{ t("Đã lưu.", "Saved.") }}
+      {% if bill %}<a class="button btn-sm" href="{{ url_for('bills.edit', bill_id=bill.id) }}">{{ t("Mở hóa đơn", "Open the bill") }}</a>{% endif %}</p>
+  {% elif draft.status == "discarded" %}
+    <p class="card compact-card">{{ t("Đã bỏ qua.", "Put aside.") }}
+      <a class="button secondary btn-sm" href="{{ url_for('bills.create', document_id=draft.document_id) }}">{{ t("Tự nhập hóa đơn", "Type the bill in yourself") }}</a></p>
+  {% else %}
+    <p class="muted">{{ t("Ô trống là ô không thấy trên hóa đơn. Chưa có gì được lưu cho tới khi bạn bấm Lưu thành hóa đơn.", "Empty boxes weren't found on the bill. Nothing is saved until you press Save as a bill.") }}</p>
+  {% endif %}
 
   {% if unread_pages %}
     <div class="ocr-warning-banner" role="status">
       <span class="ocr-warn-icon" aria-hidden="true">⚠</span>
-      <p>Pages {{ unread_pages | join(", ") }} couldn't be read (they need OCR, which isn't
-        available). Check them in the file yourself.</p>
+      {% set page_list = unread_pages | join(", ") %}
+      <p>{{ t("Không đọc được trang " ~ page_list ~ " (cần OCR). Hãy xem tệp gốc.", "Pages " ~ page_list ~ " couldn't be read (they need OCR). Check them in the file.") }}</p>
     </div>
   {% endif %}
 
   <div class="review-grid">
-    <aside class="card review-col source-col" aria-label="Uploaded document and extracted page text">
-      <div class="source-toolbar">
-        <div>
-          <span class="pill mint">{{ draft.document.kind|upper }}{% if draft.document.page_count %} · {{ draft.document.page_count }} page{{ 's' if draft.document.page_count != 1 }}{% endif %}</span>
-          <p class="compact-top">
-            Source file: <strong>{{ draft.document.original_name }}</strong>
-            (<a href="{{ url_for('bills.download', document_id=draft.document_id) }}">download</a>)
-          </p>
-        </div>
-      </div>
+    <aside class="card review-col source-col" aria-label="{{ t('Tệp gốc và chữ đã đọc', 'The file and the text we read') }}">
+      <p class="compact-top">
+        <span class="pill mint">{{ draft.document.kind|upper }}</span>
+        <a href="{{ url_for('bills.download', document_id=draft.document_id) }}">⬇ {{ t("Tải tệp gốc", "Download the file") }}</a>
+      </p>
 
       {% if draft.document.kind in ('png', 'jpeg', 'webp') %}
         <div class="source-viewport compact-top">
-          <img
-            src="{{ url_for('bills.download', document_id=draft.document_id, view=1) }}"
-            alt="Uploaded bill {{ draft.document.original_name }}"
-            class="source-image"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-          />
+          <img src="{{ url_for('bills.download', document_id=draft.document_id, view=1) }}"
+               alt="{{ t('Hóa đơn đã tải lên', 'Uploaded bill') }} {{ draft.document.original_name }}"
+               class="source-image" loading="lazy" referrerpolicy="no-referrer" />
         </div>
       {% endif %}
 
       <details class="card compact-card compact-top" open>
-        <summary><strong>The text we read ({{ pages | length }} page{{ "s" if pages | length != 1 }})</strong></summary>
+        <summary><strong>{{ t("Chữ đã đọc", "The text we read") }} ({{ pages | length }})</strong></summary>
         {% for page in pages %}
           <div class="source-block compact-top">
-            <h2 class="small-text">
-              Page {{ page.page_number }}
-              <small class="muted">({{ "OCR: " ~ page.engine if page.source == "ocr" else "text inside the file" }}{% if page.truncated %}, cut short{% endif %})</small>
-              {% if page.source == "ocr" and "fake" in (page.engine or "")|lower %}
-                <span class="pill sun-label">Demo / Fake OCR</span>
-              {% endif %}
-            </h2>
+            <h2 class="small-text">{{ t("Trang", "Page") }} {{ page.page_number }}{% if page.truncated %} <small class="muted">({{ t("bị cắt bớt", "cut short") }})</small>{% endif %}</h2>
             <pre class="source-text">{{ page.text }}</pre>
           </div>
         {% else %}
-          {# New empty state: no page gave us any text (DESIGN.md §10 → mascot "hi"). #}
           <div class="empty-state-box mascot-box compact-top">
             {{ mascot("hi", 80) }}
             <div>
@@ -91,15 +83,6 @@
             </div>
           </div>
         {% endfor %}
-      </details>
-
-      <details class="card compact-card compact-top">
-        <summary><strong>History ({{ revisions | length }})</strong></summary>
-        <ol class="small-text compact-top">
-          {% for rev in revisions %}
-            <li>{{ rev.created_at.strftime("%Y-%m-%d %H:%M") }} UTC: {{ rev.action }}{% if rev.changed %} ({{ rev.changed }}){% endif %}</li>
-          {% endfor %}
-        </ol>
       </details>
     </aside>
 
@@ -113,19 +96,19 @@
           {% set shown = f.get(name, v.value if v.value is not none else "") %}
           <div class="field-group">
             <label for="draft-{{ name }}">
-              <span>{{ labels[name] }}</span>
+              <span>{{ field_names.get(name, labels[name]) }}</span>
               {% if v.origin == "document" %}
-                <span class="pill mint">Evidence</span>
+                <span class="pill mint">{{ t("Từ hóa đơn", "From the bill") }}</span>
               {% elif v.origin == "you" %}
-                <span class="pill sun-label">Edited by you</span>
+                <span class="pill sun-label">{{ t("Bạn đã sửa", "Edited by you") }}</span>
               {% else %}
-                <span class="missing-badge">Unknown (null)</span>
+                <span class="missing-badge">{{ t("Không thấy", "Not found") }}</span>
               {% endif %}
             </label>
             {% if name == "kind" %}
               <select id="draft-{{ name }}" name="kind" {% if draft.status != "draft" %}disabled{% endif %}>
-                <option value="receipt" {% if shown != "card_bill" %}selected{% endif %}>Receipt / invoice</option>
-                <option value="card_bill" {% if shown == "card_bill" %}selected{% endif %}>Credit card bill</option>
+                <option value="receipt" {% if shown != "card_bill" %}selected{% endif %}>{{ t("Biên lai", "Receipt") }}</option>
+                <option value="card_bill" {% if shown == "card_bill" %}selected{% endif %}>{{ t("Sao kê thẻ tín dụng", "Credit card bill") }}</option>
               </select>
             {% else %}
               <input id="draft-{{ name }}" name="{{ name }}" value="{{ shown }}"
@@ -133,26 +116,20 @@
                      {% if name == "card_last4" %}maxlength="4" pattern="[0-9]{4}" inputmode="numeric" autocomplete="off"{% endif %}
                      {% if draft.status != "draft" %}disabled{% endif %} />
             {% endif %}
-            <small class="muted">
-              {% if v.origin == "document" %}
-                From the document{% if v.method == "first-line" %} (the first line of the bill: check it's the shop){% endif %}:
-                {% for ev in v.evidence %}page {{ ev.page }}, “{{ ev.text }}”{% if not loop.last %}; {% endif %}{% endfor %}
-              {% elif v.origin == "you" %}
-                You changed this.{% if doc.value is not none %} The document said “{{ doc.value }}”
-                (page {{ doc.evidence[0].page }}, “{{ doc.evidence[0].text }}”).{% endif %}
-              {% else %}
-                Not found on the bill.
-              {% endif %}
-            </small>
+            {% if v.origin == "document" %}
+              <small class="muted">{{ t("Trên hóa đơn", "On the bill") }}{% if v.method == "first-line" %} ({{ t("dòng đầu: kiểm tra đúng tên cửa hàng", "first line: check it's the shop") }}){% endif %}:
+                {% for ev in v.evidence %}{{ t("trang", "page") }} {{ ev.page }}, “{{ ev.text }}”{% if not loop.last %}; {% endif %}{% endfor %}</small>
+            {% elif v.origin == "you" %}
+              <small class="muted">{{ t("Bạn đã sửa ô này.", "You changed this.") }}{% if doc.value is not none %} {{ t("Hóa đơn ghi", "The document said") }} “{{ doc.value }}”
+                ({{ t("trang", "page") }} {{ doc.evidence[0].page }}, “{{ doc.evidence[0].text }}”).{% endif %}</small>
+            {% endif %}
           </div>
         {% endfor %}
         {% if draft.status == "draft" %}
-          <div class="honest-status-box compact-top" role="region" aria-label="Confirmation before accepting draft">
-            <p class="small-text"><strong>Explicit confirmation required:</strong> Pressing <em>Save changes</em> keeps this as a draft (revision {{ draft.revision + 1 }}). Pressing <em>Accept and save as a bill</em> confirms the values above and creates a saved Bill.</p>
-          </div>
           <div class="form-actions compact-top">
-            <button class="button secondary" type="submit" name="action" value="save">Save changes</button>
-            <button class="button" type="submit" name="action" value="accept">Accept and save as a bill</button>
+            {# "Save draft" first: pressing Enter in a box must never accept the bill by accident. #}
+            <button class="button secondary" type="submit" name="action" value="save">{{ t("Lưu nháp", "Save draft") }}</button>
+            <button class="button" type="submit" name="action" value="accept">✓ {{ t("Lưu thành hóa đơn", "Save as a bill") }}</button>
           </div>
         {% endif %}
       </form>
@@ -160,10 +137,9 @@
       {% if draft.status == "draft" %}
         <form method="post" action="{{ url_for('bill_review.discard', draft_id=draft.id) }}" class="compact-top">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <button class="link" type="submit">Put this draft aside and type the bill in myself</button>
+          <button class="link" type="submit">{{ t("Bỏ bản nháp, tôi sẽ tự nhập", "Put this draft aside and type it in myself") }}</button>
         </form>
       {% endif %}
     </div>
   </div>
 {% endblock %}
-

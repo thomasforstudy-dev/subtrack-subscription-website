@@ -88,7 +88,7 @@ def create_app() -> Flask:
         return None
 
     from app.read_aloud import MAX_PDF_BYTES
-    from app.security import check_csrf, csrf_token
+    from app.security import check_csrf, csrf_token, security_headers
 
     @app.before_request
     def bigger_upload_limit():
@@ -98,6 +98,7 @@ def create_app() -> Flask:
             request.max_content_length = MAX_PDF_BYTES + 1024 * 1024  # + room for the form fields
 
     app.before_request(check_csrf)
+    app.after_request(security_headers)
     app.jinja_env.globals["csrf_token"] = csrf_token
 
     from app.i18n import say, t, ui_lang

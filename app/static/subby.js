@@ -665,7 +665,7 @@
       updateProviderStatus(
         "not-configured",
         tr("AI chưa bật · Đang dùng câu trả lời có sẵn", "AI is off · Using built-in answers"),
-        "FAQ Fallback"
+        tr("Trả lời có sẵn", "Built-in answers")
       );
     } else {
       const reasonText =
@@ -675,7 +675,7 @@
       updateProviderStatus(
         "fallback",
         reasonText + tr(" · Đang dùng câu trả lời có sẵn", " · Using built-in answers"),
-        "FAQ Fallback"
+        tr("Trả lời có sẵn", "Built-in answers")
       );
     }
 
@@ -742,7 +742,7 @@
     if (open) {
       if (!log.children.length) {
         say(
-          tr("Chào bạn, mình là Subby! Bạn có thể hỏi về lời nhắc gia hạn, link đã ghim, hóa đơn hoặc bấm 🎙️ Voice để nói chuyện trực tiếp. 👋", "Hi, I'm Subby! Ask me about renewal reminders, pinned links or bills, or press 🎙️ Voice to talk. 👋"),
+          tr("Chào bạn, mình là Subby! Bạn có thể hỏi về lời nhắc gia hạn, link đã ghim, hóa đơn hoặc bấm 🎙️ Giọng nói để nói chuyện trực tiếp. 👋", "Hi, I'm Subby! Ask me about renewal reminders, pinned links or bills, or press 🎙️ Voice to talk. 👋"),
           "bot"
         );
       }

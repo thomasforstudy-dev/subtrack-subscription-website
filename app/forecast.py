@@ -100,7 +100,7 @@ def forecast(user, period: str) -> dict:
             continue
         shop = bill.merchant.strip().casefold()
         shop_windows[shop].add(key)
-        shop_spend[shop] += bill.total
+        shop_spend[(shop, bill.currency)] += bill.total  # never add VND and USD together
         shop_names[shop][bill.merchant.strip()] += 1
         shop_currency[shop][bill.currency] += 1
         totals[bill.currency] += bill.total
@@ -112,7 +112,8 @@ def forecast(user, period: str) -> dict:
         shops.append({
             "name": shop_names[shop].most_common(1)[0][0],
             "chance": round(100 * len(seen) / counted),
-            "typical": (shop_spend[shop] / sum(shop_names[shop].values())).quantize(CENT),
+            # The usual amount in the currency this shop is paid in most often.
+            "typical": (shop_spend[(shop, currency)] / shop_currency[shop][currency]).quantize(CENT),
             "currency": currency,
         })
     shops.sort(key=lambda s: (-s["chance"], -s["typical"], s["name"]))
