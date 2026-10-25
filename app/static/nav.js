@@ -1,7 +1,7 @@
 // Header and menu behaviour. Everything still works without this file:
 // it only adds the hover highlight and small conveniences.
-// (Moving the dark pill between pages is done by the browser: see
-// "Page changes" in style.css.)
+// The dark "current page" pill glides from the link you clicked on the last
+// page to this page's link (initCurrentPill).
 (function () {
     "use strict";
 
@@ -91,7 +91,59 @@
         }
     }
 
+
+    // 6. The dark pill under the current page glides over from the link you
+    //    clicked on the previous page. Only the pill moves; the words stay sharp
+    //    (the browser's page-change morph used to stretch the text with it).
+    function initCurrentPill() {
+        var nav = document.querySelector("[data-nav-pills]");
+        var pill = document.querySelector("[data-nav-current]");
+        var active = nav && nav.querySelector(".nav-pill.is-active");
+        if (!nav || !pill || !active) return;
+        var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function place(left, width, animate) {
+            pill.classList.toggle("no-anim", !animate);
+            pill.style.width = width + "px";
+            pill.style.transform = "translateX(" + left + "px)";
+        }
+
+        var from = null;
+        try {
+            from = JSON.parse(sessionStorage.getItem("nav-from") || "null");
+            sessionStorage.removeItem("nav-from");
+        } catch (e) {
+            from = null;
+        }
+
+        nav.classList.add("has-current-pill");
+        if (from && !reduce && Math.abs(from.left - active.offsetLeft) > 2) {
+            place(from.left, from.width, false); // start under the old page's link...
+            nav.classList.add("is-sliding");
+            pill.getBoundingClientRect();
+            requestAnimationFrame(function () {
+                place(active.offsetLeft, active.offsetWidth, true); // ...and glide to this one
+                setTimeout(function () { nav.classList.remove("is-sliding"); }, 280);
+            });
+        } else {
+            place(active.offsetLeft, active.offsetWidth, false);
+        }
+
+        nav.querySelectorAll(".nav-pill").forEach(function (link) {
+            link.addEventListener("click", function () {
+                try {
+                    sessionStorage.setItem("nav-from", JSON.stringify({ left: active.offsetLeft, width: active.offsetWidth }));
+                } catch (e) { /* storage blocked: the pill just appears in place */ }
+            });
+        });
+        // The web font can arrive after this runs and change the link widths.
+        var again = function () { if (!nav.classList.contains("is-sliding")) place(active.offsetLeft, active.offsetWidth, false); };
+        window.addEventListener("resize", again);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(again);
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
+        initCurrentPill();
         initHoverHighlight();
         initScrollShadow();
         initUserMenu();

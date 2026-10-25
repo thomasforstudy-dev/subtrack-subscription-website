@@ -1,0 +1,11 @@
+{# A service's tile: its brand logo when we know it (app/brands.py), otherwise the
+   first letter on a colour picked from the name.
+   Use: {% from "_brand.html" import logo %} {{ logo(item.name, "service-tile") }} #}
+{% macro logo(name, cls="service-tile") -%}
+  {%- set b = brand(name) -%}
+  {%- if b -%}
+    <span class="{{ cls }} brand-tile" style="--brand: {{ b.color }}" aria-hidden="true"><img src="{{ url_for('static', filename='brands/' ~ b.slug ~ '.svg') }}" alt="" width="20" height="20" /></span>
+  {%- else -%}
+    <span class="{{ cls }} tone-{{ tone(name) }}" aria-hidden="true">{{ ((name or '')[:1] or '?')|upper }}</span>
+  {%- endif -%}
+{%- endmacro %}

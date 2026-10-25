@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Xì dách với AI", "Blackjack vs AI") }} — AllOutFree{% endblock %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1>{{ t("Xì dách với AI", "Blackjack vs AI") }}</h1>
+      <p class="muted">{{ t("AI làm nhà cái. Gần 21 nhất mà không quá là thắng. Chỉ là điểm vui, không phải tiền thật.", "The AI is the dealer. Get closer to 21 than it without going over. Points only, never real money.") }}</p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
+    </div>
+  </div>
+
+  <div class="game-grid bj-grid" data-blackjack>
+    <section class="card bj-table">
+      <div class="bj-row">
+        <div class="bj-label"><strong>{{ t("Nhà cái AI", "AI dealer") }}</strong> <span class="bj-total" data-dealer-total></span></div>
+        <div class="bj-hand" data-dealer-hand></div>
+      </div>
+      <p class="bj-talk" data-talk aria-live="polite"></p>
+      <div class="bj-row">
+        <div class="bj-label"><strong>{{ t("Bạn", "You") }}</strong> <span class="bj-total" data-player-total></span></div>
+        <div class="bj-hand" data-player-hand></div>
+      </div>
+
+      <div class="bj-controls">
+        <div class="bj-bet" data-bet-area>
+          <span class="muted small-text">{{ t("Cược", "Bet") }}</span>
+          <button type="button" class="chip-btn" data-bet="50">50</button>
+          <button type="button" class="chip-btn" data-bet="100">100</button>
+          <button type="button" class="chip-btn" data-bet="250">250</button>
+          <button type="button" class="button" data-deal>{{ t("Chia bài", "Deal") }}</button>
+        </div>
+        <div class="bj-actions" data-play-area hidden>
+          <button type="button" class="button" data-hit>{{ t("Rút", "Hit") }}</button>
+          <button type="button" class="button secondary" data-stand>{{ t("Dừng", "Stand") }}</button>
+          <button type="button" class="button secondary" data-double>{{ t("Gấp đôi", "Double") }}</button>
+        </div>
+      </div>
+      <p class="bj-bank"><span>{{ t("Điểm", "Points") }}: <strong data-bank>1000</strong></span> <span>{{ t("Cược", "Bet") }}: <strong data-bet-now>100</strong></span> <span class="muted small-text">{{ t("Bài còn", "Cards left") }}: <span data-deck-left>52</span></span></p>
+    </section>
+
+    <section class="card bj-odds">
+      <div class="bj-odds-head">
+        <h2 class="card-title">{{ t("Lá tiếp theo", "Next card odds") }}</h2>
+        <label class="switch-label"><input type="checkbox" data-show-odds checked /> {{ t("Hiện %", "Show %") }}</label>
+      </div>
+      <div data-odds-body>
+        <div class="bj-summary">
+          <div><span class="muted small-text">{{ t("Rút mà quá 21", "Bust if you hit") }}</span><strong data-bust>–</strong></div>
+          <div><span class="muted small-text">{{ t("Rút ra đúng 21", "Hit to exactly 21") }}</span><strong data-hit21>–</strong></div>
+          <div><span class="muted small-text">{{ t("AI gợi ý", "AI suggests") }}</span><strong data-advice>–</strong></div>
+        </div>
+        <table class="bj-odds-table">
+          <thead><tr><th>{{ t("Lá", "Card") }}</th><th>{{ t("Còn", "Left") }}</th><th>%</th><th>{{ t("Bạn sẽ có", "You'd have") }}</th></tr></thead>
+          <tbody data-odds-rows></tbody>
+        </table>
+        <p class="muted small-text">{{ t("Tính trên các lá bạn chưa thấy (gồm lá úp của nhà cái). Bộ 52 lá, xào lại khi còn ít.", "Counted over every card you haven't seen (including the dealer's face-down card). One 52-card deck, reshuffled when it runs low.") }}</p>
+      </div>
+    </section>
+  </div>
+
+  <script type="application/json" id="bj-data">{{ {"words": {
+    "bust": t("Quá 21", "Bust"), "blackjack": t("Xì dách!", "Blackjack!"),
+    "hit": t("Rút", "Hit"), "stand": t("Dừng", "Stand"), "double": t("Gấp đôi", "Double"),
+    "hello": t("Chào! Chọn mức cược rồi bấm Chia bài nhé.", "Hi! Pick a bet and press Deal."),
+    "your_turn": t("Tới lượt bạn. Rút hay dừng?", "Your move. Hit or stand?"),
+    "dealer_draws": t("Mình rút thêm…", "I'll draw…"), "dealer_stands": t("Mình dừng ở", "I stand on"),
+    "dealer_bust": t("Ối, mình quá 21 rồi!", "Oops, I bust!"),
+    "win": t("Bạn thắng", "You win"), "lose": t("Nhà cái thắng", "Dealer wins"), "push": t("Hòa, trả lại cược", "Push, bet returned"),
+    "bj_win": t("Xì dách! Bạn thắng 1.5 lần cược", "Blackjack! You win 1.5× your bet"),
+    "broke": t("Hết điểm rồi, mình cho bạn 1000 điểm mới.", "Out of points: here are 1000 fresh ones."),
+    "shuffle": t("Xào bài mới…", "Shuffling a fresh deck…"),
+    "or": t("hoặc", "or")}}|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='blackjack.js') }}" defer></script>
+{% endblock %}

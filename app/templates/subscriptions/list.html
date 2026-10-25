@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_brand.html" import logo %}
 {% from "_mascot.html" import mascot %}
 {% from "_icons.html" import icon %}
 {% block title %}{{ t("Gói đăng ký", "Subscriptions") }} — AllOutFree{% endblock %}
@@ -71,7 +72,6 @@
         <tbody id="subs-tbody">
           {% for item in items %}
             {% set days_left = (item.next_renewal_at - today).days %}
-            {% set btile = (item.name[:1] or 'S')|upper %}
             {% set is_active = (item.status is not defined or item.status == 'active') %}
             <tr class="{% if is_active and item.next_renewal_at <= today %}due{% elif is_active and days_left <= 7 %}soon-row{% endif %}"
                 data-sub-row data-name="{{ item.name }}" data-currency="{{ item.currency }}" data-amount="{{ item.amount }}"
@@ -79,7 +79,7 @@
                 data-status="{{ item.status if item.status is defined else 'active' }}">
               <td>
                 <div class="service-cell">
-                  <span class="service-tile tone-{{ tone(item.name) }}" aria-hidden="true">{{ btile }}</span>
+                  {{ logo(item.name, "service-tile") }}
                   <div class="service-info">
                     <div class="sub-card-title-row">
                       <strong class="service-name">{{ item.name }}</strong>

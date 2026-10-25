@@ -7799,3 +7799,1250 @@ fieldset {
   border-color: var(--violet);
   color: #fff;
 }
+
+/* ======================================================================
+   Games (tools/coin_flip, tools/blackjack, tools/case_spin)
+   ====================================================================== */
+/* A button that reads like a text link (Reset, Restore samples...). */
+button.link {
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button.link:hover {
+  background: none;
+  color: var(--accent-deep);
+  transform: none;
+}
+
+.tools-subhead {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.game-stage {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.game-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.game-result {
+  min-height: 1.6em;
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.game-result.is-win { color: var(--tint-green-fg); }
+.game-result.is-lose { color: var(--coral); }
+
+/* ---- Coin: two faces back to back, turned in 3D ---- */
+.coin-wrap {
+  perspective: 900px;
+  padding: 1rem 0 0.5rem;
+}
+
+.coin {
+  position: relative;
+  width: 9rem;
+  height: 9rem;
+  transform-style: preserve-3d;
+  transition: transform 0.9s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.coin.flipping {
+  animation: coin-hop 0.9s ease-out;
+}
+
+@keyframes coin-hop {
+  0%, 100% { translate: 0 0; }
+  40% { translate: 0 -2.5rem; }
+}
+
+.coin-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #6b4400;
+  background: radial-gradient(circle at 35% 30%, #ffe9a3 0%, #ffc83d 45%, #e09a00 100%);
+  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.35), 0 12px 26px rgba(224, 154, 0, 0.35);
+  backface-visibility: hidden;
+}
+
+.coin-tails {
+  transform: rotateY(180deg);
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, #c9b9ff 0%, #8f73ff 45%, #5130e8 100%);
+  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.3), 0 12px 26px rgba(109, 74, 255, 0.35);
+}
+
+.odds-bar {
+  display: flex;
+  height: 0.9rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.odds-bar span {
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.odds-heads { background: var(--sun); }
+.odds-tails { background: var(--violet); }
+
+.game-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.game-stats div {
+  padding: 0.6rem 0.75rem;
+  border-radius: 14px;
+  background: var(--lilac);
+}
+
+.game-stats dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.game-stats dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.coin-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coin-dot {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.coin-dot.heads { background: var(--sun); color: #5a3a00; }
+.coin-dot.tails { background: var(--violet); color: #fff; }
+
+/* ---- Blackjack: a green felt table ---- */
+.bj-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+
+.bj-table {
+  display: grid;
+  gap: 1rem;
+  background: radial-gradient(circle at 50% 20%, #1f9b6b 0%, #0d6b49 70%, #0a5a3d 100%);
+  color: #fff;
+  border: 0;
+}
+
+.bj-table .muted {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bj-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.bj-total {
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  font-weight: 800;
+}
+
+.bj-total:empty {
+  display: none;
+}
+
+.bj-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 6.2rem;
+}
+
+.playing-card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 4.4rem;
+  height: 6.2rem;
+  border-radius: 10px;
+  background: #fff;
+  color: #16142b;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  animation: card-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.playing-card.is-red { color: #d61f3c; }
+
+.pc-rank {
+  position: absolute;
+  top: 0.3rem;
+  left: 0.45rem;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.pc-suit {
+  font-size: 2rem;
+}
+
+.playing-card.is-back {
+  background: repeating-linear-gradient(45deg, #6d4aff 0 8px, #8f73ff 8px 16px);
+  border: 4px solid #fff;
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translate(40px, -30px) rotate(8deg); }
+  to { opacity: 1; transform: none; }
+}
+
+.bj-talk {
+  min-height: 2.6em;
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.14);
+  font-weight: 600;
+}
+
+.bj-talk::before {
+  content: "🤖 ";
+}
+
+.bj-controls {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.bj-bet,
+.bj-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bj-bet .muted {
+  margin-right: 0.25rem;
+}
+
+.chip-btn {
+  width: 3.2rem;
+  height: 3.2rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 4px dashed rgba(255, 255, 255, 0.7);
+  background: #c81e3a;
+  color: #fff;
+  font-weight: 800;
+}
+
+.chip-btn:hover {
+  background: #c81e3a;
+}
+
+.chip-btn[data-bet="100"],
+.chip-btn[data-bet="100"]:hover { background: #1d5fd1; }
+.chip-btn[data-bet="250"],
+.chip-btn[data-bet="250"]:hover { background: #16142b; }
+
+.chip-btn.on {
+  outline: 3px solid var(--sun);
+  outline-offset: 2px;
+}
+
+.bj-table .button.secondary {
+  background: rgba(255, 255, 255, 0.92);
+  color: #16142b;
+  border-color: transparent;
+}
+
+.bj-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0;
+}
+
+.bj-odds-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.bj-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.bj-summary div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  background: var(--lilac);
+}
+
+.bj-summary strong {
+  font-size: 1.05rem;
+}
+
+.bj-odds-table {
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+.bj-odds-table td,
+.bj-odds-table th {
+  padding: 0.3rem 0.5rem;
+}
+
+.bj-odds-table td:nth-child(3) {
+  position: relative;
+  min-width: 5.5rem;
+}
+
+.odds-mini {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.2rem;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.bj-odds-table tr.is-bust td:last-child { color: var(--coral); font-weight: 700; }
+.bj-odds-table tr.is-21 td:last-child { color: var(--tint-green-fg); font-weight: 800; }
+
+/* ---- Case spin: a strip of tiles slides under a marker ---- */
+.case-game {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.case-stage {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.case-modes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.case-modes label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.case-modes label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 700;
+}
+
+.case-reels {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.case-reel {
+  position: relative;
+  overflow: hidden;
+  padding: 0.6rem 0;
+  border-radius: 16px;
+  background: #16142b;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+}
+
+/* Fade the edges so tiles slide in and out of the dark. */
+.case-reel::before,
+.case-reel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 18%;
+  pointer-events: none;
+}
+
+.case-reel::before { left: 0; background: linear-gradient(90deg, #16142b, transparent); }
+.case-reel::after { right: 0; background: linear-gradient(270deg, #16142b, transparent); }
+
+.case-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 2;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--sun);
+  box-shadow: 0 0 12px var(--sun);
+}
+
+.case-strip {
+  display: flex;
+  gap: 0.5rem;
+  width: max-content;
+  will-change: transform;
+}
+
+.case-tile {
+  display: grid;
+  place-items: center;
+  width: 8.5rem;
+  height: 6rem;
+  padding: 0.5rem;
+  border-radius: 12px;
+  background: #241f4a;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 5px solid;
+}
+
+.case-tile.r-blue { border-color: #4b8bff; background: linear-gradient(180deg, #241f4a, #1c2c5c); }
+.case-tile.r-purple { border-color: #8f5bff; background: linear-gradient(180deg, #241f4a, #33205e); }
+.case-tile.r-pink { border-color: #ff4fd8; background: linear-gradient(180deg, #241f4a, #4a1c52); }
+.case-tile.r-red { border-color: #ff4d5e; background: linear-gradient(180deg, #241f4a, #52202c); }
+.case-tile.r-gold { border-color: #ffc83d; background: linear-gradient(180deg, #3a3216, #6b4c00); }
+
+.case-tile.is-winner {
+  animation: winner-glow 1s ease-in-out 3;
+}
+
+@keyframes winner-glow {
+  50% { box-shadow: 0 0 0 3px var(--sun), 0 0 24px var(--sun); transform: scale(1.06); }
+}
+
+.case-result {
+  min-height: 1.6em;
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.case-result.show {
+  animation: msg-pop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) both;
+}
+
+.case-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: none;
+  margin-bottom: 0.75rem;
+}
+
+.case-add input {
+  flex: 1 1 10rem;
+}
+
+.case-list-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0.4rem;
+  font-size: 0.95rem;
+}
+
+.case-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.3rem 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--lilac);
+  font-size: 0.9rem;
+}
+
+.chip-x {
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.chip-x:hover {
+  background: var(--coral);
+  color: #fff;
+  transform: none;
+}
+
+@media (max-width: 860px) {
+  .game-grid,
+  .bj-grid,
+  .case-game {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .playing-card { width: 3.6rem; height: 5.1rem; }
+  .bj-hand { min-height: 5.1rem; }
+  .bj-summary { grid-template-columns: minmax(0, 1fr); }
+  .case-tile { width: 6.5rem; height: 5rem; font-size: 0.85rem; }
+  .coin { width: 7rem; height: 7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coin,
+  .odds-bar span { transition: none; }
+  .coin.flipping,
+  .playing-card,
+  .case-tile.is-winner,
+  .case-result.show { animation: none; }
+}
+
+/* ======================================================================
+   Bills page v2: card holder (static/wallet.js), drop zone, month spend
+   ====================================================================== */
+.bills-top {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+/* ---- Card holder ---- */
+.card-holder {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.wallet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wallet-head .card-title {
+  margin: 0;
+}
+
+.wallet-nav {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.wallet-nav .icon-action {
+  font-size: 1.3rem;
+  color: var(--text);
+}
+
+/* Without JS: a row of cards that scrolls sideways. */
+.wallet-stack {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.25rem;
+}
+
+.wallet-stack > .pay-card {
+  flex: 0 0 min(100%, 22rem);
+  scroll-snap-align: start;
+}
+
+/* With JS: a stack, the next cards peeking out above the front one. */
+.wallet-stack.is-stacked {
+  position: relative;
+  display: block;
+  overflow: visible;
+  width: min(100%, 24rem);
+  aspect-ratio: 1.586;
+  margin: 1.6rem auto 0;
+  touch-action: pan-y;
+  outline: none;
+}
+
+.wallet-stack.is-stacked:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 20px;
+}
+
+.wallet-stack.is-stacked > .pay-card {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease, filter 0.35s ease;
+}
+
+.wallet-stack.is-stacked > .pay-card[data-pos="0"] { z-index: 4; cursor: grab; }
+.wallet-stack.is-stacked > .pay-card[data-pos="1"] { z-index: 3; transform: translateY(-0.8rem) scale(0.94); filter: brightness(0.85); }
+.wallet-stack.is-stacked > .pay-card[data-pos="2"] { z-index: 2; transform: translateY(-1.5rem) scale(0.88); filter: brightness(0.7); }
+.wallet-stack.is-stacked > .pay-card[data-pos="3"] { z-index: 1; transform: translateY(-1.5rem) scale(0.88); opacity: 0; }
+
+.wallet-stack.is-stacked > .pay-card.dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.wallet-stack.is-stacked > .pay-card.swipe-left {
+  transform: translateX(-120%) rotate(-14deg) !important;
+  opacity: 0;
+  transition: transform 0.32s ease-in, opacity 0.32s ease-in;
+}
+
+.wallet-stack.is-stacked > .pay-card.swipe-right {
+  transform: translateX(120%) rotate(14deg) !important;
+  opacity: 0;
+  transition: transform 0.32s ease-in, opacity 0.32s ease-in;
+}
+
+.wallet-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.wallet-dots i {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--line);
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.wallet-dots i.on {
+  width: 1.3rem;
+  background: var(--accent);
+}
+
+/* ---- A payment card ---- */
+.pay-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0.35rem;
+  aspect-ratio: 1.586;
+  padding: 1.1rem 1.2rem;
+  border-radius: 18px;
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 18px 36px rgba(22, 20, 43, 0.28);
+  user-select: none;
+}
+
+/* the soft shine across the card */
+.pay-card::before {
+  content: "";
+  position: absolute;
+  inset: -40% -10% auto auto;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 65%);
+  pointer-events: none;
+}
+
+.pc-violet { background: linear-gradient(135deg, #9a7bff, #5130e8 70%, #3a1fb8); }
+.pc-orange { background: linear-gradient(135deg, #ffb37a, #ff6a2b 60%, #d9420f); }
+.pc-mint { background: linear-gradient(135deg, #5ee7b8, #10b981 60%, #08805a); }
+.pc-sky { background: linear-gradient(135deg, #7cc0ff, #2f8fff 60%, #1a5fd1); }
+.pc-pink { background: linear-gradient(135deg, #ff8fc4, #ff4f9a 60%, #c92a6f); }
+.pc-ink { background: linear-gradient(135deg, #3a3560, #16142b 70%, #0b0a18); }
+
+.pay-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-right: 1.6rem; /* room for the remove button */
+}
+
+.pay-card-name {
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pay-card-kind {
+  flex: none;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pay-card-chip {
+  width: 2.6rem;
+  height: 1.9rem;
+  margin-top: 0.35rem;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ffe7a3, #e0b44a 50%, #fff0c2);
+  box-shadow: inset 0 0 0 1px rgba(120, 80, 0, 0.35);
+}
+
+.pay-card-number {
+  align-self: end;
+  margin: 0;
+  font-size: clamp(1.05rem, 4.2vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.pay-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.pay-card-use {
+  opacity: 0.92;
+}
+
+.pay-card-net {
+  flex: none;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.pay-card-net.net-mastercard,
+.pay-card-net.net-napas,
+.pay-card-net.net-jcb {
+  font-style: normal;
+}
+
+.pay-card-remove {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  margin: 0;
+}
+
+.pay-card-x {
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  line-height: 1;
+}
+
+.pay-card-x:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: none;
+}
+
+.pay-card-ghost {
+  width: min(100%, 22rem);
+  margin: 0 auto;
+  background: repeating-linear-gradient(135deg, var(--lilac) 0 12px, var(--surface) 12px 24px);
+  border: 2px dashed var(--line);
+  box-shadow: none;
+  color: var(--muted);
+}
+
+.pay-card-ghost .pay-card-chip {
+  opacity: 0.5;
+}
+
+/* ---- Add a card ---- */
+.wallet-add summary {
+  width: fit-content;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.wallet-add summary::-webkit-details-marker {
+  display: none;
+}
+
+:root[data-theme="dark"] .wallet-add summary {
+  color: #d9cfff;
+}
+
+.wallet-form {
+  display: grid;
+  gap: 0.6rem;
+  max-width: none;
+  margin-top: 0.75rem;
+}
+
+.wallet-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.wallet-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.swatches legend {
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.swatch {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch input {
+  position: absolute;
+  opacity: 0;
+}
+
+.swatch:has(input:checked) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.swatch:has(input:focus-visible) {
+  outline: 3px solid var(--sun);
+  outline-offset: 2px;
+}
+
+/* ---- Upload: a big friendly drop zone ---- */
+.upload-card {
+  gap: 0.75rem;
+}
+
+.drop-zone {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 1.6rem 1rem;
+  border: 2px dashed color-mix(in srgb, var(--violet) 45%, transparent);
+  border-radius: 18px;
+  background: var(--surface);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.drop-zone:hover,
+.drop-zone.is-over {
+  border-color: var(--violet);
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface));
+  transform: translateY(-2px);
+}
+
+.drop-zone:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.drop-zone.has-file {
+  border-style: solid;
+  border-color: var(--mint);
+}
+
+.drop-icon {
+  display: grid;
+  place-items: center;
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 18px;
+  background: var(--grad-violet);
+  font-size: 1.8rem;
+  box-shadow: 0 10px 22px rgba(109, 74, 255, 0.3);
+  transition: transform 0.3s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+.drop-zone:hover .drop-icon,
+.drop-zone.is-over .drop-icon {
+  transform: translateY(-4px) rotate(-6deg);
+}
+
+.drop-zone strong {
+  font-size: 1.05rem;
+  word-break: break-word;
+}
+
+.drop-browse {
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The real file input covers the zone (invisible), so click and drop both work everywhere. */
+.drop-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drop-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.drop-types span {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.drop-types span.muted {
+  border-color: transparent;
+  background: none;
+}
+
+.upload-card .upload-go {
+  justify-self: stretch;
+  width: auto;
+}
+
+/* ---- Spent this month ---- */
+.month-spend {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+  gap: 1.25rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.month-spend .card-title {
+  margin: 0;
+}
+
+.month-big {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  background: var(--grad-mint);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.month-big small {
+  font-size: 1rem;
+  color: var(--muted);
+  -webkit-text-fill-color: var(--muted);
+}
+
+.month-all {
+  margin: 0.6rem 0 0;
+}
+
+.cat-bars {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cat-bars li {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.cat-bars .pill {
+  justify-self: start;
+}
+
+.cat-track {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--lilac);
+  overflow: hidden;
+}
+
+.cat-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: bar-grow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: left;
+}
+
+.fill-food { background: var(--orange); }
+.fill-shopping { background: var(--pink); }
+.fill-software { background: var(--violet); }
+.fill-streaming { background: var(--coral); }
+.fill-education { background: var(--sky); }
+.fill-utilities { background: var(--sun); }
+.fill-travel { background: var(--mint); }
+.fill-other { background: var(--muted); }
+
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* ---- Filter bar: one row (search grows, the button stays next to it) ---- */
+.filter-bar {
+  grid-template-columns: minmax(12rem, 1.8fr) repeat(3, minmax(8rem, 1fr)) auto auto;
+  align-items: center;
+}
+
+.filter-bar > button,
+.filter-bar > .button {
+  width: auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .filter-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filter-bar > input[type="search"] {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .bills-top,
+  .month-spend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cat-bars li {
+    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  }
+
+  .wallet-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wallet-stack.is-stacked > .pay-card,
+  .drop-zone,
+  .drop-icon { transition: none; }
+  .cat-fill { animation: none; }
+}
+
+/* ======================================================================
+   Fix_Thing_2: the menu pill glides between pages; brighter dark-mode text
+   ====================================================================== */
+/* The dark "current page" pill is its own element (static/nav.js moves it),
+   so only the pill travels and the menu words stay sharp. Without JS the
+   active link keeps its own dark background (the rule further up). */
+.nav-current {
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--navy);
+  box-shadow: 0 6px 16px rgba(14, 11, 43, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.42s cubic-bezier(0.34, 1.25, 0.64, 1), width 0.42s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+.nav-current.no-anim {
+  transition: none;
+}
+
+.nav-pills.has-current-pill .nav-current {
+  opacity: 1;
+}
+
+.nav-pills.has-current-pill .nav-pill.is-active {
+  background: transparent;
+  box-shadow: none;
+  view-transition-name: none;
+}
+
+/* While the pill is still on its way, the new link's words wait in the normal colour. */
+.nav-pills.is-sliding .nav-pill.is-active {
+  color: var(--muted);
+}
+
+/* The whole menu is part of the still header during a page change. */
+.nav-pills {
+  view-transition-name: none;
+}
+
+/* ---- Dark mode: text that was too faint on the dark cards ---- */
+:root[data-theme="dark"] {
+  --muted: #c9c5ec;
+}
+
+:root[data-theme="dark"] .tile-label,
+:root[data-theme="dark"] .card-title,
+:root[data-theme="dark"] .activity-table th,
+:root[data-theme="dark"] .legend,
+:root[data-theme="dark"] .bar-col small,
+:root[data-theme="dark"] th {
+  color: #ebe8ff;
+}
+
+:root[data-theme="dark"] .tile-sub,
+:root[data-theme="dark"] .soon-text small,
+:root[data-theme="dark"] .small-text,
+:root[data-theme="dark"] small {
+  color: #d6d2f5;
+}
+
+:root[data-theme="dark"] ::placeholder {
+  color: #a9a5d0;
+  opacity: 1;
+}
+
+:root[data-theme="dark"] .upload-card .card-title,
+:root[data-theme="dark"] .drop-browse,
+:root[data-theme="dark"] button.link {
+  color: #c4b5ff;
+}
+
+:root[data-theme="dark"] .pill.cat-food { background: rgba(255, 106, 43, 0.18); color: #ffb48a; }
+:root[data-theme="dark"] .pill.cat-shopping { background: rgba(255, 79, 154, 0.18); color: #ff9cc8; }
+:root[data-theme="dark"] .pill.cat-software { background: rgba(143, 115, 255, 0.22); color: #cbbcff; }
+:root[data-theme="dark"] .pill.cat-streaming { background: rgba(255, 77, 94, 0.18); color: #ff9aa5; }
+:root[data-theme="dark"] .pill.cat-education { background: rgba(47, 143, 255, 0.2); color: #9cc8ff; }
+:root[data-theme="dark"] .pill.cat-utilities { background: rgba(255, 184, 32, 0.18); color: #ffd47a; }
+:root[data-theme="dark"] .pill.cat-travel { background: rgba(16, 201, 143, 0.18); color: #7fe6c3; }
+:root[data-theme="dark"] .pill.cat-other { background: rgba(255, 255, 255, 0.1); color: #d6d2f5; }
+
+/* Brand logos (app/brands.py, static/brands/*.svg): the white mark on the brand's colour. */
+.brand-tile {
+  display: grid;
+  place-items: center;
+  background: var(--brand) !important;
+}
+
+.brand-tile img {
+  width: 58%;
+  height: 58%;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+/* A card's first heading sits at the top padding, not a browser margin below it
+   (the empty band above "Card bills to pay"). */
+.card > .card-title:first-child,
+.card > h2:first-child,
+.card > div:first-child > .card-title:first-child {
+  margin-top: 0;
+}

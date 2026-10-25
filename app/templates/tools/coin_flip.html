@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Tung đồng xu", "Coin flip") }} — AllOutFree{% endblock %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1>{{ t("Tung đồng xu", "Coin flip") }}</h1>
+      <p class="muted">{{ t("Đoán sấp hay ngửa. Tung càng nhiều, tỉ lệ càng gần 50%.", "Call heads or tails. The more you flip, the closer it gets to 50%.") }}</p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
+    </div>
+  </div>
+
+  <div class="game-grid" data-coin-game>
+    <section class="card game-stage">
+      <div class="coin-wrap">
+        <div class="coin" data-coin aria-hidden="true">
+          <span class="coin-face coin-heads">{{ t("NGỬA", "HEADS") }}</span>
+          <span class="coin-face coin-tails">{{ t("SẤP", "TAILS") }}</span>
+        </div>
+      </div>
+      <p class="game-result" data-coin-result aria-live="polite">{{ t("Chọn một mặt rồi tung!", "Pick a side, then flip!") }}</p>
+      <div class="game-actions">
+        <button type="button" class="button" data-call="heads">{{ t("Ngửa", "Heads") }}</button>
+        <button type="button" class="button secondary" data-call="tails">{{ t("Sấp", "Tails") }}</button>
+      </div>
+      <div class="game-actions">
+        <button type="button" class="button secondary btn-sm" data-many="10">{{ t("Tung 10 lần", "Flip 10") }}</button>
+        <button type="button" class="button secondary btn-sm" data-many="100">{{ t("Tung 100 lần", "Flip 100") }}</button>
+        <button type="button" class="button secondary btn-sm" data-many="1000">{{ t("Tung 1.000 lần", "Flip 1,000") }}</button>
+        <button type="button" class="link" data-coin-reset>{{ t("Làm lại", "Reset") }}</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">{{ t("Tỉ lệ", "The odds") }}</h2>
+      <div class="odds-bar" aria-hidden="true">
+        <span class="odds-heads" data-bar-heads style="width: 50%"></span>
+        <span class="odds-tails" data-bar-tails style="width: 50%"></span>
+      </div>
+      <dl class="game-stats">
+        <div><dt>{{ t("Ngửa", "Heads") }}</dt><dd data-stat="heads">0%</dd></div>
+        <div><dt>{{ t("Sấp", "Tails") }}</dt><dd data-stat="tails">0%</dd></div>
+        <div><dt>{{ t("Số lần tung", "Flips") }}</dt><dd data-stat="flips">0</dd></div>
+        <div><dt>{{ t("Bạn đoán đúng", "Your calls right") }}</dt><dd data-stat="calls">–</dd></div>
+        <div><dt>{{ t("Chuỗi hiện tại", "Current streak") }}</dt><dd data-stat="streak">–</dd></div>
+        <div><dt>{{ t("Chuỗi dài nhất", "Longest streak") }}</dt><dd data-stat="longest">–</dd></div>
+      </dl>
+      <p class="muted small-text" data-coin-tip>{{ t("Mỗi lần tung luôn là 50/50, kể cả sau 5 lần ngửa liền.", "Every flip is 50/50, even after five heads in a row.") }}</p>
+      <ol class="coin-history" data-coin-history aria-label="{{ t('20 lần gần nhất', 'Last 20 flips') }}"></ol>
+    </section>
+  </div>
+
+  <script type="application/json" id="coin-data">{{ {"words": {
+    "heads": t("Ngửa", "Heads"), "tails": t("Sấp", "Tails"),
+    "win": t("Đoán đúng! 🎉", "You called it! 🎉"), "lose": t("Trật rồi 😅", "Not this time 😅"),
+    "landed": t("Ra", "It's"), "flipped": t("Đã tung thêm", "Flipped"), "times": t("lần", "times"),
+    "start": t("Chọn một mặt rồi tung!", "Pick a side, then flip!"),
+    "tip_close": t("Gần 50% rồi: đó là luật số lớn.", "Close to 50%: that's the law of large numbers."),
+    "tip_far": t("Lệch khỏi 50%? Tung thêm để xem nó quay về.", "Away from 50%? Flip more and watch it come back."),
+    "tip_start": t("Mỗi lần tung luôn là 50/50, kể cả sau 5 lần ngửa liền.", "Every flip is 50/50, even after five heads in a row.")}}|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='coin-flip.js') }}" defer></script>
+{% endblock %}

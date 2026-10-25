@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_brand.html" import logo %}
 {% from "_icons.html" import icon %}
 {% from "_mascot.html" import mascot %}
 {% block title %}{{ t("Tổng quan", "Overview") }} — AllOutFree{% endblock %}
@@ -141,7 +142,7 @@
               {% set days = (sub.next_renewal_at - today).days %}
               <li>
                 <a href="{{ url_for('subscriptions.edit', item_id=sub.id) }}">
-                  <span class="soon-mark tone-{{ tone(sub.name) }}">{{ sub.name[:1] | upper }}</span>
+                  {{ logo(sub.name, "soon-mark") }}
                   <span class="soon-text"><strong>{{ sub.name }}</strong>
                     <small>{{ sub.next_renewal_at.strftime('%d/%m') }}, {% if days <= 0 %}<span>{{ t("hôm nay", "today") }}</span>{% else %}<span data-vi="còn {{ days }} ngày" data-en="in {{ days }} days">còn {{ days }} ngày</span>{% endif %}</small></span>
                   <strong class="soon-amount">{{ sub.amount | money(sub.currency) }} {{ sub.currency }}</strong>

@@ -26,7 +26,8 @@
       <div class="preset-tiles">
         {% for label, initial, colour, data in presets %}
           <button type="button" class="preset-tile" style="--brand: {{ colour }}" data-preset-plan="{{ data | tojson | forceescape }}" aria-pressed="false">
-            <span class="preset-logo" aria-hidden="true">{{ initial }}</span>
+            {% set b = brand(label) %}
+            {% if b %}<span class="preset-logo brand-tile" aria-hidden="true"><img src="{{ url_for('static', filename='brands/' ~ b.slug ~ '.svg') }}" alt="" width="24" height="24" /></span>{% else %}<span class="preset-logo" aria-hidden="true">{{ initial }}</span>{% endif %}
             <span>{{ label }}</span>
           </button>
         {% endfor %}

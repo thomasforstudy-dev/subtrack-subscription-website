@@ -46,9 +46,11 @@
         </a>
 
         {% if signed_in %}
-          {# The highlight (nav-indicator) slides under the page you point at; see static/nav.js. #}
+          {# The highlight (nav-indicator) slides under the page you point at, and the dark pill
+             (nav-current) glides from the page you came from; see static/nav.js. #}
           <nav class="nav-pills" aria-label="{{ t('Điều hướng chính', 'Main menu') }}" data-nav-pills>
             <span class="nav-indicator" aria-hidden="true" data-nav-indicator></span>
+            <span class="nav-current" aria-hidden="true" data-nav-current></span>
             {% for target, endpoint, prefix, vi, en, _ in nav_items %}
               {% set active = request.path.startswith(prefix) %}
               <a href="{{ url_for(endpoint) }}" class="nav-pill{% if active %} is-active{% endif %}" {% if active %}aria-current="page"{% endif %} data-nav-target="{{ target }}" data-vi="{{ vi }}" data-en="{{ en }}">{{ t(vi, en) }}</a>

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "_mascot.html" import mascot %}
 {% from "_icons.html" import icon %}
+{% from "_brand.html" import logo %}
 {% block title %}{{ t("Hóa đơn", "Bills") }} — AllOutFree{% endblock %}
 {% set cat_names = {"software": t("Phần mềm", "Software"), "streaming": t("Giải trí", "Streaming"), "education": t("Học tập", "Education"),
                     "utilities": t("Điện nước", "Utilities"), "shopping": t("Mua sắm", "Shopping"), "food": t("Ăn uống", "Food"),
@@ -16,35 +17,138 @@
     </div>
   </div>
 
+  {% set net_names = {"visa": "VISA", "mastercard": "Mastercard", "amex": "AMEX", "jcb": "JCB", "napas": "NAPAS", "unionpay": "UnionPay", "card": ""} %}
   <div class="bills-top">
+    {# Card holder: only the first 6 and last 4 digits are ever stored (app/cards.py) #}
+    <section class="card card-holder" id="cards" aria-labelledby="wallet-title">
+      <div class="wallet-head">
+        <h2 id="wallet-title" class="card-title">💳 {{ t("Ví thẻ", "Card holder") }} {% if cards %}<span class="pill">{{ cards|length }}</span>{% endif %}</h2>
+        {% if cards|length > 1 %}
+          <div class="wallet-nav">
+            <button type="button" class="icon-action" data-wallet-prev aria-label="{{ t('Thẻ trước', 'Previous card') }}">‹</button>
+            <button type="button" class="icon-action" data-wallet-next aria-label="{{ t('Thẻ sau', 'Next card') }}">›</button>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if cards %}
+        <div class="wallet-stack" data-wallet aria-roledescription="{{ t('ví thẻ', 'card holder') }}" aria-label="{{ t('Vuốt để đổi thẻ', 'Swipe to change card') }}">
+          {% for row in cards %}
+            {% set card = row.card %}
+            <article class="pay-card pc-{{ card.color }}" data-wallet-card aria-label="{{ card.name }}, {{ row.number }}">
+              <div class="pay-card-top">
+                <strong class="pay-card-name">{{ card.name }}</strong>
+                <span class="pay-card-kind">{{ t("Tín dụng", "Credit") if card.kind == 'credit' else t("Ghi nợ", "Debit") }}</span>
+              </div>
+              <span class="pay-card-chip" aria-hidden="true"></span>
+              <p class="pay-card-number">{{ row.number }}</p>
+              <div class="pay-card-bottom">
+                <span class="pay-card-use">
+                  {% if row.month %}
+                    {{ t("Tháng này", "This month") }}: {% for currency, amount in row.month %}{{ amount|money(currency) }} {{ currency }}{% if not loop.last %} · {% endif %}{% endfor %}
+                  {% else %}
+                    {{ row.bills }} {{ t("hóa đơn", "bills") }}
+                  {% endif %}
+                </span>
+                <span class="pay-card-net net-{{ row.network }}">{{ net_names.get(row.network, "") }}</span>
+              </div>
+              <form method="post" action="{{ url_for('cards.remove', card_id=card.id) }}" class="pay-card-remove" data-confirm="{{ t('Bỏ thẻ này khỏi ví?', 'Remove this card from the holder?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="pay-card-x" aria-label="{{ t('Bỏ thẻ', 'Remove card') }} {{ card.name }}" title="{{ t('Bỏ thẻ', 'Remove card') }}">×</button>
+              </form>
+            </article>
+          {% endfor %}
+        </div>
+        {% if cards|length > 1 %}<div class="wallet-dots" data-wallet-dots aria-hidden="true"></div>{% endif %}
+      {% else %}
+        <div class="pay-card pay-card-ghost" aria-hidden="true">
+          <span class="pay-card-chip"></span>
+          <p class="pay-card-number">•••• ••••  •••• ••••</p>
+        </div>
+      {% endif %}
+
+      <details class="wallet-add" {% if not cards %}open{% endif %}>
+        <summary>+ {{ t("Thêm thẻ", "Add a card") }}</summary>
+        <form method="post" action="{{ url_for('cards.add') }}" class="wallet-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <div class="wallet-form-row">
+            <label>{{ t("Tên thẻ", "Card name") }}
+              <input type="text" name="name" maxlength="60" placeholder="{{ t('Ví dụ: Techcombank Visa', 'e.g. Techcombank Visa') }}" />
+            </label>
+            <label>{{ t("Loại", "Type") }}
+              <select name="kind">
+                <option value="credit">{{ t("Tín dụng", "Credit") }}</option>
+                <option value="debit">{{ t("Ghi nợ", "Debit") }}</option>
+              </select>
+            </label>
+          </div>
+          <div class="wallet-form-row">
+            <label>{{ t("6 số đầu", "First 6 digits") }}
+              <input type="text" name="first6" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="411111" autocomplete="off" />
+            </label>
+            <label>{{ t("4 số cuối", "Last 4 digits") }}
+              <input type="text" name="last4" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="1234" autocomplete="off" />
+            </label>
+          </div>
+          <fieldset class="swatches">
+            <legend>{{ t("Màu thẻ", "Colour") }}</legend>
+            {% for color in ("violet", "orange", "mint", "sky", "pink", "ink") %}
+              <label class="swatch pc-{{ color }}"><input type="radio" name="color" value="{{ color }}" {% if loop.first %}checked{% endif %} /><span class="sr-only">{{ color }}</span></label>
+            {% endfor %}
+          </fieldset>
+          <p class="muted small-text">🔒 {{ t("Chỉ lưu 6 số đầu và 4 số cuối. Đừng bao giờ nhập đủ số thẻ, ngày hết hạn hay CVV.", "Only the first 6 and last 4 digits are saved. Never type the full number, expiry date or CVV.") }}</p>
+          <button type="submit" class="button btn-sm">{{ t("Thêm vào ví", "Add to holder") }}</button>
+        </form>
+      </details>
+    </section>
+
     {# Upload: the file is checked, stored privately, then typed in or read #}
-    <form class="card upload-card" data-tour="upload" method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data">
+    <form class="card upload-card" data-tour="upload" data-upload method="post" action="{{ url_for('bills.upload') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <h2 class="card-title">{{ icon("upload", 20) }} {{ t("Tải hóa đơn lên", "Upload a bill") }}</h2>
-      <label for="bills-upload-input" class="sr-only">{{ t("Chọn tệp", "Choose a file") }}</label>
-      <input id="bills-upload-input" type="file" name="file" required aria-describedby="bills-upload-help"
-             accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,image/png,image/jpeg,image/webp,application/pdf" />
-      <p id="bills-upload-help" class="muted small-text">{{ t("Ảnh, PDF hoặc Word · tối đa 10 MB", "Photo, PDF or Word · up to 10 MB") }}</p>
-      <button type="submit">{{ t("Tải lên", "Upload") }}</button>
+      <label for="bills-upload-input" class="drop-zone" data-drop>
+        <span class="drop-icon" aria-hidden="true">🧾</span>
+        <strong data-drop-name>{{ t("Kéo thả hóa đơn vào đây", "Drop a bill here") }}</strong>
+        <span class="drop-browse">{{ t("hoặc bấm để chọn tệp", "or click to choose a file") }}</span>
+        <input id="bills-upload-input" class="drop-input" type="file" name="file" required aria-describedby="bills-upload-help"
+               accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,image/png,image/jpeg,image/webp,application/pdf" />
+      </label>
+      <div class="drop-types" id="bills-upload-help">
+        <span>📷 {{ t("Ảnh", "Photo") }}</span><span>📄 PDF</span><span>📝 Word</span><span class="muted">{{ t("tối đa 10 MB", "up to 10 MB") }}</span>
+      </div>
+      <button type="submit" class="upload-go">{{ t("Tải lên", "Upload") }} →</button>
     </form>
-
-    {# Spent: confirmed receipts, one line per currency (never added together) #}
-    <article class="card spent-card">
-      <h2 class="card-title">{{ t("Đã chi", "Spent") }}</h2>
-      {% if totals %}
-        <ul class="spent-list">
-          {% for row in totals %}
-            <li>
-              <strong>{{ row.total | money(row.currency) }} {{ row.currency }}</strong>
-              <small>{{ row.count }} {{ t("hóa đơn", "bills") }}</small>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="muted">{{ t("Chưa có biên lai nào.", "No receipts yet.") }}</p>
-      {% endif %}
-    </article>
   </div>
+
+  {# Spent: this month by category in the main currency; all time per currency (never added together) #}
+  <section class="card month-spend">
+    <div class="month-spend-total">
+      <h2 class="card-title">{{ t("Chi tháng này", "Spent this month") }}</h2>
+      {% if month %}
+        <p class="month-big">{{ month.total|money(month.currency) }} <small>{{ month.currency }}</small></p>
+        <p class="muted small-text">{{ month.count }} {{ t("biên lai", "receipts") }}{% for currency, amount in month.others %} · + {{ amount|money(currency) }} {{ currency }}{% endfor %}</p>
+      {% else %}
+        <p class="month-big">0</p>
+        <p class="muted small-text">{{ t("Chưa có biên lai nào tháng này.", "No receipts this month yet.") }}</p>
+      {% endif %}
+      {% if totals %}
+        <p class="month-all small-text">{{ t("Từ trước tới nay", "All time") }}:
+          {% for row in totals %}<strong>{{ row.total|money(row.currency) }} {{ row.currency }}</strong> <span class="muted">({{ row.count }})</span>{% if not loop.last %} · {% endif %}{% endfor %}
+        </p>
+      {% endif %}
+    </div>
+    {% if month %}
+      <ul class="cat-bars">
+        {% for cat, amount, width in month.categories %}
+          <li>
+            <span class="pill cat-{{ cat }}">{{ cat_names.get(cat, cat) }}</span>
+            <span class="cat-track" aria-hidden="true"><span class="cat-fill fill-{{ cat }}" style="width: {{ width }}%"></span></span>
+            <strong>{{ amount|money(month.currency) }}</strong>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
 
   {# Uploaded files that aren't a saved bill yet #}
   {% if waiting %}
@@ -162,7 +266,7 @@
               </td>
               <td>
                 <div class="service-cell">
-                  <span class="service-tile tone-{{ tone(bill.merchant) }}" aria-hidden="true">{{ (bill.merchant[:1] or '?')|upper }}</span>
+                  {{ logo(bill.merchant, "service-tile") }}
                   <div>
                     <div class="bill-merchant-row">
                       <strong>{{ bill.merchant }}</strong>
@@ -232,4 +336,7 @@
     <a class="button secondary btn-sm" href="{{ url_for('bills.export', fmt='json') }}">JSON</a>
     <a class="button secondary btn-sm" href="{{ url_for('bills.export', fmt='md') }}">Markdown</a>
   </div>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='wallet.js') }}" defer></script>
 {% endblock %}

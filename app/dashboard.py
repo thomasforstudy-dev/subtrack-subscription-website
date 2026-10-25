@@ -58,13 +58,26 @@ def summary(user) -> dict:
     active = active_subscriptions(user)
     totals = projected_totals(active)
     upcoming = [s for s in active if s.next_renewal_at <= today + timedelta(days=UPCOMING_DAYS)]
-    expected = (
+    archived = archived_plan_ids(user)
+    expected = [
+        row for row in
         Renewal.query.filter_by(user_id=user.id)
         .filter(Renewal.due_date >= today - timedelta(days=HISTORY_DAYS))
         .order_by(Renewal.due_date.desc())
         .all()
-    )
+        if not still_asking_for_archived(row, archived)
+    ]
     return {"today": today, "totals": totals, "upcoming": upcoming, "expected": expected}
+
+
+def archived_plan_ids(user) -> set[int]:
+    return {s.id for s in Subscription.query.filter_by(user_id=user.id).filter(Subscription.status != "active")}
+
+
+def still_asking_for_archived(row: Renewal, archived: set[int]) -> bool:
+    """An archived plan shouldn't keep asking "were you charged?". Answered
+    renewals (paid / not charged) stay: they are history."""
+    return row.status == "expected" and row.subscription_id in archived
 
 
 CHART_MONTHS_BEFORE, CHART_MONTHS_AFTER = 3, 2  # 6 bars: 3 past months, this one, 2 ahead
@@ -126,8 +139,11 @@ def activity(user, today: date, limit: int = 8) -> list[dict]:
                       "status": ("paid" if bill.paid_at else "unpaid") if bill.kind == "card_bill" else "saved",
                       "url": url_for("bills.edit", bill_id=bill.id)})
     names = {s.id: s.name for s in Subscription.query.filter_by(user_id=user.id)}
+    archived = archived_plan_ids(user)
     for row in Renewal.query.filter_by(user_id=user.id).filter(Renewal.due_date <= today) \
             .order_by(Renewal.due_date.desc()).limit(limit):
+        if still_asking_for_archived(row, archived):
+            continue
         items.append({"when": row.due_date, "title": names.get(row.subscription_id, "—"), "kind": "renewal",
                       "amount": row.amount, "currency": row.currency, "status": row.status,
                       "url": url_for("subscriptions.edit", item_id=row.subscription_id)})

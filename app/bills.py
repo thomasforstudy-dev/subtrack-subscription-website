@@ -22,6 +22,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 
 from app import db
+from app.cards import card_rows
 from app.documents import IMAGES, MIME_TYPES, UploadError, clean_name, file_path, inspect_bounded as inspect, read_upload, save_file
 from app.models import Bill, BillDraft, BillLine, Document, DocumentJob
 from app.schedule import local_now
@@ -83,6 +84,8 @@ def list_bills():
         items=pages.items,
         pages=pages,
         totals=receipt_totals(),
+        month=month_spend(),
+        cards=card_rows(current_user.id, user_today().replace(day=1)),
         unpaid=unpaid_card_bills(),
         waiting=waiting_documents(),
         # "Read it for me" jobs of the waiting files: {document_id: job}
@@ -103,6 +106,41 @@ def receipt_totals() -> list[dict]:
         .group_by(Bill.currency).order_by(Bill.currency).all()
     )
     return [{"currency": c, "count": n, "total": Decimal(t).quantize(Decimal("0.01"))} for c, n, t in rows]
+
+
+def month_spend() -> dict | None:
+    """This month's receipts in the user's main currency, split by category.
+
+    The main currency is the one with the most receipts this month; the
+    others are listed apart (never added together)."""
+    start = user_today().replace(day=1)
+    day = func.coalesce(Bill.transaction_date, Bill.invoice_date)
+    rows = (
+        db.session.query(Bill.currency, Bill.category, func.count(Bill.id), func.sum(Bill.total))
+        .filter(Bill.user_id == current_user.id, Bill.status == "confirmed", Bill.kind == "receipt",
+                Bill.total.isnot(None), day >= start)
+        .group_by(Bill.currency, Bill.category).all()
+    )
+    if not rows:
+        return None
+    by_currency = {}
+    for currency, category, count, total in rows:
+        entry = by_currency.setdefault(currency, {"count": 0, "total": Decimal(0), "categories": []})
+        entry["count"] += count
+        entry["total"] += Decimal(total)
+        entry["categories"].append((category, Decimal(total)))
+    main = max(by_currency, key=lambda c: (by_currency[c]["count"], by_currency[c]["total"]))
+    entry = by_currency[main]
+    biggest = max(amount for _, amount in entry["categories"]) or Decimal(1)
+    return {
+        "currency": main,
+        "count": entry["count"],
+        "total": entry["total"].quantize(Decimal("0.01")),
+        # (category, amount, bar width in %), biggest first
+        "categories": [(cat, amount.quantize(Decimal("0.01")), int(amount / biggest * 100))
+                       for cat, amount in sorted(entry["categories"], key=lambda row: -row[1])],
+        "others": [(c, by_currency[c]["total"].quantize(Decimal("0.01"))) for c in sorted(by_currency) if c != main],
+    }
 
 
 def unpaid_card_bills() -> list[Bill]:

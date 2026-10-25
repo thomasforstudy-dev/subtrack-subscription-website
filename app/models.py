@@ -520,3 +520,31 @@ class EmailCode(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     used_at = db.Column(db.DateTime)  # set when used or cancelled
+
+
+class Card(db.Model):
+    """A payment card in the card holder on the Bills page (app/cards.py).
+
+    Only the first 6 digits (they name the bank and card type) and the last 4
+    are kept: what a printed receipt shows. Never the full number, the expiry
+    date or the CVV; the form doesn't ask for them. Removing a card sets
+    removed_at and keeps the row, like every other table here.
+    """
+
+    __tablename__ = "cards"
+    __table_args__ = (db.Index("IX_cards_user", "user_id", "removed_at"),)
+
+    KINDS = ("credit", "debit")
+    COLORS = ("violet", "orange", "mint", "sky", "pink", "ink")
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name = db.Column(db.Unicode(60), nullable=False)  # the owner's label, e.g. "Techcombank Visa"
+    kind = db.Column(db.Unicode(10), default="credit", nullable=False)
+    first6 = db.Column(db.Unicode(6), nullable=False)
+    last4 = db.Column(db.Unicode(4), nullable=False)
+    color = db.Column(db.Unicode(10), default="violet", nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    removed_at = db.Column(db.DateTime)

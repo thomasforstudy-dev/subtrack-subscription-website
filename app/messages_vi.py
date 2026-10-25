@@ -152,6 +152,11 @@ VI = {
     "There is no text to read. A scanned PDF needs OCR, which isn't switched on yet.":
         "Không có chữ để đọc. PDF dạng ảnh quét cần OCR, tính năng này chưa bật.",
     "Upload a file or paste some text first.": "Hãy tải tệp lên hoặc dán đoạn chữ trước.",
+    # card holder
+    "Type the first 6 and the last 4 digits of the card, numbers only.": "Nhập 6 số đầu và 4 số cuối của thẻ, chỉ gồm chữ số.",
+    "The card holder fits 12 cards. Remove one first.": "Ví thẻ chứa tối đa 12 thẻ. Hãy bỏ bớt một thẻ trước.",
+    "Card added to your card holder.": "Đã thêm thẻ vào ví thẻ.",
+    "Card removed from your card holder.": "Đã bỏ thẻ khỏi ví thẻ.",
 }
 
 # Messages with a changing part. {0}, {1} ... are the parts in brackets.

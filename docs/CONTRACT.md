@@ -430,6 +430,26 @@ expiry and revocation. Answers are JSON with `Cache-Control: no-store`.
   `Access-Control-Allow-Origin`; preflight allows `GET` and the `Authorization` header, never
   credentials, never a wildcard. CORS is not the login: the token is.
 
+## Card holder (since 26 Oct, on the Bills page)
+
+Only the first 6 and last 4 digits are stored. Never ask for the full number, expiry or CVV.
+
+| Route | Fields | Result |
+|---|---|---|
+| `POST /cards/` | `csrf_token`, `name` (0–60, empty = network + last 4), `kind` (`credit`/`debit`), `first6` (exactly 6 digits), `last4` (exactly 4 digits), `color` (`violet`, `orange`, `mint`, `sky`, `pink`, `ink`) | redirects to `/bills/#cards`; max 12 cards |
+| `POST /cards/<id>/remove` | `csrf_token` | hides the card (`removed_at`), keeps the row; 404 for someone else's card |
+
+`bills/list.html` gets `cards`: a list of `{card, network, number, bills, month}` where `number`
+is already masked (`4111 11•• •••• 1234`) and `month` is `[(currency, amount)]` spent this month
+with that card (bills whose `card_last4` matches). It also gets `month`: this month's receipts
+in the main currency (`currency`, `total`, `count`, `categories` as `(category, amount, bar %)`,
+`others` as `[(currency, total)]`), or `None`.
+
+## Games (since 26 Oct, all in the browser)
+
+`GET /tools/coin-flip`, `GET /tools/blackjack`, `GET /tools/case-spin` (logged in). Nothing is
+posted or saved on the server; the case spin keeps its lists in `localStorage` (`case-spin-lists`).
+
 ## Admin
 
 Nobody becomes admin by signing up any more. On the server PC:

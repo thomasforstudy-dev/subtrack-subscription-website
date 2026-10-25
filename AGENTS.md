@@ -42,7 +42,9 @@ helper, and install a Chrome extension for reminders.
 | `app/links.py`, `app/link_preview.py` | Pinned links + automatic page titles |
 | `app/admin.py` | Admin user list |
 | `app/api_tokens.py`, `app/api.py` | Extension tokens (Settings page) and the token-only `/api/v1/` API |
-| `app/tools.py`, `app/forecast.py`, `app/read_aloud.py`, `app/roulette.py` | AI tools (`/tools/`): spending forecast, Read aloud (Gemini voice), food roulette |
+| `app/tools.py`, `app/forecast.py`, `app/read_aloud.py`, `app/roulette.py` | AI tools (`/tools/`): spending forecast, Read aloud (Gemini voice), food roulette; games (coin flip, blackjack, case spin) run in `static/coin-flip.js`, `blackjack.js`, `case-spin.js` |
+| `app/cards.py`, `static/wallet.js` | Card holder on the Bills page (first 6 + last 4 digits only) and the upload drop zone |
+| `app/brands.py`, `templates/_brand.html`, `static/brands/` | Brand logos (Simple Icons, CC0) for known services |
 | `app/guide.py`, `templates/_tour.html`, `static/tour.js` | User guide page (`/guide`) and the step-by-step spotlight tours (new users, sign-up) |
 | `templates/_pet.html`, `static/pet.js`, `templates/_subby.html` | Subby the AI pet (the animated chat button that reacts, follows the cursor and gives tips) |
 | `tools/loadtest.py` | Local-only load test (refuses anything but 127.0.0.1) |
@@ -85,8 +87,9 @@ folder on `main` with no uncommitted changes; do your work in your own branch fo
 4. Run the tests: `run_tests.bat` (or `.venv\Scripts\python -m pytest -q`).
    They must pass. Add or update tests for anything you add or change.
 5. Add one line to the log in `docs/PROGRESS.md`: date, which AI you are, what changed.
-6. Commit, starting the message with your name:
-   `git commit -m "[codex] Add dashboard monthly total"`.
+6. Commit with a plain message that says what changed, **without** an AI name or
+   `[claude]`/`[codex]` prefix (the owner's request, 26 Oct; the repo is his portfolio):
+   `git commit -m "Add dashboard monthly total"`. Say which AI you are in the PROGRESS log line.
    The commit is the save point: if something breaks later, it can be undone.
 
 ## Rules that must never be broken

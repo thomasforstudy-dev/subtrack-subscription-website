@@ -25,4 +25,23 @@
       <span class="muted small-text">{{ t("Không biết ăn gì? Quay thôi.", "Can't decide where to eat? Spin.") }}</span>
     </a>
   </div>
+
+  <h2 class="tools-subhead">{{ t("Trò chơi", "Games") }}</h2>
+  <div class="tools-grid">
+    <a class="card tool-card tone-bg-2" href="{{ url_for('tools.coin_flip') }}">
+      <span class="tool-emoji" aria-hidden="true">🪙</span>
+      <strong>{{ t("Tung đồng xu", "Coin flip") }}</strong>
+      <span class="muted small-text">{{ t("Đoán sấp ngửa, xem tỉ lệ % thay đổi.", "Call it and watch the odds settle.") }}</span>
+    </a>
+    <a class="card tool-card tone-bg-3" href="{{ url_for('tools.blackjack') }}">
+      <span class="tool-emoji" aria-hidden="true">🃏</span>
+      <strong>{{ t("Xì dách với AI", "Blackjack vs AI") }}</strong>
+      <span class="muted small-text">{{ t("AI chia bài, bạn xem % lá tiếp theo.", "The AI deals; you see the odds of every next card.") }}</span>
+    </a>
+    <a class="card tool-card tone-bg-0" href="{{ url_for('tools.case_spin') }}">
+      <span class="tool-emoji" aria-hidden="true">🎁</span>
+      <strong>{{ t("Mở hộp món ăn", "Food case spin") }}</strong>
+      <span class="muted small-text">{{ t("Nhập món ăn, đồ uống rồi quay như mở hòm.", "Add foods and drinks, then open the case.") }}</span>
+    </a>
+  </div>
 {% endblock %}

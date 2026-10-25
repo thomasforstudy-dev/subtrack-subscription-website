@@ -101,12 +101,13 @@ def create_app() -> Flask:
     app.after_request(security_headers)
     app.jinja_env.globals["csrf_token"] = csrf_token
 
+    from app.brands import brand
     from app.i18n import say, t, ui_lang
     from app.mailer import inbox_url
 
     # One language per page: {{ t("Tiếng Việt", "English") }} in every template,
     # {{ say(message) }} for messages the code writes in English.
-    app.jinja_env.globals.update(t=t, say=say, ui_lang=ui_lang, inbox_url=inbox_url, tone=tone)
+    app.jinja_env.globals.update(t=t, say=say, ui_lang=ui_lang, inbox_url=inbox_url, tone=tone, brand=brand)
 
     from app.admin import bp as admin_bp
     from app.api import bp as api_bp
@@ -116,6 +117,7 @@ def create_app() -> Flask:
     from app.bill_review import bp as bill_review_bp
     from app.bills import bp as bills_bp
     from app.calendar import bp as calendar_bp
+    from app.cards import bp as cards_bp
     from app.dashboard import bp as dashboard_bp
     from app.forecast import bp as forecast_bp
     from app.guide import bp as guide_bp
@@ -141,6 +143,7 @@ def create_app() -> Flask:
     app.register_blueprint(oauth_bp)
     app.register_blueprint(subby_bp)
     app.register_blueprint(bills_bp)
+    app.register_blueprint(cards_bp)
     app.register_blueprint(bill_review_bp)
     app.register_blueprint(api_tokens_bp)
     app.register_blueprint(api_bp)

@@ -13,6 +13,8 @@ EXPECTED_TABLES = {
     "api_tokens",
     # 09_email_codes.sql: 6-digit codes in the confirm email
     "email_codes",
+    # 10_cards.sql: the card holder on the Bills page
+    "cards",
 }
 
 # Kept (never deleted) but no longer read or written by the app, so their
@@ -28,6 +30,7 @@ REQUIRED_INDEXES = {
     "document_jobs": [(("document_id",), True)],  # one reading job per file
     "api_tokens": [(("token_hash",), True), (("user_id", "slot"), True)],  # the 5-token limit
     "email_codes": [(("user_id", "used_at"), False)],
+    "cards": [(("user_id", "removed_at"), False)],
 }
 
 

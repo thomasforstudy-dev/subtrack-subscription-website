@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Mở hộp món ăn", "Food case spin") }} — AllOutFree{% endblock %}
+{% block content %}
+  <div class="section-head">
+    <div>
+      <h1>{{ t("Mở hộp món ăn", "Food case spin") }}</h1>
+      <p class="muted">{{ t("Thêm món ăn, đồ uống bạn thích rồi mở hộp để AI chọn giùm.", "Add the foods and drinks you like, then open the case and let it choose.") }}</p>
+    </div>
+    <div class="head-actions">
+      <a class="button secondary" href="{{ url_for('tools.index') }}">← {{ t("Công cụ AI", "AI tools") }}</a>
+    </div>
+  </div>
+
+  <div class="case-game" data-case-game>
+    <section class="card case-stage">
+      <div class="case-modes" role="radiogroup" aria-label="{{ t('Mở hộp nào', 'Which case') }}">
+        <label><input type="radio" name="case-mode" value="food" checked /> 🍜 {{ t("Món ăn", "Food") }}</label>
+        <label><input type="radio" name="case-mode" value="drink" /> 🧋 {{ t("Đồ uống", "Drink") }}</label>
+        <label><input type="radio" name="case-mode" value="combo" /> 🍱 {{ t("Combo", "Combo") }}</label>
+      </div>
+      <div class="case-reels" data-reels></div>
+      <button type="button" class="spin-button" data-open-case>🎁 {{ t("Mở hộp!", "Open case!") }}</button>
+      <div class="case-result" data-case-result aria-live="polite"></div>
+    </section>
+
+    <section class="card case-lists">
+      <h2 class="card-title">{{ t("Danh sách của bạn", "Your lists") }}</h2>
+      <form class="case-add" data-case-add>
+        <label class="sr-only" for="case-item">{{ t("Tên món", "Item name") }}</label>
+        <input id="case-item" type="text" maxlength="40" placeholder="{{ t('Ví dụ: Bún bò', 'e.g. Pad thai') }}" autocomplete="off" />
+        <label class="sr-only" for="case-cat">{{ t("Loại", "Category") }}</label>
+        <select id="case-cat">
+          <option value="food">🍜 {{ t("Món ăn", "Food") }}</option>
+          <option value="drink">🧋 {{ t("Đồ uống", "Drink") }}</option>
+        </select>
+        <button type="submit" class="button btn-sm">+ {{ t("Thêm", "Add") }}</button>
+      </form>
+      <h3 class="case-list-title">🍜 {{ t("Món ăn", "Food") }} <span class="pill" data-count="food"></span></h3>
+      <ul class="case-chips" data-list="food"></ul>
+      <h3 class="case-list-title">🧋 {{ t("Đồ uống", "Drink") }} <span class="pill" data-count="drink"></span></h3>
+      <ul class="case-chips" data-list="drink"></ul>
+      <button type="button" class="link small-text" data-case-defaults>{{ t("Khôi phục danh sách mẫu", "Restore the sample lists") }}</button>
+      <p class="muted small-text">{{ t("Danh sách được lưu trong trình duyệt này.", "Your lists are saved in this browser.") }}</p>
+    </section>
+  </div>
+
+  <script type="application/json" id="case-data">{{ {"words": {
+    "need": t("Cần ít nhất 2 món trong danh sách này.", "Add at least 2 items to this list first."),
+    "pick": t("Hôm nay chọn", "Today's pick"), "and": t("và", "and"),
+    "remove": t("Xóa", "Remove"), "dup": t("Món này có rồi.", "That one's already on the list."),
+    "rare": t("Hàng hiếm!", "Rare drop!")},
+    "defaults": {
+      "food": ["Phở bò", "Bún bò Huế", "Cơm tấm", "Bánh mì", "Bún chả", "Hủ tiếu", "Mì Quảng", "Gỏi cuốn", "Bánh xèo", "Lẩu thái"],
+      "drink": ["Trà sữa", "Cà phê sữa đá", "Bạc xỉu", "Trà đào", "Nước mía", "Sinh tố bơ", "Matcha latte", "Nước dừa"]}}|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='case-spin.js') }}" defer></script>
+{% endblock %}
