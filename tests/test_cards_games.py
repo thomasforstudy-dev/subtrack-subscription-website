@@ -48,7 +48,7 @@ def test_card_holder_has_a_limit(app, user):
 
 
 def test_cards_are_private_and_removal_keeps_the_row(app, user):
-    user.post("/cards/", data={"name": "Mine", "first6": "512345", "last4": "1111"})
+    user.post("/cards/", data={"name": "Zebra card", "first6": "512345", "last4": "7731"})
     with app.app_context():
         card_id = Card.query.one().id
 
@@ -56,14 +56,14 @@ def test_cards_are_private_and_removal_keeps_the_row(app, user):
     other = app.test_client()
     sign_up(other, "b@example.com")
     page = other.get("/bills/").get_data(as_text=True)
-    assert "Mine" not in page and "1111" not in page
+    assert "Zebra card" not in page and "7731" not in page
     assert other.post(f"/cards/{card_id}/remove").status_code == 404
 
     user.post(f"/cards/{card_id}/remove")
     with app.app_context():
         card = db.session.get(Card, card_id)
         assert card is not None and card.removed_at is not None  # hidden, not deleted
-    assert "Mine" not in user.get("/bills/").get_data(as_text=True)
+    assert "Zebra card" not in user.get("/bills/").get_data(as_text=True)
 
 
 def test_network_and_masking():
