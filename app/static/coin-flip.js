@@ -65,7 +65,11 @@
 
   // Spin the coin so it lands showing `side` (CSS turns it with rotateY).
   function animate(side, done) {
-    if (reduceMotion) { coin.dataset.side = side; done(); return; }
+    if (reduceMotion) { // no spin: just show the face it landed on
+      coin.style.transform = side === "tails" ? "rotateY(180deg)" : "rotateY(0deg)";
+      done();
+      return;
+    }
     state.turns += 5; // five full turns per flip, then the face we landed on
     var angle = state.turns * 360 + (side === "tails" ? 180 : 0);
     coin.classList.add("flipping");

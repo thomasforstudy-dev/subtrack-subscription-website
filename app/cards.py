@@ -53,8 +53,11 @@ def active_cards(user_id: int) -> list[Card]:
     return Card.query.filter_by(user_id=user_id, removed_at=None).order_by(Card.created_at, Card.id).all()
 
 
-def card_rows(user_id: int, month_start) -> list[dict]:
-    """Each card with how many bills used it and what it spent this month (per currency)."""
+def card_rows(user_id: int, month_start, month_end) -> list[dict]:
+    """Each card with how many bills used it and what it spent this month (per currency).
+
+    Only receipts count as spending: a card statement repeats the same
+    purchases, so adding it too would count them twice."""
     cards = active_cards(user_id)
     if not cards:
         return []
@@ -67,7 +70,7 @@ def card_rows(user_id: int, month_start) -> list[dict]:
     for bill in bills:
         count[bill.card_last4] += 1
         day = bill.transaction_date or bill.invoice_date
-        if bill.total is not None and day and day >= month_start:
+        if bill.kind == "receipt" and bill.total is not None and day and month_start <= day < month_end:
             month[bill.card_last4][bill.currency] += bill.total
     return [
         {

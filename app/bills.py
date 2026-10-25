@@ -12,7 +12,7 @@ import csv
 import io
 import json
 import re
-from datetime import date, time
+from datetime import date, time, timedelta
 from decimal import Decimal, InvalidOperation
 from zoneinfo import available_timezones
 
@@ -85,7 +85,7 @@ def list_bills():
         pages=pages,
         totals=receipt_totals(),
         month=month_spend(),
-        cards=card_rows(current_user.id, user_today().replace(day=1)),
+        cards=card_rows(current_user.id, *this_month()),
         unpaid=unpaid_card_bills(),
         waiting=waiting_documents(),
         # "Read it for me" jobs of the waiting files: {document_id: job}
@@ -108,17 +108,24 @@ def receipt_totals() -> list[dict]:
     return [{"currency": c, "count": n, "total": Decimal(t).quantize(Decimal("0.01"))} for c, n, t in rows]
 
 
+def this_month() -> tuple[date, date]:
+    """The first day of this month and the first day of next month, in the user's time zone."""
+    start = user_today().replace(day=1)
+    end = (start + timedelta(days=32)).replace(day=1)
+    return start, end
+
+
 def month_spend() -> dict | None:
     """This month's receipts in the user's main currency, split by category.
 
     The main currency is the one with the most receipts this month; the
     others are listed apart (never added together)."""
-    start = user_today().replace(day=1)
+    start, end = this_month()
     day = func.coalesce(Bill.transaction_date, Bill.invoice_date)
     rows = (
         db.session.query(Bill.currency, Bill.category, func.count(Bill.id), func.sum(Bill.total))
         .filter(Bill.user_id == current_user.id, Bill.status == "confirmed", Bill.kind == "receipt",
-                Bill.total.isnot(None), day >= start)
+                Bill.total.isnot(None), day >= start, day < end)
         .group_by(Bill.currency, Bill.category).all()
     )
     if not rows:

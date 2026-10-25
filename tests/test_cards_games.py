@@ -173,3 +173,28 @@ def test_archived_plan_renewals_stop_asking(app, user):
         with app.test_request_context():
             titles = [(i["title"], i["status"]) for i in activity(owner, today) if i["kind"] == "renewal"]
         assert ("Old gym", "expected") not in titles and ("Music", "expected") in titles
+
+
+# ---------- Codex review (26 Oct): month totals ----------
+
+def test_card_month_ignores_statements_and_future_dates(app, user):
+    user.post("/cards/", data={"name": "Daily card", "first6": "411111", "last4": "1234"})
+    with app.app_context():
+        owner = me()
+        today = local_now(owner.timezone).date()
+        next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
+        db.session.add_all([
+            Bill(user_id=owner.id, merchant="Shop", total=Decimal("100000"), currency="VND", kind="receipt",
+                 category="shopping", card_last4="1234", transaction_date=today),
+            # the statement repeats that purchase: not spending a second time
+            Bill(user_id=owner.id, merchant="Bank statement", total=Decimal("100000"), currency="VND",
+                 kind="card_bill", category="other", card_last4="1234", invoice_date=today, due_date=today),
+            # dated next month: not this month's spending
+            Bill(user_id=owner.id, merchant="Later", total=Decimal("50000"), currency="VND", kind="receipt",
+                 category="shopping", card_last4="1234", transaction_date=next_month),
+        ])
+        db.session.commit()
+    page = user.get("/bills/").get_data(as_text=True)
+    assert "This month: 100,000 VND" in page
+    assert "This month: 150,000" not in page and "This month: 200,000" not in page
+    assert "100,000 <small>VND</small>" in page  # "Spent this month" on the Bills page too

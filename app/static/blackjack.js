@@ -94,22 +94,51 @@
     return W.hit;
   }
 
+  // Which hole cards are impossible: the dealer peeked for blackjack at the
+  // deal, so if play went on, an ace can't sit under a 10 (and the other way round).
+  function cantBeHole(upRank) {
+    if (upRank === "A") return ["10", "J", "Q", "K"];
+    if (rankValue(upRank) === 10) return ["A"];
+    return [];
+  }
+
+  // The chance each rank is the next card off the deck. The dealer's hole card
+  // is one of the unseen cards, but not one ruled out by the blackjack peek.
+  function nextCardChances(counts, total) {
+    var chances = {};
+    var banned = playing && holeHidden && dealer[0] ? cantBeHole(dealer[0].rank) : [];
+    var bannedCount = banned.reduce(function (sum, r) { return sum + (counts[r] || 0); }, 0);
+    var holeChoices = total - bannedCount; // the cards the hole card can still be
+    RANKS.forEach(function (rank) {
+      var c = counts[rank] || 0;
+      if (!total) chances[rank] = 0;
+      else if (!banned.length || holeChoices <= 0 || total < 2) chances[rank] = c / total;
+      else if (banned.indexOf(rank) >= 0) chances[rank] = c / (total - 1); // never the hole card
+      else {
+        // either the hole card is this rank (one fewer left in the deck) or it isn't
+        chances[rank] = (c / holeChoices) * ((c - 1) / (total - 1)) + ((holeChoices - c) / holeChoices) * (c / (total - 1));
+      }
+    });
+    return chances;
+  }
+
   function renderOdds() {
     var body = $("[data-odds-rows]");
     body.innerHTML = "";
     var unseen = unseenCards();
     var counts = {};
     unseen.forEach(function (c) { counts[c.rank] = (counts[c.rank] || 0) + 1; });
+    var chances = nextCardChances(counts, unseen.length);
     var bust = 0, hit21 = 0;
     RANKS.forEach(function (rank) {
       var n = counts[rank] || 0;
-      var share = unseen.length ? n / unseen.length : 0;
+      var share = chances[rank];
       var row = document.createElement("tr");
       var after = "";
       if (playing && player.length) {
         var next = handValue(player.concat([{ rank: rank, suit: "♠" }])).total;
-        if (next > 21) { bust += n; after = W.bust; row.className = "is-bust"; }
-        else { after = String(next); if (next === 21) { hit21 += n; row.className = "is-21"; } }
+        if (next > 21) { bust += share; after = W.bust; row.className = "is-bust"; }
+        else { after = String(next); if (next === 21) { hit21 += share; row.className = "is-21"; } }
       }
       var bar = '<span class="odds-mini" style="width:' + Math.round(share * 100) + '%"></span>';
       row.innerHTML = "<td><strong></strong></td><td></td><td>" + bar + "<span></span></td><td></td>";
@@ -120,12 +149,19 @@
       body.appendChild(row);
     });
     var live = playing && player.length && unseen.length;
-    $("[data-bust]").textContent = live ? (bust / unseen.length * 100).toFixed(1) + "%" : "–";
-    $("[data-hit21]").textContent = live ? (hit21 / unseen.length * 100).toFixed(1) + "%" : "–";
+    $("[data-bust]").textContent = live ? (bust * 100).toFixed(1) + "%" : "–";
+    $("[data-hit21]").textContent = live ? (hit21 * 100).toFixed(1) + "%" : "–";
     $("[data-advice]").textContent = live ? advice() : "–";
   }
 
   function draw(hand) {
+    if (!deck.length) {
+      // Out of cards mid-hand: shuffle a new deck without the cards on the table.
+      var onTable = player.concat(dealer).map(function (c) { return c.rank + c.suit; });
+      newDeck();
+      deck = deck.filter(function (c) { return onTable.indexOf(c.rank + c.suit) < 0; });
+      talk(W.shuffle);
+    }
     hand.push(deck.pop());
   }
 
@@ -147,7 +183,7 @@
 
   function deal() {
     if (bank < bet) bet = Math.max(50, Math.floor(bank / 50) * 50);
-    if (deck.length < 15) { newDeck(); talk(W.shuffle); }
+    if (deck.length < 20) { newDeck(); talk(W.shuffle); }
     bank -= bet;
     stake = bet;
     player = []; dealer = []; holeHidden = true;
