@@ -9069,3 +9069,13 @@ button.link:hover {
   opacity: 0.55;
   font-style: italic;
 }
+
+/* ---- Bills: the AI reads uploads (Fix_5, 28 Oct) ---- */
+.ai-read-note {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 12px;
+  background: var(--lilac);
+  color: var(--text);
+  line-height: 1.4;
+}

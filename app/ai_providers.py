@@ -20,6 +20,7 @@ Nothing here downloads or starts a model.
 
 import base64
 import io
+import json
 import os
 import re
 import wave
@@ -331,6 +332,41 @@ def transcribe(audio: bytes, mime: str, lang: str = "vi") -> str:
         if not res.ok:
             raise ProviderUnavailable(f"http-{res.status_code}")
         return gemini_text(read_json(res))
+    raise ProviderUnavailable("busy")
+
+
+READ_TIMEOUT = 90  # seconds: reading a photo or a 5-page scan takes longer than a chat answer
+
+
+def gemini_json(parts: list[dict], max_tokens: int = 8192) -> tuple[dict, str]:
+    """Ask Gemini for a JSON answer (bill reading). parts are Gemini "parts":
+    text and/or inline files. Returns (the answer, the model that gave it).
+    Raises ProviderUnavailable: not-set-up, unreachable, busy, http-NNN, bad-reply."""
+    gemini = GeminiProvider()
+    if not gemini.key:
+        raise ProviderUnavailable("not-set-up")
+    payload = {
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens,
+                             "responseMimeType": "application/json"},
+    }
+    for model in gemini.models:
+        try:
+            res = requests.post(GEMINI_URL.format(model=model), headers={"x-goog-api-key": gemini.key},
+                                json=payload, timeout=READ_TIMEOUT)
+        except requests.RequestException as exc:
+            raise ProviderUnavailable("unreachable") from exc
+        if res.status_code == 429 or res.status_code >= 500:
+            continue
+        if not res.ok:
+            raise ProviderUnavailable(f"http-{res.status_code}")
+        try:
+            answer = json.loads(gemini_text(read_json(res)))
+        except ValueError as exc:
+            raise ProviderUnavailable("bad-reply") from exc
+        if not isinstance(answer, dict):
+            raise ProviderUnavailable("bad-reply")
+        return answer, model
     raise ProviderUnavailable("busy")
 
 

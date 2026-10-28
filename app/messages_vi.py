@@ -88,6 +88,8 @@ VI = {
     "Please choose a file first.": "Vui lòng chọn tệp trước.",
     "You already uploaded this file.": "Bạn đã tải tệp này lên rồi.",
     "File saved. Now type in the bill details next to it.": "Đã lưu tệp. Giờ hãy nhập thông tin hóa đơn bên cạnh.",
+    "File saved. The AI is reading it now and will file it by itself if everything is clear.":
+        "Đã lưu tệp. AI đang đọc và sẽ tự lưu hóa đơn nếu mọi thông tin đều rõ ràng.",
     "That file is bigger than 10 MB. Please upload a smaller one.": "Tệp lớn hơn 10 MB. Vui lòng tải tệp nhỏ hơn.",
     "That file is empty.": "Tệp này trống.",
     "Please upload a PNG, JPG or WEBP photo, a PDF, or a Word (.docx) file.":

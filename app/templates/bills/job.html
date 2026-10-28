@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ t("Đang đọc hóa đơn", "Reading your bill") }} — AllOutFree{% endblock %}
+{% block head %}
+  {# Reading runs in the background: look again every few seconds until it's done. #}
+  {% if job.status in ("queued", "running") %}<meta http-equiv="refresh" content="4" />{% endif %}
+{% endblock %}
 {% block content %}
   {# Backend routes, CSRF tokens and status values stay as in docs/CONTRACT.md → Reading bills. #}
   <div class="section-head">
@@ -27,21 +31,37 @@
       <div class="reading-orb" aria-hidden="true">⏳</div>
       <div class="reading-meta-box">
         <h2>{{ t("Đang chờ đọc", "Waiting to be read") }}</h2>
-        <p>{{ t("Lần đọc tới sẽ xử lý tệp này. Tải lại trang sau ít phút.", "It will be read on the reader's next run. Reload in a few minutes.") }}
+        <p>{{ t("Tệp sẽ được đọc ngay. Trang tự cập nhật.", "It will be read in a moment. This page updates by itself.") }}
           {% if job.error_code %}{{ t("Lần trước chưa được:", "The last try didn't work:") }} {{ say(message) }}{% endif %}</p>
       </div>
     {% elif job.status == "running" %}
       <div class="reading-orb running" aria-hidden="true">⚙</div>
       <div class="reading-meta-box">
         <h2>{{ t("Đang đọc tệp…", "Reading now…") }}</h2>
-        <p>{{ t("Trang không tự cập nhật: tải lại sau giây lát.", "This page doesn't update by itself: reload it in a moment.") }}</p>
+        <p>{{ t("Trang tự cập nhật khi đọc xong.", "This page updates by itself when it's done.") }}</p>
       </div>
     {% elif job.status == "succeeded" %}
       <div class="reading-orb succeeded" aria-hidden="true">✓</div>
       <div class="reading-meta-box">
         <h2>{{ t("Đã đọc xong", "Done reading") }}</h2>
-        <p>{{ t("Chưa lưu thành hóa đơn cho tới khi bạn kiểm tra.", "Nothing is saved as a bill until you check it.") }}</p>
-        {% if draft %}
+        {% if filed.bill %}
+          <p data-filed-bill>✓ {{ t("Đã tự lưu thành hóa đơn:", "Saved as a bill by itself:") }}
+            <strong>{{ filed.bill.merchant }}</strong> · {{ filed.bill.total }} {{ filed.bill.currency }}</p>
+          {% if filed.plan %}
+            <p data-filed-plan>🔁 {{ t("Đã thêm gói định kỳ", "Added the plan") }} <strong>{{ filed.plan.name }}</strong>
+              ({{ filed.plan.cycle }}) — {{ t("gia hạn tiếp", "next renewal") }} {{ filed.plan.next_renewal_at }}.
+              {{ t("Lời nhắc gửi theo giờ trong Cài đặt.", "Reminders follow the time in your Settings.") }}</p>
+          {% endif %}
+          <p class="compact-top head-actions">
+            <a class="button" href="{{ url_for('bills.edit', bill_id=filed.bill.id) }}">{{ t("Xem / sửa hóa đơn", "View or edit the bill") }}</a>
+            {% if filed.plan %}
+              <a class="button secondary" href="{{ url_for('subscriptions.edit', item_id=filed.plan.id) }}">{{ t("Xem / sửa gói", "View or edit the plan") }}</a>
+            {% endif %}
+          </p>
+        {% else %}
+          <p>{{ t("Chưa lưu thành hóa đơn cho tới khi bạn kiểm tra.", "Nothing is saved as a bill until you check it.") }}</p>
+        {% endif %}
+        {% if draft and not filed.bill %}
           <p class="compact-top">
             <a class="button" href="{{ url_for('bill_review.draft_page', draft_id=draft.id) }}">{{ t("Kiểm tra bản nháp", "Check the draft") }}</a>
           </p>

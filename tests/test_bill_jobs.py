@@ -491,7 +491,7 @@ def test_job_status_json(user, app):
     draft = ready_draft(app, user)
     data = user.get(f"/bills/jobs/{draft.job_id}.json").get_json()
     assert data == {"status": "succeeded", "attempts": 1, "error_code": None, "message": None,
-                    "draft_url": f"/bills/drafts/{draft.id}"}
+                    "draft_url": f"/bills/drafts/{draft.id}", "bill_url": None, "plan_url": None}
 
 
 # ---------- the rules themselves ---------------------------------------------

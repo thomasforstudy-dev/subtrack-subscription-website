@@ -45,6 +45,8 @@ helper, and install a Chrome extension for reminders.
 | `app/tools.py`, `app/forecast.py`, `app/read_aloud.py`, `app/roulette.py` | AI tools (`/tools/`): spending forecast, Read aloud (Gemini voice), food roulette; games (coin flip, blackjack, case spin) run in `static/coin-flip.js`, `blackjack.js`, `case-spin.js` |
 | `app/cards.py`, `static/wallet.js` | Card holder on the Bills page (first 6 + last 4 digits only) and the upload drop zone |
 | `app/brands.py`, `templates/_brand.html`, `static/brands/` | Brand logos (Simple Icons, CC0) for known services |
+| `app/bill_jobs.py`, `app/ocr.py`, `app/ai_reader.py`, `app/bill_auto.py` | Reading uploaded bills in the background: OCR (GOT-OCR or Gemini), Gemini points at each detail (checked against the text), then a clear bill is saved by itself and a subscription bill adds its plan |
+| `static/voice-tidy.js` | Tidies what Subby's mic heard (Vietnamese punctuation, brand names, money) |
 | `app/guide.py`, `templates/_tour.html`, `static/tour.js` | User guide page (`/guide`) and the step-by-step spotlight tours (new users, sign-up) |
 | `templates/_pet.html`, `static/pet.js`, `templates/_subby.html` | Subby the AI pet (the animated chat button that reacts, follows the cursor and gives tips) |
 | `tools/loadtest.py` | Local-only load test (refuses anything but 127.0.0.1) |

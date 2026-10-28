@@ -116,6 +116,12 @@
       <div class="drop-types" id="bills-upload-help">
         <span>📷 {{ t("Ảnh", "Photo") }}</span><span>📄 PDF</span><span>📝 Word</span><span class="muted">{{ t("tối đa 10 MB", "up to 10 MB") }}</span>
       </div>
+      {% if ai_reading %}
+        <p class="ai-read-note small-text" data-ai-reading>
+          🤖 {{ t("AI tự đọc hóa đơn, lưu vào danh sách và tạo gói định kỳ (kèm lời nhắc) nếu là gói đăng ký. Tệp được gửi tới Gemini của Google để đọc.",
+                  "The AI reads the bill, saves it and, for a subscription, adds the plan with its reminders. The file is sent to Google's Gemini to be read.") }}
+        </p>
+      {% endif %}
       <button type="submit" class="upload-go">{{ t("Tải lên", "Upload") }} →</button>
     </form>
   </div>

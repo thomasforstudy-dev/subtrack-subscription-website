@@ -348,7 +348,7 @@ to style. **New routes only; no existing route or field name changed.** Every PO
 |---|---|
 | `POST /bills/files/<document_id>/read` | "Read it for me". One job per file: pressing it again returns the same job. Redirects to the job page |
 | `GET /bills/jobs/<job_id>` | Job page: status, honest message, Try again (when failed), link to the draft, "type it in yourself" |
-| `GET /bills/jobs/<job_id>.json` | `{status, attempts, error_code, message, draft_url}` for polling (null when absent) |
+| `GET /bills/jobs/<job_id>.json` | `{status, attempts, error_code, message, draft_url, bill_url, plan_url}` for polling (null when absent; `bill_url`/`plan_url` = what the AI reader filed by itself) |
 | `POST /bills/jobs/<job_id>/retry` | Only a `failed` job goes back to `queued` |
 | `GET /bills/drafts/<draft_id>` | Review page (template gets `draft`, `values`, `found`, `unread_pages`, `pages`, `revisions`, `fields`, `labels`, `typed`, `bill`) |
 | `POST /bills/drafts/<draft_id>` | Fields with the bill form's names (`merchant`, `total`, `invoice_date`, …) + hidden `revision` + `action=save` (new revision) or `action=accept` (same checks as `/bills/new`; makes one Bill, then redirects to its edit page). A stale `revision` (other tab) is refused, nothing saved |
@@ -357,12 +357,22 @@ to style. **New routes only; no existing route or field name changed.** Every PO
 `/bills/` template also gets `reading` = `{document_id: job}` (the list shows "Read it for me"
 or "Reading status" next to each waiting file).
 
+**AI reader (since 28 Oct, `OCR_PROVIDER=gemini`).** `/bills/` also gets `ai_reading` (bool);
+when true the upload card must say files go to Google's Gemini (`[data-ai-reading]`).
+`POST /bills/upload` then queues the reading itself and redirects to the job page (not
+`/bills/new`). Jobs run in the background straight away; the job page refreshes itself while
+`queued`/`running` and gets `filed` = `{bill, plan}`: a complete, valid draft becomes a Bill by
+itself (draft `accepted`, revision action `auto-saved`) and a subscription bill adds a plan
+(only if no plan has that name). Anything unclear stays a draft, as before. With the AI off,
+nothing here changes.
+
 **Job status**: `queued` → `running` → `succeeded` | `failed`. `error_code` (message for each in
 `app/bill_jobs.py` → `MESSAGES`): `ocr-not-set-up`, `ocr-offline`, `ocr-busy`, `ocr-bad-reply`,
 `timeout`, `reader-crashed`, `bad-document`, `too-big`, `bad-extraction`, `file-missing`, `gave-up`.
 Temporary ones (`ocr-offline`, `ocr-busy`, `timeout`, `reader-crashed`) go back to `queued` with
-5, then 10 minutes' wait, at most 3 tries. Jobs run only when `flask process-documents` runs
-(no scheduler is switched on).
+5, then 10 minutes' wait, at most 3 tries. Jobs start in the background when a file is queued
+or retried, and when the owner opens `/bills/` or a job page while a retry is due;
+`flask process-documents` still runs them by hand.
 
 **Draft values** (`values`, one entry per field name of the bill form):
 `{"value": "99000.00" | null, "origin": "document" | "you" | "empty", "method": "label" |

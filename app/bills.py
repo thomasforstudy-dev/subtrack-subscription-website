@@ -16,12 +16,13 @@ from datetime import date, time, timedelta
 from decimal import Decimal, InvalidOperation
 from zoneinfo import available_timezones
 
-from flask import Blueprint, Response, flash, redirect, render_template, request, send_file, url_for
+from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 
 from app import db
+from app.ai_reader import ai_reading_on
 from app.cards import card_rows
 from app.documents import IMAGES, MIME_TYPES, UploadError, clean_name, file_path, inspect_bounded as inspect, read_upload, save_file
 from app.models import Bill, BillDraft, BillLine, Document, DocumentJob
@@ -79,6 +80,9 @@ def list_bills():
     pages = query.order_by(newest.desc(), Bill.id.desc()).paginate(
         page=request.args.get("page", 1, type=int), per_page=PER_PAGE, error_out=False,
     )
+    from app.bill_jobs import due_for, read_soon  # here: bill_jobs files bills through this module
+    if due_for(current_user.id):
+        read_soon(current_app._get_current_object())  # a retry whose wait is over
     return render_template(
         "bills/list.html",
         items=pages.items,
@@ -90,6 +94,7 @@ def list_bills():
         waiting=waiting_documents(),
         # "Read it for me" jobs of the waiting files: {document_id: job}
         reading={job.document_id: job for job in DocumentJob.query.filter_by(user_id=current_user.id)},
+        ai_reading=ai_reading_on(),
         status=status, kind=kind, category=category, q=q,
         kinds=Bill.KINDS, categories=Bill.CATEGORIES,
         today=user_today(),
@@ -498,6 +503,13 @@ def upload():
         file_path(stored).unlink(missing_ok=True)  # our own copy that was never recorded
         existing = Document.query.filter_by(user_id=current_user.id, sha256=facts["sha256"]).first_or_404()
         return redirect_for_document(existing)
+    if ai_reading_on():
+        # The AI reads it straight away and files it if everything is clear.
+        from app.bill_jobs import read_soon, request_reading
+        job, _ = request_reading(current_user, document)
+        read_soon(current_app._get_current_object())
+        flash("File saved. The AI is reading it now and will file it by itself if everything is clear.")
+        return redirect(url_for("bill_review.job_page", job_id=job.id))
     flash("File saved. Now type in the bill details next to it.")
     return redirect(url_for("bills.create", document_id=document.id))
 

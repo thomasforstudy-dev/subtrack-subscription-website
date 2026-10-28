@@ -7,16 +7,22 @@
    that crashed leaves "running"; after STALE_AFTER another run takes it again.
 3. read: the file's own text (doc_text.py, in a time-limited child process);
    pages without text go to OCR (ocr.py) if OCR is set up.
-4. find fields (extract_fields.py) and check them, then save the page text, the
-   draft and "succeeded" in ONE transaction that only commits while we still
-   hold the claim. So a job can never make two drafts, even if two workers race.
+4. find fields (extract_fields.py; with Gemini on, ai_reader.py too) and check
+   them, then save the page text, the draft and "succeeded" in ONE transaction
+   that only commits while we still hold the claim. So a job can never make two
+   drafts, even if two workers race.
+5. file it (bill_auto.py), in that same transaction: a complete, valid draft
+   becomes a bill by itself, and a repeating payment becomes a plan. Anything
+   unclear stays a draft for the owner to check (bill_review.py).
 
-Nothing here creates a confirmed bill: the owner accepts a draft (bill_review.py).
-Jobs run only when `flask process-documents` runs. No scheduler starts it.
+Jobs run in the background right after a file is queued (read_soon), and again
+when the owner opens the bills page while a retry is due. `flask
+process-documents` still works for running them by hand.
 """
 
 import json
 import secrets
+import threading
 from datetime import timedelta
 
 import click
@@ -25,6 +31,8 @@ from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 
 from app import db
+from app.ai_reader import ProviderUnavailable, ai_extract, ai_reading_on, merge
+from app.bill_auto import auto_file
 from app.doc_text import TextError, read_text_bounded
 from app.doc_text import page as text_page
 from app.documents import UploadError, file_path
@@ -160,13 +168,29 @@ def run_job(job: DocumentJob, token: str, now, ocr=None) -> str:
         fields = check_extraction(extract(pages), pages)
     except ExtractionError:
         return fail(job.id, token, "bad-extraction", job.attempts, now)
+    suggested = {}
+    if ai_reading_on():
+        try:
+            found = ai_extract(pages)
+            fields = merge(fields, found["fields"])
+            suggested = {"category": found["category"], "plan": found["plan"]}
+        except ProviderUnavailable:
+            pass  # Gemini busy: the rules' draft is still useful, the owner checks it
 
     try:
         for p in new_pages:
             db.session.add(DocumentPage(document_id=document.id, user_id=job.user_id, page_number=p["page"],
                                         text=p["text"], source=p["source"], engine=p.get("engine", ""),
                                         truncated=p.get("truncated", False)))
-        save_draft(job, fields, pages, now)
+        draft = save_draft(job, fields, pages, now, suggested)
+        # Filing by itself is part of the AI reader: with the rules alone, the owner checks every draft.
+        filed = auto_file(job, draft, json.loads(draft.values_json), suggested, now) if suggested else {"bill": None}
+        if filed["bill"] is not None:
+            db.session.flush()  # ids for the job page's links
+            extracted = json.loads(draft.extracted_json)
+            extracted["filed"] = {"bill_id": filed["bill"].id,
+                                  "plan_id": filed["plan"].id if filed["plan"] is not None else None}
+            draft.extracted_json = json.dumps(extracted, ensure_ascii=False)
         won = DocumentJob.query.filter_by(id=job.id, claim_token=token).update(
             {"status": "succeeded", "claim_token": None, "finished_at": now, "error_code": ""},
             synchronize_session=False,
@@ -211,21 +235,23 @@ def read_pages(read: list[dict], data: bytes, kind: str, ocr) -> tuple[list[dict
     return saved, [{"page": p["page"], "text": p["text"]} for p in saved]
 
 
-def save_draft(job: DocumentJob, fields: dict, pages: list[dict], now) -> None:
+def save_draft(job: DocumentJob, fields: dict, pages: list[dict], now, suggested: dict | None = None) -> BillDraft:
     read_numbers = {p["page"] for p in pages}
     unread = [n for n in range(1, (job.document.page_count or 1) + 1) if n not in read_numbers]
     values = {name: {"value": item["value"], "origin": "document" if item["value"] is not None else "empty",
                      "method": item["method"], "evidence": item["evidence"]}
               for name, item in fields.items()}
-    extracted = {"extractor": EXTRACTOR, "unread_pages": unread, "fields": values}
+    extractor = EXTRACTOR + (" + gemini" if suggested else "")
+    extracted = {"extractor": extractor, "unread_pages": unread, "fields": values, "suggested": suggested or {}}
     draft = BillDraft(user_id=job.user_id, document_id=job.document_id, job_id=job.id, status="draft",
-                      extractor=EXTRACTOR, extracted_json=json.dumps(extracted, ensure_ascii=False),
+                      extractor=extractor, extracted_json=json.dumps(extracted, ensure_ascii=False),
                       values_json=json.dumps(values, ensure_ascii=False), revision=1)
     db.session.add(draft)
     db.session.flush()  # gives the draft its id for the first history entry
     db.session.add(BillDraftRevision(draft_id=draft.id, user_id=job.user_id, number=1, action="extracted",
                                      changed=", ".join(n for n, v in values.items() if v["value"] is not None)[:400],
                                      values_json=draft.values_json, created_at=now))
+    return draft
 
 
 # ---------- running jobs ------------------------------------------------------
@@ -241,6 +267,45 @@ def process_due(now=None, ocr=None) -> dict:
         db.session.refresh(job)
         counts[run_job(job, token, now, ocr)] += 1
     return counts
+
+
+_reader = threading.Lock()  # one background reader at a time
+_more_work = threading.Event()
+
+
+def read_soon(app) -> None:
+    """Read queued bills now, in the background, so nobody has to run
+    `flask process-documents` by hand. While a reader is busy, a new call just
+    asks it to look once more before it stops."""
+    if app.testing:
+        return  # tests run process_due() themselves, step by step
+    _more_work.set()
+    if not _reader.locked():
+        threading.Thread(target=_read_until_done, args=(app,), daemon=True).start()
+
+
+def _read_until_done(app) -> None:
+    if not _reader.acquire(blocking=False):
+        return
+    try:
+        while _more_work.is_set():
+            _more_work.clear()
+            with app.app_context():
+                try:
+                    process_due()
+                except Exception:  # noqa: BLE001 - a broken file must not stop later ones
+                    app.logger.exception("Reading bills failed")
+                finally:
+                    db.session.remove()
+    finally:
+        _reader.release()
+
+
+def due_for(user_id: int, now=None) -> bool:
+    """Does this owner have a job waiting to run (a new one, or a retry whose wait is over)?"""
+    now = now or utcnow()
+    return DocumentJob.query.filter(DocumentJob.user_id == user_id, DocumentJob.status == "queued",
+                                    DocumentJob.next_try_at <= now).first() is not None
 
 
 @click.command("process-documents")

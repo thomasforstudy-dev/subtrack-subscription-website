@@ -75,6 +75,8 @@ DATE = re.compile(
     r"|(?P<vd>\d{1,2})\s*th[áa]ng\s*(?P<vm>\d{1,2})\s*n[ăa]m\s*(?P<vy>\d{4})",
     re.I,
 )
+# Phone wallets print "19 Th10" / "19 thg 10" / "19 tháng 10" with no year.
+SHORT_DATE = re.compile(r"(?P<d>\d{1,2})\s*(?:th[áa]ng|thg|th)\.?\s*(?P<m>\d{1,2})(?![\d/.-])", re.I)
 TIME = re.compile(r"\b(?P<h>[01]?\d|2[0-3])[:h](?P<mi>[0-5]\d)(?::[0-5]\d)?\b")
 INVOICE_NUMBER = re.compile(r"[A-Za-z0-9][A-Za-z0-9\-/]{0,63}")
 MASKED_CARD = re.compile(r"(?:[•*xX]{2,}[\s-]?){1,4}(?P<last4>\d{4})\b")
@@ -95,6 +97,21 @@ def to_date(match) -> str | None:
     except ValueError:
         return None  # 31/02/2026 is not a date: leave it empty, don't guess
     return found.isoformat() if date(2000, 1, 1) <= found <= date(2100, 12, 31) else None
+
+
+def short_date(match, today: date | None = None) -> str | None:
+    """"19 Th10" -> the latest 19 October that isn't in the future (a receipt
+    is never from next year), as YYYY-MM-DD."""
+    today = today or date.today()
+    day, month = int(match["d"]), int(match["m"])
+    for year in (today.year, today.year - 1):
+        try:
+            found = date(year, month, day)
+        except ValueError:
+            continue  # 31 Th02, or 29 Th02 outside a leap year
+        if found <= today:
+            return found.isoformat()
+    return None
 
 
 def to_amount(raw: str) -> str | None:
@@ -275,7 +292,10 @@ def shows(name: str, value: str, text: str) -> bool:
         return to_amount(text) == value
     if name in DATE_FIELDS:
         hit = DATE.fullmatch(text)
-        return bool(hit) and to_date(hit) == value
+        if hit:
+            return to_date(hit) == value
+        short = SHORT_DATE.fullmatch(text)  # no year printed: the year is the one short_date() picks
+        return bool(short) and short_date(short) == value
     if name == "transaction_time":
         hit = TIME.fullmatch(text)
         return bool(hit) and f"{int(hit['h']):02d}:{hit['mi']}" == value

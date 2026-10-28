@@ -1,7 +1,9 @@
 """Pages for reading uploaded bills: start a job, see its status, check the draft.
 
-A draft is never a bill. The owner looks at each field next to the text it
-came from, corrects what's wrong and presses Accept; only then a Bill is made.
+A draft is not a bill. A complete, valid one is filed by itself when it is read
+(bill_auto.py) and the job page says so; any other draft waits here: the owner
+looks at each field next to the text it came from, corrects what's wrong and
+presses Accept; only then a Bill is made.
 Every change is kept as a revision, so what the document said, what the reader
 found and what the owner changed stay separate.
 
@@ -11,14 +13,14 @@ Every query filters by the logged-in user. Contract: docs/CONTRACT.md -> Reading
 import json
 import re
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
-from app.bill_jobs import MESSAGES, request_reading, retry
+from app.bill_jobs import MESSAGES, due_for, read_soon, request_reading, retry
 from app.bills import apply, own_document_or_404, read_form
 from app.extract_fields import DRAFT_FIELDS, TEXT_LIMITS
-from app.models import Bill, BillDraft, BillDraftRevision, DocumentJob, DocumentPage
+from app.models import Bill, BillDraft, BillDraftRevision, DocumentJob, DocumentPage, Subscription
 
 bp = Blueprint("bill_review", __name__, url_prefix="/bills")
 
@@ -45,6 +47,20 @@ def draft_of(job: DocumentJob) -> BillDraft | None:
     return BillDraft.query.filter_by(job_id=job.id, user_id=current_user.id).first()
 
 
+def filed_of(draft: BillDraft | None) -> dict:
+    """What the reader filed by itself from this draft: {"bill": Bill|None, "plan": Subscription|None}."""
+    filed = (json.loads(draft.extracted_json).get("filed") or {}) if draft else {}
+    bill_id, plan_id = filed.get("bill_id"), filed.get("plan_id")
+    return {
+        "bill": Bill.query.filter_by(id=bill_id, user_id=current_user.id).first() if bill_id else None,
+        "plan": Subscription.query.filter_by(id=plan_id, user_id=current_user.id).first() if plan_id else None,
+    }
+
+
+def start_reading() -> None:
+    read_soon(current_app._get_current_object())
+
+
 # ---------- jobs ------------------------------------------------------------------
 
 @bp.route("/files/<int:document_id>/read", methods=["POST"])
@@ -53,6 +69,7 @@ def read_document(document_id: int):
     """The explicit "Read this bill for me" button. Nothing is read without it."""
     document = own_document_or_404(document_id)
     job, made_now = request_reading(current_user, document)
+    start_reading()
     flash("Queued: we'll read this file and prepare a draft for you to check." if made_now
           else "This file is already being read (or was read).")
     return redirect(url_for("bill_review.job_page", job_id=job.id))
@@ -62,7 +79,10 @@ def read_document(document_id: int):
 @login_required
 def job_page(job_id: int):
     job = own_job_or_404(job_id)
-    return render_template("bills/job.html", job=job, draft=draft_of(job),
+    if job.status == "queued" and due_for(current_user.id):
+        start_reading()  # e.g. a retry whose wait is over
+    draft = draft_of(job)
+    return render_template("bills/job.html", job=job, draft=draft, filed=filed_of(draft),
                            message=MESSAGES.get(job.error_code, ""))
 
 
@@ -72,10 +92,13 @@ def job_json(job_id: int):
     """For the page to check progress without reloading."""
     job = own_job_or_404(job_id)
     draft = draft_of(job)
+    filed = filed_of(draft)
     return jsonify(
         status=job.status, attempts=job.attempts, error_code=job.error_code or None,
         message=MESSAGES.get(job.error_code) or None,
         draft_url=url_for("bill_review.draft_page", draft_id=draft.id) if draft else None,
+        bill_url=url_for("bills.edit", bill_id=filed["bill"].id) if filed["bill"] else None,
+        plan_url=url_for("subscriptions.edit", item_id=filed["plan"].id) if filed["plan"] else None,
     )
 
 
@@ -83,7 +106,10 @@ def job_json(job_id: int):
 @login_required
 def retry_job(job_id: int):
     job = own_job_or_404(job_id)
-    flash("Queued again." if retry(job) else "Only a job that failed can be tried again.")
+    queued = retry(job)
+    if queued:
+        start_reading()
+    flash("Queued again." if queued else "Only a job that failed can be tried again.")
     return redirect(url_for("bill_review.job_page", job_id=job.id))
 
 
