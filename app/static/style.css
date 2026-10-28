@@ -9046,3 +9046,26 @@ button.link:hover {
 .card > div:first-child > .card-title:first-child {
   margin-top: 0;
 }
+
+/* ---- Subby mic: language switch + the words still being guessed (28 Oct) ---- */
+.subby-voice-stage .voice-lang-btn {
+  align-self: center;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.subby-voice-stage .voice-lang-btn:hover,
+.subby-voice-stage .voice-lang-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.voice-interim {
+  opacity: 0.55;
+  font-style: italic;
+}

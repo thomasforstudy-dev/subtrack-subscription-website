@@ -199,8 +199,9 @@ def listen():
         return jsonify(error="too-long"), 413
     if not heard.hit(client_ip()):
         return jsonify(error="too-many"), 429
+    lang = "en" if request.args.get("lang") == "en" else "vi"  # the mic's language switch
     try:
-        text = transcribe(request.get_data(), request.mimetype.lower())
+        text = transcribe(request.get_data(), request.mimetype.lower(), lang)
     except ProviderUnavailable as problem:
         log.info("Subby listening unavailable: %s", problem)
         return jsonify(error="listen-unavailable"), 503

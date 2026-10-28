@@ -274,7 +274,39 @@ def gemini_audio(data: object) -> bytes:
 AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/wav", "audio/mpeg")  # what browsers record
 
 
-def transcribe(audio: bytes, mime: str) -> str:
+BRAND_NAMES = ("Netflix, Spotify, YouTube Premium, ChatGPT, iCloud, Google One, Gemini, Canva, "
+               "Apple Music, Disney+, Gmail, Shopee, Grab, MoMo, VNPay, Zalo, AllOutFree, Subby")
+
+# What Gemini is told when it writes down a recording. Vietnamese gets the most
+# care: tone marks, Vietnamese-English mixing, and how people say money.
+TRANSCRIBE_RULES = {
+    "vi": (
+        "Write down this Vietnamese voice message from a user of AllOutFree, an app that tracks "
+        "subscriptions and bills, exactly as it is spoken.\n"
+        "- Use correct Vietnamese spelling with every tone mark (dấu); never drop or guess them.\n"
+        "- People mix English words into Vietnamese: keep those in English. Spell brand names "
+        f"correctly: {BRAND_NAMES}.\n"
+        "- Write money as digits with dots for thousands and keep the unit said: "
+        "'hai trăm sáu mươi nghìn' -> 260.000, 'một triệu rưỡi' -> 1.500.000, "
+        "'mười đô' -> 10 USD.\n"
+        "- Write dates and other numbers as digits: 'ngày mười lăm' -> ngày 15.\n"
+        "- Add normal punctuation and end a question with '?'.\n"
+        "- Leave out fillers ('ờ', 'ừm', 'à') and repeated stutters. Do not translate, answer, "
+        "summarise or add anything.\n"
+        "Reply with the words only. If nobody speaks, reply with nothing."
+    ),
+    "en": (
+        "Write down this voice message from a user of AllOutFree, an app that tracks subscriptions "
+        "and bills, exactly as it is spoken, in the language spoken.\n"
+        f"- Spell brand names correctly: {BRAND_NAMES}.\n"
+        "- Write money, dates and numbers as digits. Add normal punctuation.\n"
+        "- Leave out fillers ('um', 'uh'). Do not translate, answer or add anything.\n"
+        "Reply with the words only. If nobody speaks, reply with nothing."
+    ),
+}
+
+
+def transcribe(audio: bytes, mime: str, lang: str = "vi") -> str:
     """Write down what is said in a short recording (Subby's mic in browsers
     without speech recognition, like Firefox). Raises ProviderUnavailable."""
     gemini = GeminiProvider()
@@ -283,10 +315,10 @@ def transcribe(audio: bytes, mime: str) -> str:
     payload = {
         "contents": [{"role": "user", "parts": [
             {"inline_data": {"mime_type": mime, "data": base64.b64encode(audio).decode()}},
-            {"text": "Write down exactly what is said, in the language spoken. "
-                     "Reply with the words only. If nobody speaks, reply with nothing."},
+            {"text": TRANSCRIBE_RULES.get(lang, TRANSCRIBE_RULES["vi"])},
         ]}],
-        "generationConfig": {"temperature": 0, "maxOutputTokens": 256},
+        # Vietnamese with tone marks takes more tokens per word than English.
+        "generationConfig": {"temperature": 0, "maxOutputTokens": 512},
     }
     for model in gemini.models:
         try:

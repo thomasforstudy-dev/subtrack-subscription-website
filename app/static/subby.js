@@ -786,6 +786,75 @@
   let draftEdited = false;
   input.addEventListener("input", () => { draftEdited = true; });
 
+  // Keep listening through pauses (Vietnamese speakers often stop mid-sentence
+  // to think) and finish on our own after this much quiet.
+  const SILENCE_MS = 3000;
+  const MAX_LISTEN_MS = 60000;
+  let silenceTimer = null;
+  let listenLimitTimer = null;
+
+  // Which language the mic listens for: the page language unless the visitor
+  // switched it with [data-voice-lang] (remembered on this browser).
+  const voiceLangBtn = root.querySelector("[data-voice-lang]");
+  let voiceLangChoice = null;
+  try {
+    const saved = localStorage.getItem("subby-voice-lang");
+    if (saved === "vi" || saved === "en") voiceLangChoice = saved;
+  } catch (e) {
+    // storage blocked: follow the page language
+  }
+
+  function micLang() {
+    return voiceLangChoice || tr("vi", "en");
+  }
+
+  function showVoiceLang() {
+    if (!voiceLangBtn) return;
+    voiceLangBtn.textContent = micLang() === "en"
+      ? tr("🎙 Nói: English", "🎙 Speak: English")
+      : tr("🎙 Nói: Tiếng Việt", "🎙 Speak: Vietnamese");
+    voiceLangBtn.title = tr("Bấm để đổi ngôn ngữ micro nghe", "Press to change the language the mic listens for");
+  }
+  showVoiceLang();
+
+  if (voiceLangBtn) {
+    voiceLangBtn.addEventListener("click", () => {
+      voiceLangChoice = micLang() === "en" ? "vi" : "en";
+      try {
+        localStorage.setItem("subby-voice-lang", voiceLangChoice);
+      } catch (e) {
+        // fine: it just won't be remembered
+      }
+      showVoiceLang();
+      if (recognition || recorder) {
+        stopVoiceRecognition(true);
+        startOrToggleMic(false); // listen again in the new language
+      }
+    });
+  }
+
+  // voice-tidy.js: punctuation, capitals, brand names, money ("260 nghìn" -> 260.000).
+  function tidyHeard(text) {
+    return window.VoiceTidy ? window.VoiceTidy.tidy(text, micLang()) : text.trim();
+  }
+
+  function joinHeard(parts) {
+    return window.VoiceTidy ? window.VoiceTidy.joinSegments(parts) : parts.join(" ").trim();
+  }
+
+  // The words so far, with the part still being guessed in grey.
+  function showHeard(finalText, interimText) {
+    if (!voiceTranscriptEl) return;
+    voiceTranscriptEl.textContent = "“" + finalText;
+    if (interimText) {
+      const guess = document.createElement("span");
+      guess.className = "voice-interim";
+      guess.textContent = (finalText ? " " : "") + interimText;
+      voiceTranscriptEl.appendChild(guess);
+    }
+    voiceTranscriptEl.appendChild(document.createTextNode("”"));
+  }
+
   function syncMicButtons(isListening) {
     [micBtn, voiceOrbBtn].forEach((btn) => {
       if (!btn) return;
@@ -865,7 +934,7 @@
 
   function sendRecording(blob, mime) {
     setVoiceStageState("thinking", tr("✍️ Gemini đang viết lại câu bạn nói…", "✍️ Gemini is writing down what you said…"));
-    fetch(root.dataset.listenUrl, { method: "POST", headers: csrfHeaders({ "Content-Type": mime }), body: blob })
+    fetch(root.dataset.listenUrl + "?lang=" + micLang(), { method: "POST", headers: csrfHeaders({ "Content-Type": mime }), body: blob })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
       .then((data) => {
         const text = String((data && data.text) || "").trim();
@@ -884,6 +953,8 @@
   }
 
   function stopVoiceRecognition(cancelled) {
+    clearTimeout(silenceTimer);
+    clearTimeout(listenLimitTimer);
     if (recorder) stopRecording(cancelled);
     if (recognition) {
       const active = recognition;
@@ -906,6 +977,8 @@
     syncMicButtons(false);
     if (voiceBar) voiceBar.hidden = true;
 
+    // Tidy what was heard, but never rewrite what the visitor typed themselves.
+    if (!cancelled && !draftEdited && input.value.trim()) input.value = tidyHeard(input.value);
     const cleanText = input.value.trim();
     if (!cancelled && cleanText) {
       if (voiceTranscriptEl) {
@@ -970,9 +1043,13 @@
     input.value = "";
     recognition = new SpeechRec();
     const active = recognition;
-    recognition.lang = isEn ? "en-US" : "vi-VN";
+    recognition.lang = micLang() === "en" ? "en-US" : "vi-VN";
     recognition.interimResults = true;
+    recognition.continuous = true; // don't stop at the first pause; SILENCE_MS ends it
     recognition.maxAlternatives = 1;
+    listenLimitTimer = setTimeout(() => {
+      if (recognition === active) stopVoiceRecognition(false);
+    }, MAX_LISTEN_MS);
 
     syncMicButtons(true);
     setVoiceStageState("listening");
@@ -1000,24 +1077,33 @@
 
     recognition.onresult = (event) => {
       if (recognition !== active) return;
-      let text = "";
+      const finals = [];
+      const guesses = [];
       for (let i = 0; i < event.results.length; i++) {
-        text += event.results[i][0].transcript;
+        (event.results[i].isFinal ? finals : guesses).push(event.results[i][0].transcript);
       }
-      heardTranscript = text;
-      if (!draftEdited) input.value = text;
+      const finalText = joinHeard(finals);
+      const interimText = guesses.join(" ").trim();
+      heardTranscript = (finalText + " " + interimText).trim();
+      if (!draftEdited) input.value = heardTranscript;
       const trimmed = input.value.trim();
       if (voicePreview) {
         voicePreview.textContent = isEn
           ? 'Draft: "' + trimmed + '" (Click Stop & Review to edit before sending)'
           : 'Bản nháp: "' + trimmed + '" (Bấm Dừng & Xem chữ để chỉnh sửa trước khi gửi)';
       }
-      if (voiceTranscriptEl) {
-        voiceTranscriptEl.textContent = "“" + trimmed + "”";
+      if (draftEdited) {
+        if (voiceTranscriptEl) voiceTranscriptEl.textContent = "“" + trimmed + "”";
+      } else {
+        showHeard(finalText, interimText);
       }
       if (voiceTranscriptActions && trimmed) {
         voiceTranscriptActions.hidden = false;
       }
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => {
+        if (recognition === active) stopVoiceRecognition(false);
+      }, SILENCE_MS);
     };
 
     recognition.onerror = (event) => {

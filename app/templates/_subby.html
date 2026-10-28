@@ -48,6 +48,8 @@
     {# Màn hình Voice Mode theo thiết kế Stitch (docs/design/subby-voice-phone.png) #}
     <div class="subby-voice-stage" data-voice-stage data-stage-state="idle" hidden role="region" aria-label="{{ t("Chế độ trò chuyện bằng giọng nói", "Voice chat") }}">
       <p class="voice-privacy-note muted small-text" data-voice-privacy-note>{{ t("🔒 Micro chỉ bật khi bạn bấm. Không lưu âm thanh.", "🔒 The mic starts only when you click. No audio is kept.") }}</p>
+      {# Which language the mic listens for (subby.js remembers the choice). #}
+      <button type="button" class="voice-lang-btn" data-voice-lang>{{ t("🎙 Nói: Tiếng Việt", "🎙 Speak: English") }}</button>
       <div class="voice-stage-center">
         <div class="voice-orb-wrap">
           <span class="voice-orb-ring ring-1" aria-hidden="true"></span>

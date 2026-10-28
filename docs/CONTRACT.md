@@ -230,6 +230,16 @@ answered something unusable (null/wrong shape/not JSON) or another error;
 `empty` = it answered nothing. A wrong `SUBBY_FALLBACK` setting is ignored (no
 fallback), never a 500 and never a silent cloud call.
 
+### Subby's mic — `POST /subby/listen?lang=vi|en` (since 28 Oct)
+
+Body: the recording itself (`audio/webm`, `audio/ogg`, `audio/mp4`, `audio/wav` or
+`audio/mpeg`, at most 2 MB), with the `X-CSRF-Token` header. Only used where the browser
+can't recognise speech (Firefox). `lang` is the mic's language switch
+(`[data-voice-lang]` in `_subby.html`); missing or anything else means `vi`. Reply:
+`{"text": "..."}`; 400 not audio, 413 too long, 429 too many, 503 Gemini unavailable.
+The page runs every transcript (browser or Gemini) through `static/voice-tidy.js`
+before it goes in the question box.
+
 ### Account tools (logged-in users, since 19 Oct)
 
 When a logged-in user asks about their own account, the 200 reply has extra keys.

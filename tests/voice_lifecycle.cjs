@@ -21,18 +21,24 @@ class Speech {
   stop() { if (this.onend) this.onend(); }
   abort() {}
 }
+const timers = [];  // fake setTimeout: the test decides when the pause is over
+const langBtn = { textContent: '', title: '', handlers: {},
+  addEventListener(name, callback) { this.handlers[name] = callback; }, click() { this.handlers.click(); } };
 const sent = [];
 const spokenLog = [];
 let currentUiLang = 'en';
-const context = { ...buttons, window: { SpeechRecognition: Speech },
+const context = { ...buttons, window: { SpeechRecognition: Speech, VoiceTidy: require('../app/static/voice-tidy.js') },
+  setTimeout(fn, ms) { timers.push({ fn, ms }); return timers.length; },
+  clearTimeout(id) { if (timers[id - 1]) timers[id - 1].cleared = true; },
   document: { documentElement: { lang: 'en', getAttribute() { return currentUiLang; } },
-    addEventListener(name, cb) { this[name] = cb; } },
+    addEventListener(name, cb) { this[name] = cb; },
+    createElement() { return {}; }, createTextNode(text) { return text; } },
   input: { value: '', focus() {}, addEventListener(name, cb) { this[name] = cb; } }, voiceBar: {}, voiceStage: { hidden: false },
-  voiceState: {}, voicePreview: {}, voiceTranscriptEl: {}, voiceTranscriptActions: {},
+  voiceState: {}, voicePreview: {}, voiceTranscriptEl: { appendChild() {} }, voiceTranscriptActions: {},
   setVoiceModeOpen() {}, setVoiceStageState() {}, stopSpeaking() {}, petSignal() {},
   say(text) { spokenLog.push(text); },
   tr(vi, en) { return currentUiLang === 'en' ? en : vi; },  // subby.js's language helper
-  root: { classList: { toggle() {} } }, voiceModeToggleBtn: null, panel: { hidden: false },
+  root: { classList: { toggle() {} }, querySelector(sel) { return sel === '[data-voice-lang]' ? langBtn : null; } }, voiceModeToggleBtn: null, panel: { hidden: false },
   openBtn: { setAttribute() {}, focus() {} }, teaser: null, log: { children: [1] },
   ask(text) { sent.push(text); } };
 vm.runInNewContext(modeFunctions + section + escapeHandler, context);
@@ -43,7 +49,7 @@ assert.equal(active.lang, 'en-US', 'English UI should select en-US recognition')
 result('original recognized question');
 assert.equal(sent.length, 0, 'speech must be reviewed before submission');
 buttons.voiceStopBtn.click();
-assert.equal(context.input.value, 'original recognized question');
+assert.equal(context.input.value, 'Original recognized question.');
 context.input.value = 'edited approved question';
 buttons.voiceSendNowBtn.click();
 assert.deepEqual(sent, ['edited approved question'], 'send must use reviewed input');
@@ -61,7 +67,7 @@ assert.equal(sent.length, 1, 'cancelled draft must not submit');
 buttons.micBtn.click();
 result('natural end question');
 active.onend();
-assert.equal(context.input.value, 'natural end question');
+assert.equal(context.input.value, 'Natural end question.');
 buttons.voiceClearDraftBtn.click();
 assert.equal(context.input.value, '');
 buttons.micBtn.click();
@@ -90,9 +96,9 @@ active.stop = () => {}; // browser final recognition arrives after Stop
 buttons.voiceStopBtn.click();
 result('final question after stop');
 active.onend();
-assert.equal(context.input.value, 'final question after stop');
+assert.equal(context.input.value, 'Final question after stop.');
 buttons.voiceSendNowBtn.click();
-assert.equal(sent.at(-1), 'final question after stop');
+assert.equal(sent.at(-1), 'Final question after stop.');
 buttons.micBtn.click();
 result('interim draft');
 context.input.value = 'edited during recognition';
@@ -105,6 +111,22 @@ result('must clear on Escape');
 context.document.keydown({ key: 'Escape', preventDefault() {} });
 assert.equal(context.panel.hidden, true);
 assert.equal(context.input.value, '');
+// Vietnamese: keeps listening through pauses, merges Android repeats, stops after 3 s of quiet, tidies.
+const sentBeforePause = sent.length;
+buttons.micBtn.click();
+assert.equal(active.lang, 'vi-VN');
+assert.equal(active.continuous, true, 'must keep listening through pauses');
+active.onresult({ results: ['thêm nét phích', 'thêm nét phích 260 nghìn'].map(t => Object.assign([{ transcript: t }], { isFinal: true })) });
+assert.equal(context.input.value, 'thêm nét phích 260 nghìn', 'Android repeats must be merged');
+timers.filter(t => t.ms === 3000 && !t.cleared).at(-1).fn();
+assert.equal(context.input.value, 'Thêm Netflix 260.000.', 'stops after the pause and tidies');
+assert.equal(sent.length, sentBeforePause, 'a pause must not send by itself');
+// The language switch overrides the page language.
+langBtn.click();
+assert.equal(langBtn.textContent, '🎙 Nói: English');
+buttons.micBtn.click();
+assert.equal(active.lang, 'en-US', 'mic language switch must win over the page language');
+buttons.voiceCancelBtn.click();
 context.window.SpeechRecognition = undefined;
 buttons.micBtn.click();
 context.input.value = 'keyboard on unsupported browser';

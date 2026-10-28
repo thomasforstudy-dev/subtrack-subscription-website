@@ -255,8 +255,8 @@ def test_subby_speaks_with_gemini_voice(client, monkeypatch):
 def test_subby_writes_down_a_recording(client, monkeypatch):
     seen = {}
 
-    def fake_transcribe(audio, mime):
-        seen.update(audio=audio, mime=mime)
+    def fake_transcribe(audio, mime, lang):
+        seen.update(audio=audio, mime=mime, lang=lang)
         return "When does Netflix renew?"
 
     monkeypatch.setattr("app.subby.transcribe", fake_transcribe)
@@ -264,7 +264,11 @@ def test_subby_writes_down_a_recording(client, monkeypatch):
     res = client.post("/subby/listen", data=b"OggS-audio", content_type="audio/ogg;codecs=opus",
                       headers={"X-CSRF-Token": token}, csrf=False)
     assert res.get_json() == {"text": "When does Netflix renew?"}
-    assert seen == {"audio": b"OggS-audio", "mime": "audio/ogg"}
+    assert seen == {"audio": b"OggS-audio", "mime": "audio/ogg", "lang": "vi"}  # Vietnamese unless asked
+    client.post("/subby/listen?lang=en", data=b"OggS", content_type="audio/ogg", headers={"X-CSRF-Token": token}, csrf=False)
+    assert seen["lang"] == "en"
+    client.post("/subby/listen?lang=fr", data=b"OggS", content_type="audio/ogg", headers={"X-CSRF-Token": token}, csrf=False)
+    assert seen["lang"] == "vi"  # anything else falls back to Vietnamese
     assert client.post("/subby/listen", data=b"x", content_type="text/plain", headers={"X-CSRF-Token": token}, csrf=False).status_code == 400
     too_long = b"0" * (2 * 1024 * 1024 + 1)
     assert client.post("/subby/listen", data=too_long, content_type="audio/webm", headers={"X-CSRF-Token": token}, csrf=False).status_code == 413
