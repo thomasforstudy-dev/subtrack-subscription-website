@@ -31,10 +31,12 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM 3. Make a .env settings file if there isn't one (uses the local test database)
+REM 3. Make a .env settings file if there isn't one (uses the local test database).
+REM    APP_ENV=development: without it the app acts as the live site and only
+REM    sends login cookies over HTTPS, so logging in on http://127.0.0.1 fails.
 if not exist ".env" (
     echo [3/4] Creating .env with a random secret key...
-    ".venv\Scripts\python.exe" -c "import secrets; open('.env','w').write('SECRET_KEY='+secrets.token_hex(32)+'\nDB_SERVER=\n')"
+    ".venv\Scripts\python.exe" -c "import secrets; open('.env','w').write('SECRET_KEY='+secrets.token_hex(32)+'\nAPP_ENV=development\nDB_SERVER=\n')"
 ) else (
     echo [3/4] .env found.
 )
